@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Step 1: 生成 NEFF 文件
-运行 nkilib 和 neuronxcc 的 MLP kernel，保存 NEFF 文件到指定目录
+Step 1: Generate NEFF files
+Run nkilib and neuronxcc MLP kernels, save NEFF files to output directory
 """
 
 import os
 import glob
 import shutil
 
-# 设置环境变量
+# Set environment variables
 os.environ["NEURON_FRAMEWORK_DEBUG"] = "1"
 os.environ["XLA_IR_DEBUG"] = "1"
 os.environ["XLA_HLO_DEBUG"] = "1"
@@ -20,7 +20,7 @@ from torch_neuronx.xla_impl.ops import nki_jit
 from neuronxcc.nki._private_kernels.mlp import mlp_isa_kernel
 from neuronxcc.nki.language import nc
 
-# nkilib kernel (需要安装 nkilib_standalone)
+# nkilib kernel (requires nkilib_standalone to be installed)
 from nkilib_standalone.nkilib.core.mlp.mlp import mlp as nkilib_mlp
 
 
@@ -28,7 +28,7 @@ OUTPUT_DIR = "/tmp/mlp_benchmark_neffs"
 
 
 def find_latest_neff(pattern="*.neff"):
-    """找到最新生成的 NEFF 文件"""
+    """Find the most recently generated NEFF file"""
     neff_files = glob.glob(pattern)
     if not neff_files:
         return None
@@ -41,17 +41,17 @@ def generate_nkilib_neff(batch: int, seqlen: int, hidden: int, intermediate: int
 
     device = xm.xla_device()
 
-    # 清除之前的 NEFF 文件
+    # Clear previous NEFF files
     for f in glob.glob("*.neff"):
         os.remove(f)
 
-    # 创建输入
+    # Create inputs
     hidden_tensor = torch.randn(batch, seqlen, hidden, dtype=torch.bfloat16).to(device)
     gate_w = (torch.randn(hidden, intermediate, dtype=torch.bfloat16) * 0.02).to(device)
     up_w = (torch.randn(hidden, intermediate, dtype=torch.bfloat16) * 0.02).to(device)
     down_w = (torch.randn(intermediate, hidden, dtype=torch.bfloat16) * 0.02).to(device)
 
-    # 执行 kernel（触发编译）
+    # Execute kernel (triggers compilation)
     print("  Compiling and executing...")
     output = nkilib_mlp(
         hidden_tensor=hidden_tensor,
@@ -62,13 +62,13 @@ def generate_nkilib_neff(batch: int, seqlen: int, hidden: int, intermediate: int
     xm.mark_step()
     xm.wait_device_ops()
 
-    # 找到生成的 NEFF
+    # Find generated NEFF
     neff_path = find_latest_neff()
     if not neff_path:
         print("  NEFF not found!")
         return None
 
-    # 复制到输出目录
+    # Copy to output directory
     output_path = os.path.join(OUTPUT_DIR, f"{output_name}.neff")
     shutil.copy(neff_path, output_path)
     print(f"  Saved NEFF: {output_path}")
@@ -82,11 +82,11 @@ def generate_neuronxcc_neff(batch: int, seqlen: int, hidden: int, intermediate: 
 
     device = xm.xla_device()
 
-    # 清除之前的 NEFF 文件
+    # Clear previous NEFF files
     for f in glob.glob("*.neff"):
         os.remove(f)
 
-    # 创建输入
+    # Create inputs
     hidden_tensor = torch.randn(batch, seqlen, hidden, dtype=torch.bfloat16).to(device)
     ln_w = torch.ones(1, hidden, dtype=torch.bfloat16).to(device)
     gate_w = (torch.randn(hidden, intermediate, dtype=torch.bfloat16) * 0.02).to(device)
@@ -98,7 +98,7 @@ def generate_neuronxcc_neff(batch: int, seqlen: int, hidden: int, intermediate: 
     grid = (nc(logical_nc_config),)
     _mlp_fwd_call = nki_jit()(mlp_isa_kernel)
 
-    # 执行 kernel（触发编译）
+    # Execute kernel (triggers compilation)
     print("  Compiling and executing...")
     _mlp_fwd_call[grid](
         hidden_tensor,
@@ -115,13 +115,13 @@ def generate_neuronxcc_neff(batch: int, seqlen: int, hidden: int, intermediate: 
     xm.mark_step()
     xm.wait_device_ops()
 
-    # 找到生成的 NEFF
+    # Find generated NEFF
     neff_path = find_latest_neff()
     if not neff_path:
         print("  NEFF not found!")
         return None
 
-    # 复制到输出目录
+    # Copy to output directory
     output_path = os.path.join(OUTPUT_DIR, f"{output_name}.neff")
     shutil.copy(neff_path, output_path)
     print(f"  Saved NEFF: {output_path}")
@@ -131,10 +131,10 @@ def generate_neuronxcc_neff(batch: int, seqlen: int, hidden: int, intermediate: 
 
 def main():
     print("=" * 80)
-    print("Step 1: 生成 NEFF 文件")
+    print("Step 1: Generate NEFF files")
     print("=" * 80)
 
-    # 创建输出目录
+    # Create output directory
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     configs = [
@@ -165,13 +165,13 @@ def main():
 
     # Print summary
     print("\n" + "=" * 80)
-    print("生成的 NEFF 文件")
+    print("Generated NEFF files")
     print("=" * 80)
     for kernel, config, path in neff_files:
         print(f"  {kernel:<12} {config:<35} {path}")
 
-    print(f"\n所有 NEFF 文件保存在: {OUTPUT_DIR}")
-    print("\n下一步: 运行 benchmark_mlp_step2_profile.py 来 profile 这些 NEFF 文件")
+    print(f"\nAll NEFF files saved to: {OUTPUT_DIR}")
+    print("\nNext step: Run benchmark_mlp_step2_profile.py to profile these NEFF files")
 
 
 if __name__ == "__main__":

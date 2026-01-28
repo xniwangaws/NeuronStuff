@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Step 2: Profile NEFF 文件
-使用 neuron-explorer capture 来 profile Step 1 生成的 NEFF 文件
+Step 2: Profile NEFF files
+Use neuron-explorer capture to profile NEFF files generated in Step 1
 """
 
 import os
@@ -13,12 +13,12 @@ OUTPUT_DIR = "/tmp/mlp_benchmark_neffs"
 
 
 def profile_neff(neff_path: str) -> dict:
-    """使用 neuron-explorer capture 来 profile NEFF"""
+    """Profile NEFF using neuron-explorer capture"""
 
     basename = os.path.basename(neff_path).replace(".neff", "")
     ntff_path = os.path.join(OUTPUT_DIR, f"{basename}.ntff")
 
-    # 使用 neuron-explorer capture
+    # Run neuron-explorer capture
     cmd = f"neuron-explorer capture -n {neff_path} -s {ntff_path} --profile-nth-exec=2"
     print(f"  Running: {cmd}")
 
@@ -28,7 +28,7 @@ def profile_neff(neff_path: str) -> dict:
         print(f"  Capture failed: {result.stderr[:500]}")
         return None
 
-    # 查找生成的 ntff 文件（可能带有 _exec_2 后缀）
+    # Find generated ntff file (may have _exec_2 suffix)
     actual_ntff = ntff_path.replace(".ntff", "_exec_2.ntff")
     if not os.path.exists(actual_ntff):
         actual_ntff = ntff_path
@@ -39,7 +39,7 @@ def profile_neff(neff_path: str) -> dict:
 
     print(f"  Generated: {actual_ntff}")
 
-    # 使用 neuron-profile view 生成 JSON 报告
+    # Use neuron-profile view to generate JSON report
     json_path = os.path.join(OUTPUT_DIR, f"{basename}.json")
     view_cmd = f"neuron-profile view -n {neff_path} -s {actual_ntff} --output-format=json --output-file={json_path}"
     subprocess.run(view_cmd, shell=True, capture_output=True, text=True)
@@ -63,14 +63,14 @@ def profile_neff(neff_path: str) -> dict:
 
 def main():
     print("=" * 80)
-    print("Step 2: Profile NEFF 文件")
+    print("Step 2: Profile NEFF files")
     print("=" * 80)
 
     if not os.path.exists(OUTPUT_DIR):
         print(f"Error: {OUTPUT_DIR} not found. Run step1 first.")
         return
 
-    # 找到所有 NEFF 文件
+    # Find all NEFF files
     neff_files = glob.glob(os.path.join(OUTPUT_DIR, "*.neff"))
     if not neff_files:
         print(f"No NEFF files found in {OUTPUT_DIR}")
@@ -85,7 +85,7 @@ def main():
         parts = basename.split("_")
         kernel_name = parts[0]
 
-        # 解析配置
+        # Parse config
         config_parts = "_".join(parts[1:])
         config_str = config_parts.replace("b", "b=").replace("_s", ", s=").replace("_h", ", h=").replace("_i", ", i=")
 
@@ -110,7 +110,7 @@ def main():
 
     # Print summary table
     print("\n" + "=" * 100)
-    print("性能汇总")
+    print("Performance Summary")
     print("=" * 100)
     print(f"{'Kernel':<12} {'Config':<35} {'Total (μs)':<12} {'Tensor (μs)':<12} {'DMA (μs)':<10} {'MFU (%)':<10}")
     print("-" * 100)
@@ -124,7 +124,7 @@ def main():
 
     # Compare same configs
     print("\n" + "=" * 100)
-    print("对比分析")
+    print("Comparison Analysis")
     print("=" * 100)
 
     # Group by config
@@ -145,9 +145,9 @@ def main():
             ratio = t2 / t1 if t1 > 0 else 0
 
             if ratio > 1:
-                print(f"{config}: nkilib ({t1:.2f} μs) 比 neuronxcc ({t2:.2f} μs) 快 {ratio:.2f}x")
+                print(f"{config}: nkilib ({t1:.2f} μs) is {ratio:.2f}x faster than neuronxcc ({t2:.2f} μs)")
             else:
-                print(f"{config}: neuronxcc ({t2:.2f} μs) 比 nkilib ({t1:.2f} μs) 快 {1/ratio:.2f}x")
+                print(f"{config}: neuronxcc ({t2:.2f} μs) is {1/ratio:.2f}x faster than nkilib ({t1:.2f} μs)")
 
 
 if __name__ == "__main__":

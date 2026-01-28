@@ -1,57 +1,58 @@
 ================================================================================
-MLP Kernel 性能对比测试结果
+MLP Kernel Performance Comparison Results
 ================================================================================
-平台: trn2
-日期: 2026-01-26
-测试脚本: benchmark_mlp_complete.py, benchmark_mlp_kernels_v3.py
+Platform: trn2
+Date: 2026-01-26
+Test scripts: benchmark_mlp_step1_generate_neff.py, benchmark_mlp_step2_profile.py
 
 ================================================================================
-一、测试结果汇总
+1. Test Results Summary
 ================================================================================
 
-1. Torch 执行时间 (包含 torch-xla 调度开销)
+1.1 Torch Execution Time (includes torch-xla dispatch overhead)
 --------------------------------------------------------------------------------
-Kernel       Config                         Torch Time (ms)   备注
+Kernel       Config                         Torch Time (ms)   Notes
 --------------------------------------------------------------------------------
-nkilib       b=1, s=128, h=1024, i=512      4039.86          每次重新编译!
-neuronxcc    b=1, s=128, h=1024, i=512      1.41             使用缓存
-nkilib       b=1, s=256, h=2048, i=1024     4098.30          每次重新编译!
-neuronxcc    b=1, s=256, h=2048, i=1024     1.69             使用缓存
+nkilib       b=1, s=128, h=1024, i=512      4039.86          Recompiles every time!
+neuronxcc    b=1, s=128, h=1024, i=512      1.41             Uses cache
+nkilib       b=1, s=256, h=2048, i=1024     4098.30          Recompiles every time!
+neuronxcc    b=1, s=256, h=2048, i=1024     1.69             Uses cache
 
-2. 实际 Kernel 执行时间 (通过 neuron-profile 测量)
+1.2 Actual Kernel Execution Time (measured via neuron-profile)
 --------------------------------------------------------------------------------
-Kernel       Config                         Kernel Time (μs)  编译时间 (ms)
+Kernel       Config                         Kernel Time (μs)  Compile Time (ms)
 --------------------------------------------------------------------------------
 nkilib       b=1, s=128, h=1024, i=512      45.26            4312
 
-注: neuronxcc 的 NEFF 通过 torch-xla 编译，结构不同，无法直接用 neuron-profile 测量。
-    但从 torch 执行时间推算，实际 kernel 时间应该更短。
+Note: neuronxcc NEFF is compiled via torch-xla with different structure,
+      cannot be directly measured with neuron-profile.
+      However, actual kernel time should be shorter based on torch execution time.
 
-3. 关键发现
+1.3 Key Findings
 --------------------------------------------------------------------------------
-- nkilib 实际 kernel 执行时间: ~45 微秒 (0.045 ms)
-- neuronxcc torch 执行时间: ~1.4 ms (包含调度开销)
-- nkilib torch 执行时间: ~4000 ms (包含重复编译!)
+- nkilib actual kernel execution time: ~45 microseconds (0.045 ms)
+- neuronxcc torch execution time: ~1.4 ms (includes dispatch overhead)
+- nkilib torch execution time: ~4000 ms (includes repeated compilation!)
 
-结论: nkilib kernel 本身性能很好，问题是 @nki.jit 每次都重新编译。
+Conclusion: nkilib kernel itself performs well, the issue is @nki.jit recompiles every time.
 
 ================================================================================
-二、如何使用 neuron-profile 获取 Kernel 执行时间
+2. How to Use neuron-profile to Get Kernel Execution Time
 ================================================================================
 
-步骤 1: 编译 Kernel 生成 NEFF 文件
+Step 1: Compile Kernel to Generate NEFF File
 ----------------------------------------
-使用 compile_klir_to_neff() 或测试框架的编译流程:
+Use compile_klir_to_neff() or test framework compilation flow:
 
 ```python
 from nki.compiler.backends.neuron.TraceKernel import TraceKernel as KLIRTraceKernel
 from neuronxcc.starfish.penguin.ir.IRBuilder import IRBuilder
 from neuronxcc.starfish.penguin.ir.IRWriter import IRWriter
 
-# 1. 创建 IR builder
+# 1. Create IR builder
 builder = IRBuilder()
 
-# 2. 添加输入张量
+# 2. Add input tensors
 for name, tensor in inputs.items():
     tensor_ir = builder.tensor(shape=tensor.shape, dtype=tensor.dtype, name=name)
 
@@ -59,15 +60,15 @@ for name, tensor in inputs.items():
 traced_kernel = KLIRTraceKernel.trace(func=mlp, platform_target="trn2")
 traced_kernel[lnc_count](**inputs)
 
-# 4. 生成 penguin.py
+# 4. Generate penguin.py
 IRWriter.run(cu=builder.cu, output=file, save_weights=True, weights_dir=output_dir)
 
-# 5. 编译生成 NEFF
+# 5. Compile to generate NEFF
 neuronx-cc compile --framework XLA penguin.py --target trn2 --lnc 2
-# 输出: file.neff
+# Output: file.neff
 ```
 
-步骤 2: 保存输入数据为 .bin 文件
+Step 2: Save Input Data as .bin Files
 ----------------------------------------
 ```python
 for name, tensor in inputs.items():
@@ -76,7 +77,7 @@ for name, tensor in inputs.items():
             f.write(tensor.tobytes())
 ```
 
-步骤 3: 使用 neuron-profile capture 执行
+Step 3: Execute with neuron-profile capture
 ----------------------------------------
 ```bash
 neuron-profile capture \
@@ -89,15 +90,15 @@ neuron-profile capture \
     down_proj_weights_tensor inp-down_proj_weights_tensor-000.bin
 ```
 
-输出: profile.ntff, out, out.2, out.3, ...
+Output: profile.ntff, out, out.2, out.3, ...
 
-步骤 4: 查看执行时间摘要
+Step 4: View Execution Time Summary
 ----------------------------------------
 ```bash
 neuron-profile show-session -s profile.ntff
 ```
 
-输出示例:
+Example output:
 ```
 +---------+----------------+-----------+------+-------+----------+--------+--------+
 | NODE ID | EXEC TIME (NS) | EXECUTOR  | NAME | TRACE |  CYCLES  | EVENTS | ERRORS |
@@ -107,7 +108,7 @@ neuron-profile show-session -s profile.ntff
 +---------+----------------+-----------+------+-------+----------+--------+--------+
 ```
 
-步骤 5: 获取详细性能数据 (JSON 格式)
+Step 5: Get Detailed Performance Data (JSON format)
 ----------------------------------------
 ```bash
 neuron-profile view \
@@ -117,17 +118,17 @@ neuron-profile view \
     --output-file=profile.json
 ```
 
-解析 JSON 获取实际执行时间:
+Parse JSON to get actual execution time:
 ```python
 import json
 with open('profile.json') as f:
     data = json.load(f)
 
-# 获取总执行时间
-total_time = data['summary'][0]['total_time']  # 秒
+# Get total execution time
+total_time = data['summary'][0]['total_time']  # seconds
 print(f"Kernel execution time: {total_time * 1e6:.2f} μs")
 
-# 其他有用指标
+# Other useful metrics
 print(f"Hardware FLOPS: {data['summary'][0]['hardware_flops']}")
 print(f"Matmul instructions: {data['summary'][0]['matmul_instruction_count']}")
 print(f"Tensor engine active: {data['summary'][0]['tensor_engine_active_time'] * 1e6:.2f} μs")
@@ -135,20 +136,20 @@ print(f"DMA active: {data['summary'][0]['dma_active_time'] * 1e6:.2f} μs")
 ```
 
 ================================================================================
-三、详细性能数据 (nkilib MLP, b=1, s=128, h=1024, i=512)
+3. Detailed Performance Data (nkilib MLP, b=1, s=128, h=1024, i=512)
 ================================================================================
 
-从 profile.json 提取的数据:
+Data extracted from profile.json:
 
-基本指标:
-- total_time: 45.26 μs (4.5256596e-05 秒)
+Basic metrics:
+- total_time: 45.26 μs (4.5256596e-05 seconds)
 - neuroncore_cycle_count: 54307 cycles
 - hardware_flops: 427,819,008
 - matmul_instruction_count: 72
 - event_count: 1025
 - trace_count: 3458
 
-Engine 活跃时间:
+Engine active time:
 - tensor_engine_active_time: 20.70 μs (45.74%)
 - dma_active_time: 20.46 μs (45.20%)
 - vector_engine_active_time: 9.38 μs (20.72%)
@@ -156,63 +157,63 @@ Engine 活跃时间:
 - gpsimd_engine_active_time: 4.74 μs (10.47%)
 - sync_engine_active_time: 3.92 μs (8.66%)
 
-内存指标:
+Memory metrics:
 - hbm_read_bytes: 6,553,600 (6.25 MB)
 - hbm_write_bytes: 262,144 (0.25 MB)
 - inputs_outputs_weights_size_bytes: 3,670,016 (3.5 MB)
 - sbuf_read_bytes: 326,656
 - sbuf_write_bytes: 6,564,864
 
-效率指标:
+Efficiency metrics:
 - mfu_estimated_percent: 5.66%
 - mfu_max_achievable_estimated_percent: 26.89%
 - mm_arithmetic_intensity: 59.08
 
 ================================================================================
-四、根本问题分析
+4. Root Cause Analysis
 ================================================================================
 
-问题: nkilib 使用 @nki.jit 时每次 xm.mark_step() 都重新编译
+Problem: nkilib using @nki.jit recompiles on every xm.mark_step() call
 
-证据:
-1. 日志显示 "Compiler status PASS" 在每次迭代都出现
-2. neuronxcc 日志显示 "Using a cached neff at /var/tmp/neuron-compile-cache/..."
-3. nkilib 执行时间 ~4000ms ≈ 编译时间 (~4秒) + 执行时间 (~0.045ms)
+Evidence:
+1. Logs show "Compiler status PASS" on every iteration
+2. neuronxcc logs show "Using a cached neff at /var/tmp/neuron-compile-cache/..."
+3. nkilib execution time ~4000ms ≈ compile time (~4s) + execution time (~0.045ms)
 
-可能原因:
-1. nkilib 每次生成的 HLO 图有微小差异 (如张量 ID)，导致缓存 key 不同
-2. @nki.jit 与 torch_neuronx.nki_jit() 的缓存行为不同
-
-================================================================================
-五、修复建议
-================================================================================
-
-1. 调查缓存机制
-   - 检查 nkilib 生成的 HLO 图是否稳定
-   - 对比 @nki.jit 和 nki_jit() 的实现差异
-
-2. 可能的解决方案
-   - 使用 torch_neuronx.nki_jit() 包装 nkilib kernel
-   - 使用测试框架的 compile_klir_to_neff() 预编译
-   - 修复 @nki.jit 的缓存机制
-
-3. Benchmark 最佳实践
-   - 使用 neuron-profile 测量纯 kernel 执行时间
-   - 分开测量编译时间和执行时间
-   - 确保两个 kernel 使用相同的测量方法
+Possible causes:
+1. nkilib generates HLO graph with minor differences each time (e.g., tensor IDs), causing different cache keys
+2. @nki.jit and torch_neuronx.nki_jit() have different caching behavior
 
 ================================================================================
-六、公平性能对比结果 (2026-01-26 更新)
+5. Recommended Fixes
 ================================================================================
 
-使用 NEURON_FRAMEWORK_DEBUG=1 + neuron-explorer capture 方法测量实际 kernel 时间
+1. Investigate caching mechanism
+   - Check if nkilib generates stable HLO graphs
+   - Compare @nki.jit and nki_jit() implementation differences
 
-方法:
-1. 设置 NEURON_FRAMEWORK_DEBUG=1 环境变量
-2. 运行 kernel (自动保存 NEFF 文件)
-3. 使用 neuron-explorer capture 来 profile NEFF
+2. Possible solutions
+   - Use torch_neuronx.nki_jit() wrapper for nkilib kernel
+   - Use test framework's compile_klir_to_neff() for pre-compilation
+   - Fix @nki.jit's caching mechanism
 
-结果:
+3. Benchmark best practices
+   - Use neuron-profile to measure pure kernel execution time
+   - Measure compile time and execution time separately
+   - Ensure both kernels use the same measurement method
+
+================================================================================
+6. Fair Performance Comparison Results (Updated 2026-01-26)
+================================================================================
+
+Using NEURON_FRAMEWORK_DEBUG=1 + neuron-explorer capture method to measure actual kernel time
+
+Method:
+1. Set NEURON_FRAMEWORK_DEBUG=1 environment variable
+2. Run kernel (NEFF file saved automatically)
+3. Use neuron-explorer capture to profile NEFF
+
+Results:
 --------------------------------------------------------------------------------
 Kernel       Config                              Total (μs)   Tensor (μs)  DMA (μs)
 --------------------------------------------------------------------------------
@@ -221,59 +222,59 @@ nkilib       b=1, s=128, h=1024, i=512           43.22        15.22        21.08
 neuronxcc    b=1, s=256, h=2048, i=1024          67.21        36.64        40.35
 nkilib       b=1, s=256, h=2048, i=1024          85.26        57.09        53.12
 
-对比:
-- b=1, s=128, h=1024, i=512: neuronxcc 比 nkilib 快 1.10x (39.36 vs 43.22 μs)
-- b=1, s=256, h=2048, i=1024: neuronxcc 比 nkilib 快 1.27x (67.21 vs 85.26 μs)
+Comparison:
+- b=1, s=128, h=1024, i=512: neuronxcc is 1.10x faster than nkilib (39.36 vs 43.22 μs)
+- b=1, s=256, h=2048, i=1024: neuronxcc is 1.27x faster than nkilib (67.21 vs 85.26 μs)
 
-结论:
-- 在相同配置下，neuronxcc 的 mlp_isa_kernel 实际执行时间略快 10-27%
-- 两个 kernel 的 Tensor Engine 时间相近
-- nkilib 的 DMA 时间稍长，可能是数据布局差异
+Conclusions:
+- Under same configuration, neuronxcc's mlp_isa_kernel is 10-27% faster
+- Both kernels have similar Tensor Engine time
+- nkilib has slightly longer DMA time, possibly due to data layout differences
 
 ================================================================================
-七、Profile 方法总结
+7. Profiling Method Summary
 ================================================================================
 
-方法 1: KLIR 编译 + neuron-profile
+Method 1: KLIR Compilation + neuron-profile
 ----------------------------------------
-适用于: 可以直接 KLIR trace 的纯 Python kernel (如 nkilib)
+Applicable for: Pure Python kernels that can be directly KLIR traced (e.g., nkilib)
 
-步骤:
-1. 使用 compile_klir_to_neff() 编译 kernel
-2. 保存输入为 .bin 文件
+Steps:
+1. Use compile_klir_to_neff() to compile kernel
+2. Save inputs as .bin files
 3. neuron-profile capture --neff file.neff input_args
-4. neuron-profile view --output-format=json 获取详细数据
+4. neuron-profile view --output-format=json to get detailed data
 
-方法 2: NEURON_FRAMEWORK_DEBUG + neuron-explorer
+Method 2: NEURON_FRAMEWORK_DEBUG + neuron-explorer
 ----------------------------------------
-适用于: 任何通过 torch-xla 运行的 kernel (包括 Cython kernel)
+Applicable for: Any kernel running through torch-xla (including Cython kernels)
 
-步骤:
-1. 设置环境变量:
+Steps:
+1. Set environment variables:
    export NEURON_FRAMEWORK_DEBUG=1
    export XLA_IR_DEBUG=1
    export XLA_HLO_DEBUG=1
 
-2. 运行 kernel (NEFF 自动保存到当前目录)
+2. Run kernel (NEFF saved automatically to current directory)
    python your_kernel_script.py
 
 3. Profile NEFF:
    neuron-explorer capture -n <neff_file> -s profile.ntff --profile-nth-exec=2
 
-4. 生成 JSON 报告:
+4. Generate JSON report:
    neuron-profile view -n <neff_file> -s profile.ntff --output-format=json --output-file=profile.json
 
-注意: neuron-explorer capture 需要独占 Neuron device，
-      所以需要在 kernel 执行完成后单独运行
+Note: neuron-explorer capture requires exclusive Neuron device access,
+      so it must be run separately after kernel execution completes
 
 ================================================================================
-八、集成到 nki-library
+8. Integration with nki-library
 ================================================================================
 
-将以下两个 benchmark 脚本复制到 nki-library 仓库:
+Copy the following two benchmark scripts to nki-library repository:
 https://github.com/aws-neuron/nki-library/tree/main
 
-建议目录结构:
+Suggested directory structure:
 ```
 nki-library/
 └── benchmarks/
@@ -283,26 +284,26 @@ nki-library/
         └── README.md
 ```
 
-步骤:
+Steps:
 1. Clone nki-library:
    git clone https://github.com/aws-neuron/nki-library.git
    cd nki-library
 
-2. 创建目录并复制文件:
+2. Create directory and copy files:
    mkdir -p benchmarks/mlp
    cp /path/to/benchmark_mlp_step1_generate_neff.py benchmarks/mlp/
    cp /path/to/benchmark_mlp_step2_profile.py benchmarks/mlp/
 
-3. 提交并创建 PR:
+3. Commit and create PR:
    git checkout -b add-mlp-benchmark
    git add benchmarks/
    git commit -m "Add MLP kernel benchmark scripts"
    git push origin add-mlp-benchmark
 
 ================================================================================
-九、相关文件
+9. Related Files
 ================================================================================
 
-- benchmark_mlp_step1_generate_neff.py: 生成 NEFF 文件 (Step 1)
-- benchmark_mlp_step2_profile.py: Profile NEFF 文件 (Step 2)
-- /tmp/mlp_benchmark_neffs/: NEFF 和 profile 文件保存目录
+- benchmark_mlp_step1_generate_neff.py: Generate NEFF files (Step 1)
+- benchmark_mlp_step2_profile.py: Profile NEFF files (Step 2)
+- /tmp/mlp_benchmark_neffs/: NEFF and profile files output directory

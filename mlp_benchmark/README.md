@@ -1,25 +1,25 @@
 # MLP Kernel Benchmark
 
-公平对比 nkilib MLP kernel 和 neuronxcc mlp_isa_kernel 的性能。
+Fair performance comparison between nkilib MLP kernel and neuronxcc mlp_isa_kernel.
 
-## 方法
+## Method
 
-使用 `NEURON_FRAMEWORK_DEBUG=1` + `neuron-explorer capture` 方法测量实际 kernel 执行时间。
+Uses `NEURON_FRAMEWORK_DEBUG=1` + `neuron-explorer capture` to measure actual kernel execution time.
 
-## 使用方法
+## Usage
 
 ```bash
-# 激活 Neuron 环境
+# Activate Neuron environment
 source /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/activate
 
-# Step 1: 生成 NEFF 文件
+# Step 1: Generate NEFF files
 python3 benchmark_mlp_step1_generate_neff.py
 
-# Step 2: Profile NEFF 文件 (需要单独运行，独占 Neuron device)
+# Step 2: Profile NEFF files (must run separately, requires exclusive Neuron device access)
 python3 benchmark_mlp_step2_profile.py
 ```
 
-## 结果
+## Results
 
 | Kernel | Config | Total (μs) | Tensor Eng (μs) | DMA (μs) |
 |--------|--------|------------|-----------------|----------|
@@ -28,22 +28,22 @@ python3 benchmark_mlp_step2_profile.py
 | neuronxcc | b=1, s=256, h=2048, i=1024 | 67.21 | 36.64 | 40.35 |
 | nkilib | b=1, s=256, h=2048, i=1024 | 85.26 | 57.09 | 53.12 |
 
-**对比:**
-- 小配置: neuronxcc 比 nkilib 快 1.10x
-- 大配置: neuronxcc 比 nkilib 快 1.27x
+**Comparison:**
+- Small config: neuronxcc is 1.10x faster than nkilib
+- Large config: neuronxcc is 1.27x faster than nkilib
 
-## 文件说明
+## Files
 
-- `benchmark_mlp_step1_generate_neff.py` - 生成 NEFF 文件
-- `benchmark_mlp_step2_profile.py` - Profile NEFF 文件
-- `benchmark_results.txt` - 详细结果和分析
+- `benchmark_mlp_step1_generate_neff.py` - Generate NEFF files
+- `benchmark_mlp_step2_profile.py` - Profile NEFF files
+- `benchmark_results.txt` - Detailed results and analysis
 
-## 依赖
+## Dependencies
 
 - AWS Neuron SDK
 - PyTorch NeuronX
-- nkilib_standalone (需要安装)
+- nkilib_standalone (must be installed)
 
-## 关键参数
+## Key Parameters
 
-`--profile-nth-exec=2`: 执行 NEFF 2 次，只 profile 第 2 次，避免 warmup 开销影响结果。
+`--profile-nth-exec=2`: Execute NEFF twice, only profile the second execution to avoid warmup overhead affecting results.
