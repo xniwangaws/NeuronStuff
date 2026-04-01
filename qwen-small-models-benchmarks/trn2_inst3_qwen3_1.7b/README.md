@@ -42,14 +42,14 @@ bash bench.sh
 
 | Context | Best Config | vs H100 (%) | Trn2 tok/s | Trn2 tok/s per 2 Devices | H100 tok/s | TTFT Trn2 | TTFT H100 | Script Folder |
 |---------|-------------|-------------|------------|--------------------------|------------|-----------|-----------|---------------|
-| 4K | TP=1 BS=16 LNC=2 | 86% | 422.98 | 6,767.68 | 3,946.36 (c256) | 0.53s | 6.31s | [qwen3_4k_tp1_lnc2_bs16](qwen3_4k_tp1_lnc2_bs16/) |
-| 8K | TP=2 BS=16 LNC=2 | 70% | 388.38 | 3,107.04 | 2,210.66 (c64) | 0.80s | 1.72s | [qwen3_8k_tp2_lnc2_bs16](qwen3_8k_tp2_lnc2_bs16/) |
-| 16K | TP=2 BS=16 LNC=2 | 92% | 222.25 | 1,778.00 | 969.53 (c64) | 1.88s | 6.43s | [qwen3_16k_tp2_lnc2_bs16](qwen3_16k_tp2_lnc2_bs16/) |
-| 32K | TP=1 BS=2 LNC=2 | 83% | 42.85 | 685.60 | 410.80 (c256) | 3.13s | 89.89s | [qwen3_32k_tp1_lnc2_bs2](qwen3_32k_tp1_lnc2_bs2/) |
+| 4K | TP=1 BS=16 LNC=2 | 86% | 422.98 | 3,383.84 | 3,946.36 (c256) | 0.53s | 6.31s | [qwen3_4k_tp1_lnc2_bs16](qwen3_4k_tp1_lnc2_bs16/) |
+| 8K | TP=2 BS=16 LNC=2 | 70% | 388.38 | 1,553.52 | 2,210.66 (c64) | 0.80s | 1.72s | [qwen3_8k_tp2_lnc2_bs16](qwen3_8k_tp2_lnc2_bs16/) |
+| 16K | TP=2 BS=16 LNC=2 | 92% | 222.25 | 889.00 | 969.53 (c64) | 1.88s | 6.43s | [qwen3_16k_tp2_lnc2_bs16](qwen3_16k_tp2_lnc2_bs16/) |
+| 32K | TP=1 BS=2 LNC=2 | 83% | 42.85 | 342.80 | 410.80 (c256) | 3.13s | 89.89s | [qwen3_32k_tp1_lnc2_bs2](qwen3_32k_tp1_lnc2_bs2/) |
 
 > **vs H100 formula**: `(Trn2 tok/s × 16) / (H100 tok/s × LNC × TP) × 100%`
 >
-> **per 2 Devices formula**: `tok/s × 16 / TP`
+> **per 2 Devices formula**: `tok/s × 16 / (TP × LNC)`
 
 ### Key Observations
 

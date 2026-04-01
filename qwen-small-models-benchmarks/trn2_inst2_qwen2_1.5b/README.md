@@ -57,14 +57,14 @@ Performance comparison of the best Qwen2-1.5B configuration at each context leng
 
 > **vs H100 formula**: `(Trn2 tok/s × 16) / (H100 tok/s × LNC × TP) × 100%`
 >
-> **per 2 Devices formula**: `tok/s × 16 / TP`
+> **per 2 Devices formula**: `tok/s × 16 / (TP × LNC)`
 
 | Context | Best Config | vs H100 (%) | Trn2 tok/s per core | Trn2 tok/s per 2 Devices | H100 tok/s | TTFT Trn2 | TTFT H100 | Script Folder |
 |---------|-------------|-------------|---------------------|--------------------------|------------|-----------|-----------|---------------|
 | 4K | TP=1 BS=16 LNC=1 | 56% | 273.01 | 4,368.16 | 7,780.58 (c256) | 0.98s | 3.41s | [qwen2_1.5b_4k_bs16_tp1_lnc1](qwen2_1.5b_4k_bs16_tp1_lnc1/) |
 | 8K | TP=1 BS=24 LNC=1 | 63% | 219.73 | 3,515.68 | 5,584.10 (c256) | 3.18s | 4.40s | [qwen2_1.5b_8k_bs24_tp1_lnc1](qwen2_1.5b_8k_bs24_tp1_lnc1/) |
 | 16K | TP=2 BS=16 LNC=1 | 50% | 158.40 | 1,267.20 | 2,522.44 (c128) | 2.49s | 5.43s | [qwen2_1.5b_16k_bs16_tp2_lnc1](qwen2_1.5b_16k_bs16_tp2_lnc1/) |
-| 32K | TP=1 BS=8 LNC=2 | 69% | 80.87 | 1,293.92 | 933.21 (c64) | 3.38s | 8.75s | [qwen2_1.5b_32k_bs8_tp1_lnc2](qwen2_1.5b_32k_bs8_tp1_lnc2/) |
+| 32K | TP=1 BS=8 LNC=2 | 69% | 80.87 | 646.96 | 933.21 (c64) | 3.38s | 8.75s | [qwen2_1.5b_32k_bs8_tp1_lnc2](qwen2_1.5b_32k_bs8_tp1_lnc2/) |
 | 64K | TP=2 BS=2 LNC=1 | 61% | 23.85 | 190.80 | 310.76 (c64) | 8.05s | 27.83s | [qwen2_1.5b_64k_bs2_tp2_lnc1](qwen2_1.5b_64k_bs2_tp2_lnc1/) |
 
 ### Key Observations

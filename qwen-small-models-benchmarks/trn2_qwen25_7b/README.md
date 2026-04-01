@@ -42,15 +42,15 @@ bash bench.sh
 
 | Context | Best Config | vs H100 (%) | Trn2 tok/s | Trn2 tok/s per 2 Devices | H100 tok/s | TTFT Trn2 | TTFT H100 | Script Folder |
 |---------|-------------|-------------|------------|--------------------------|------------|-----------|-----------|---------------|
-| 4K | TP=4 BS=64 LNC=2 | 70% | 901.48 | 3,605.92 | 2,572.78 (c256) | 1.61s | 11.48s | [qwen25_7b_4k_tp4_lnc2_bs64](qwen25_7b_4k_tp4_lnc2_bs64/) |
-| 8K | TP=4 BS=64 LNC=2 | 55% | 527.06 | 2,108.24 | 1,918.04 (c128) | 3.32s | 6.77s | [qwen25_7b_8k_tp4_lnc2_bs64](qwen25_7b_8k_tp4_lnc2_bs64/) |
-| 16K | TP=4 BS=64 LNC=2 | 55% | 238.14 | 952.56 | 866.34 (c64) | 8.21s | 8.51s | [qwen25_7b_16k_tp4_lnc2_bs64](qwen25_7b_16k_tp4_lnc2_bs64/) |
-| 32K | TP=4 BS=2 LNC=2 | 47% | 68.11 | 272.44 | 289.74 (c64) | 2.21s | 27.76s | [qwen25_7b_32k_tp4_lnc2_bs2](qwen25_7b_32k_tp4_lnc2_bs2/) |
-| 64K | TP=4 BS=2 LNC=2 | 65% | 33.55 | 134.20 | 103.06 (c256) | 7.02s | 369.84s | [qwen25_7b_64k_tp4_lnc2_bs2](qwen25_7b_64k_tp4_lnc2_bs2/) |
+| 4K | TP=4 BS=64 LNC=2 | 70% | 901.48 | 1,802.96 | 2,572.78 (c256) | 1.61s | 11.48s | [qwen25_7b_4k_tp4_lnc2_bs64](qwen25_7b_4k_tp4_lnc2_bs64/) |
+| 8K | TP=4 BS=64 LNC=2 | 55% | 527.06 | 1,054.12 | 1,918.04 (c128) | 3.32s | 6.77s | [qwen25_7b_8k_tp4_lnc2_bs64](qwen25_7b_8k_tp4_lnc2_bs64/) |
+| 16K | TP=4 BS=64 LNC=2 | 55% | 238.14 | 476.28 | 866.34 (c64) | 8.21s | 8.51s | [qwen25_7b_16k_tp4_lnc2_bs64](qwen25_7b_16k_tp4_lnc2_bs64/) |
+| 32K | TP=4 BS=2 LNC=2 | 47% | 68.11 | 136.22 | 289.74 (c64) | 2.21s | 27.76s | [qwen25_7b_32k_tp4_lnc2_bs2](qwen25_7b_32k_tp4_lnc2_bs2/) |
+| 64K | TP=4 BS=2 LNC=2 | 65% | 33.55 | 67.10 | 103.06 (c256) | 7.02s | 369.84s | [qwen25_7b_64k_tp4_lnc2_bs2](qwen25_7b_64k_tp4_lnc2_bs2/) |
 
 > **vs H100 formula**: `(Trn2 tok/s × 16) / (H100 tok/s × LNC × TP) × 100%`
 >
-> **per 2 Devices formula**: `tok/s × 16 / TP`
+> **per 2 Devices formula**: `tok/s × 16 / (TP × LNC)`
 
 ### Key Observations
 
