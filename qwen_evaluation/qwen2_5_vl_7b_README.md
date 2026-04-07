@@ -4,16 +4,18 @@ Run Qwen2.5-VL-7B-Instruct on Trn2 via vLLM + NeuronX Distributed Inference.
 
 ## Benchmark Results
 
-### Multimodal (100 images 640x320, 100 output tokens, concurrency=1, 32 prompts)
+### Multimodal (100 images 640x320, 100 output tokens, 32 prompts)
 
-H100 = 100% baseline. Higher is better.
+Trn2 TP=4 uses 1 Neuron device. trn2.48xlarge has 16 devices, so 2 devices ≈ H100 comparison.
 
-| Metric | Trn2 (TP=4) | H100 80GB (TP=1) | Trn2 vs H100 |
-|--------|-------------|------------------|--------------|
-| Output tok/s | 20.67 | 24.57 | **84%** |
-| TTFT (median) | 3471 ms | 3430 ms | **99%** |
-| TPOT (median) | 14.45 ms | 6.78 ms | **47%** |
-| Request throughput | 0.20 req/s | 0.24 req/s | **83%** |
+| Metric | Trn2 TP=4 c=1 (1 device) | Trn2 ×2 devices | H100 80GB c=2 |
+|--------|--------------------------|-----------------|---------------|
+| Output tok/s | 20.67 | **41.34** | 35.90 |
+| TTFT (median) | **3471 ms** | **3471 ms** | 4575 ms |
+| TPOT (median) | 14.45 ms | 14.45 ms | **13.84 ms** |
+| Request throughput | 0.20 req/s | **0.40 req/s** | 0.35 req/s |
+
+**2 Neuron devices vs 1× H100**: Output throughput **115%**, TTFT **132%**, Request throughput **114%**.
 
 ### Tested Environment
 
