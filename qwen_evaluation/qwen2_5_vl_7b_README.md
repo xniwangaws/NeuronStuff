@@ -15,23 +15,6 @@ H100 = 100% baseline. Higher is better.
 | TPOT (median) | 14.45 ms | 6.78 ms | **47%** |
 | Request throughput | 0.20 req/s | 0.24 req/s | **83%** |
 
-### Multimodal (100 images 640x320, 32 output tokens, concurrency=1, 32 prompts)
-
-| Metric | Trn2 (TP=4) | H100 80GB (TP=1) | Trn2 vs H100 |
-|--------|-------------|------------------|--------------|
-| Output tok/s | 8.14 | 8.78 | **93%** |
-| TTFT (median) | 3564 ms | 3472 ms | **97%** |
-| TPOT (median) | 14.35 ms | 6.77 ms | **47%** |
-| Request throughput | 0.25 req/s | 0.27 req/s | **93%** |
-
-### Text-only (128 input tokens, 32 output tokens, concurrency=1, 32 prompts)
-
-| Metric | Trn2 (TP=4) | H100 80GB (TP=1) | Trn2 vs H100 |
-|--------|-------------|------------------|--------------|
-| Output tok/s | 56.27 | 129.10 | **44%** |
-| TTFT (median) | 152 ms | 34 ms | **22%** |
-| TPOT (median) | 13.30 ms | 6.28 ms | **47%** |
-
 ### Tested Environment
 
 - **Trn2**: trn2.48xlarge, us-east-2, NxDI 0.8.0, vllm-neuron 0.4.1, vLLM 0.13, bfloat16
