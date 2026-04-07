@@ -1,0 +1,139 @@
+# Qwen2.5-VL-7B-Instruct on AWS Neuron (Trn2)
+
+Run Qwen2.5-VL-7B-Instruct on Trn2 via vLLM + NeuronX Distributed Inference.
+
+## Benchmark Results
+
+### Multimodal (100 images 640x320, 100 output tokens, concurrency=1, 32 prompts)
+
+H100 = 100% baseline. Higher is better.
+
+| Metric | Trn2 (TP=4) | H100 80GB (TP=1) | Trn2 vs H100 |
+|--------|-------------|------------------|--------------|
+| Output tok/s | 20.67 | 24.57 | **84%** |
+| TTFT (median) | 3471 ms | 3430 ms | **99%** |
+| TPOT (median) | 14.45 ms | 6.78 ms | **47%** |
+| Request throughput | 0.20 req/s | 0.24 req/s | **83%** |
+
+### Multimodal (100 images 640x320, 32 output tokens, concurrency=1, 32 prompts)
+
+| Metric | Trn2 (TP=4) | H100 80GB (TP=1) | Trn2 vs H100 |
+|--------|-------------|------------------|--------------|
+| Output tok/s | 8.14 | 8.78 | **93%** |
+| TTFT (median) | 3564 ms | 3472 ms | **97%** |
+| TPOT (median) | 14.35 ms | 6.77 ms | **47%** |
+| Request throughput | 0.25 req/s | 0.27 req/s | **93%** |
+
+### Text-only (128 input tokens, 32 output tokens, concurrency=1, 32 prompts)
+
+| Metric | Trn2 (TP=4) | H100 80GB (TP=1) | Trn2 vs H100 |
+|--------|-------------|------------------|--------------|
+| Output tok/s | 56.27 | 129.10 | **44%** |
+| TTFT (median) | 152 ms | 34 ms | **22%** |
+| TPOT (median) | 13.30 ms | 6.28 ms | **47%** |
+
+### Tested Environment
+
+- **Trn2**: trn2.48xlarge, us-east-2, NxDI 0.8.0, vllm-neuron 0.4.1, vLLM 0.13, bfloat16
+- **H100**: p5.4xlarge (1x H100 80GB HBM3), ap-northeast-1, vLLM 0.19, PyTorch 2.10, bfloat16
+
+## Architecture Differences from Qwen2-VL
+
+Qwen2.5-VL has key differences from Qwen2-VL that prevent direct reuse of NxDI's `qwen2_vl` model:
+
+| Component | Qwen2-VL | Qwen2.5-VL-7B |
+|-----------|----------|----------------|
+| Vision Norm | LayerNorm (weight+bias) | RMSNorm (weight only) |
+| Vision MLP | GELU (fc1/fc2) | SwiGLU (gate_proj/up_proj/down_proj) |
+| PatchMerger ln_q | LayerNorm | RMSNorm |
+| PatchMerger output dim | vision hidden_size (1280) | text hidden_size (3584) |
+| tie_word_embeddings | true | false (separate lm_head) |
+| vocab_size | 151936 | 152064 |
+
+## Files
+
+```
+qwen2_5_vl_7b/
+├── __init__.py                      # Package exports
+├── modeling_qwen2_5_vl.py           # Main model: config + forward + state dict conversion
+├── modeling_qwen2_5_vl_text.py      # Text model: handles tie_word_embeddings=false
+└── modeling_qwen2_5_vl_vision.py    # Vision model: RMSNorm + SwiGLU MLP + PatchMerger2.5
+
+qwen2_5_vl_7b_setup.sh              # One-click setup: patches config, vllm_neuron, verifies imports
+vllm_neuron_serve_qwen2_5_vl_7b.sh  # Serve script (TP=4, seq_len=27648, 100 images, bfloat16)
+vllm_bench_qwen2_5_vl_7b.sh         # Benchmark script (text-only + multimodal 100 images)
+run_qwen2_5_vl_7b.py                # Standalone compile + test (without vLLM)
+test_qwen2_5_vl_7b.py               # Smoke test (imports + config assertions)
+```
+
+## Quick Start
+
+### Prerequisites
+
+- **Instance**: trn2.48xlarge (or trn2n.32xlarge with TP=4)
+- **AMI**: vLLM 0.13 Neuron AMI (e.g., `ami-0cb3b3dd424204539` in us-east-2)
+- **venv**: `/opt/aws_neuronx_venv_pytorch_inference_vllm_0_13/`
+
+### Step 1: Clone and setup
+
+```bash
+cd /home/ubuntu
+git clone https://github.com/xniwangaws/NeuronStuff.git
+cd NeuronStuff/qwen_evaluation
+
+# Run setup (downloads model, patches config + vllm_neuron, verifies imports)
+bash qwen2_5_vl_7b_setup.sh
+```
+
+### Step 2: Serve
+
+```bash
+bash vllm_neuron_serve_qwen2_5_vl_7b.sh
+# First run compiles (~5-10 min), subsequent runs use cached NEFFs
+```
+
+### Step 3: Test
+
+```bash
+# Quick test
+curl http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "/home/ubuntu/models/Qwen2.5-VL-7B-Instruct",
+    "messages": [{"role": "user", "content": "What is the capital of France?"}],
+    "max_tokens": 50
+  }'
+
+# Benchmark
+bash vllm_bench_qwen2_5_vl_7b.sh
+```
+
+## How It Works
+
+The adapter does **not** copy files into the venv. Instead:
+
+1. **`qwen2_5_vl_7b_setup.sh`** patches three things:
+   - **Model `config.json`**: adds `mlp_ratio`, `embed_dim`, `in_channels`, `out_hidden_size` fields that NxDI expects but Qwen2.5-VL doesn't provide
+   - **`vllm_neuron` model loader**: adds `Qwen2_5_VLForConditionalGeneration` to supported models and routes it to our custom `NeuronQwen2_5_VLForCausalLM` class via `sys.path`
+   - **`vllm_neuron` model runner**: adds `qwen2_5_vl` to multimodal data processing (same path as `qwen2_vl`)
+
+2. **At runtime**, vLLM loads the model and calls `_get_neuron_model_cls("Qwen2_5_VLForConditionalGeneration")` which returns our `NeuronQwen2_5_VLForCausalLM` from `qwen2_5_vl_7b/modeling_qwen2_5_vl.py`. This class:
+   - Reuses text model from NxDI `qwen2_vl` (architecture identical)
+   - Uses our custom vision model (`NeuronQwen2_5_VLVisionModel`) with RMSNorm + SwiGLU
+   - Handles `tie_word_embeddings=false` in state dict conversion
+
+## Serve Configuration
+
+Default config in `vllm_neuron_serve_qwen2_5_vl_7b.sh`:
+
+| Parameter | Value |
+|-----------|-------|
+| TP degree | 4 |
+| dtype | bfloat16 |
+| max_model_len | 27648 |
+| Text buckets | [2048, 15360, 27648] |
+| Vision buckets | [1, 50, 100] |
+| NUM_OF_IMAGES | 100 |
+| max_num_seqs | 1 |
+| block_size | 128 |
+| Port | 8080 |
