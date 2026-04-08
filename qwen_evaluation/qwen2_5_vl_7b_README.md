@@ -8,12 +8,12 @@ Run Qwen2.5-VL-7B-Instruct on Trn2 via vLLM + NeuronX Distributed Inference.
 
 Trn2 TP=4 uses 1 Neuron device. trn2.48xlarge has 16 devices, so 2 devices ≈ H100 comparison.
 
-| Metric | Trn2 TP=4 c=1 (1 device) | Trn2 ×2 devices | H100 80GB c=2 | Trn2 ×2 vs H100 |
-|--------|--------------------------|-----------------|---------------|-----------------|
-| Output tok/s | 20.67 | **41.34** | 35.90 | **115%** |
-| TTFT (median) | **3471 ms** | **3471 ms** | 4575 ms | **132%** |
-| TPOT (median) | 14.45 ms | 14.45 ms | **13.84 ms** | 96% |
-| Request throughput | 0.20 req/s | **0.40 req/s** | 0.35 req/s | **114%** |
+| Metric | Trn2 TP=4 c=1 (1 device) | Trn2 ×2 devices | H100 80GB c=2 | H100 80GB c=4 | H100 80GB c=8 | Trn2 ×2 vs H100 best |
+|--------|--------------------------|-----------------|---------------|---------------|---------------|----------------------|
+| Output tok/s | 20.67 | **41.34** | **53.59** | 49.41 | 52.99 | 77% |
+| TTFT (median) | **3471 ms** | **3471 ms** | 2417 ms | 3540 ms | 13238 ms | **143%** |
+| TPOT (median) | 14.45 ms | 14.45 ms | **12.25 ms** | 38.80 ms | 12.26 ms | 85% |
+| Request throughput | 0.20 req/s | **0.40 req/s** | **0.54 req/s** | 0.49 req/s | 0.53 req/s | 74% |
 
 ### Tested Environment
 
