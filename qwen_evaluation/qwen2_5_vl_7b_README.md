@@ -78,14 +78,33 @@ bash vllm_neuron_serve_qwen2_5_vl_7b.sh
 ### Step 3: Test
 
 ```bash
-# Quick test
-curl http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "/home/ubuntu/models/Qwen2.5-VL-7B-Instruct",
-    "messages": [{"role": "user", "content": "What is the capital of France?"}],
-    "max_tokens": 50
-  }'
+# Generate a test image with shapes and text
+python3 -c "
+from PIL import Image, ImageDraw
+img = Image.new('RGB', (320, 240), 'white')
+draw = ImageDraw.Draw(img)
+draw.rectangle([50, 50, 150, 150], fill='red', outline='black')
+draw.ellipse([170, 50, 270, 150], fill='blue', outline='black')
+draw.text((100, 180), 'Hello AWS!', fill='black')
+img.save('/tmp/test.png')
+"
+
+# Image understanding test
+python3 -c "
+import requests, base64, json
+with open('/tmp/test.png', 'rb') as f:
+    b64 = base64.b64encode(f.read()).decode()
+resp = requests.post('http://localhost:8080/v1/chat/completions', json={
+    'model': '/home/ubuntu/models/Qwen2.5-VL-7B-Instruct',
+    'messages': [{'role': 'user', 'content': [
+        {'type': 'image_url', 'image_url': {'url': f'data:image/png;base64,{b64}'}},
+        {'type': 'text', 'text': 'What do you see in this image? Describe the shapes and text.'}
+    ]}],
+    'max_tokens': 100
+})
+print(json.dumps(resp.json()['choices'][0]['message']['content'], indent=2))
+"
+# Expected: identifies red square, blue circle, and "Hello AWS!" text
 
 # Benchmark
 bash vllm_bench_qwen2_5_vl_7b.sh
