@@ -17,12 +17,12 @@ Benchmark FLUX.1-dev image generation across AWS Trainium and GPU instance types
 
 ## Instance Specifications
 
-| Instance | Accelerator | VRAM | Mem BW (GB/s) | On-Demand $/hr |
-|----------|------------|------|---------------|----------------|
-| trn2.48xlarge | 16 Trainium2 chips (used 2, tp=4 cp=2) | 96GB HBM per chip | 1,638 per chip | $35.76 (full) / ~$4.47 (2 chips) |
-| p5.48xlarge | 8x H100 80GB (used 1) | 80GB HBM3 | 3,350 | $34.61 (full) / ~$4.33 (1 GPU) |
-| trn1.32xlarge | 16 Trainium1 chips (used 2, tp=4 cp=2) | 32GB HBM per chip | 820 per chip | $21.50 (full) / ~$2.69 (2 chips) |
-| g6.4xlarge | 1x L4 24GB | 24GB GDDR6 | 300 | $1.32 |
+| Instance | Accelerator | VRAM | On-Demand $/hr |
+|----------|------------|------|----------------|
+| trn2.48xlarge | 16 Trainium2 chips (used 2, tp=4 cp=2) | 96GB HBM per chip | $35.76 (full) / ~$4.47 (2 chips) |
+| p5.48xlarge | 8x H100 80GB (used 1) | 80GB HBM3 | $34.61 (full) / ~$4.33 (1 GPU) |
+| trn1.32xlarge | 16 Trainium1 chips (used 2, tp=4 cp=2) | 32GB HBM per chip | $21.50 (full) / ~$2.69 (2 chips) |
+| g6.4xlarge | 1x L4 24GB | 24GB GDDR6 | $1.32 |
 
 ## Results
 
