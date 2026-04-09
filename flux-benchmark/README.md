@@ -63,6 +63,8 @@ The L4 has only 24GB VRAM. FLUX.1-dev transformer alone is 23.8GB in bf16, so qu
 
 ## Why is L4 so slow?
 
+Reference: [JarvisLabs - Best GPU for FLUX](https://jarvislabs.ai/ai-faqs/best-gpu-for-flux)
+
 Despite having the same 24GB VRAM as the RTX 4090, the L4 is 2-3x slower for diffusion models:
 
 | Spec | NVIDIA L4 | RTX 4090 |
