@@ -12,14 +12,45 @@ This report presents inference performance benchmarks for computer vision models
 
 ## 2. Test Environment
 
-### 2.1 Instance Specifications
+### 2.1 Full Instance Specifications
 
-| Instance | Accelerator | VRAM | On-Demand $/hr |
-|----------|------------|------|----------------|
-| trn2.48xlarge | 2x Trainium2 chips (tp=4, cp=2) | 96GB HBM per chip | $35.76 (full) / ~$4.47 (2 chips) |
-| p5.48xlarge | 1x H100 80GB | 80GB HBM3 | $34.61 (full) / ~$4.33 (1 GPU) |
-| trn1.32xlarge | 2x Trainium1 chips (tp=4, cp=2) | 32GB HBM per chip | $21.50 (full) / ~$2.69 (2 chips) |
-| g6.4xlarge | 1x L4 24GB | 24GB GDDR6 | $1.32 |
+**Trainium Instances**
+
+| Spec | trn2.48xlarge | trn1.32xlarge |
+|------|--------------|---------------|
+| Trainium Chips | 16 | 16 |
+| Accelerator Memory (total) | 1.5 TB (96 GB/chip) | 512 GB (32 GB/chip) |
+| vCPUs | 192 | 128 |
+| Instance Memory | 2 TB | 512 GiB |
+| Local NVMe Storage | 4 x 1.92 TB | 8 TB |
+| Network Bandwidth | 3.2 Tbps | 800 Gbps |
+| EFA/RDMA | Yes | Yes |
+| EBS Bandwidth | 80 Gbps | 80 Gbps |
+| On-Demand $/hr | $35.76 | $21.50 |
+
+**GPU Instances**
+
+| Spec | p5.48xlarge | g6.4xlarge |
+|------|-----------|------------|
+| GPUs | 8x H100 80GB (HBM3) | 1x L4 24GB (GDDR6) |
+| GPU Memory (total) | 640 GB | 24 GB |
+| vCPUs | 192 | 16 |
+| Instance Memory | 2 TB | 64 GiB |
+| Network Bandwidth | 3.2 Tbps | Up to 25 Gbps |
+| On-Demand $/hr | $34.61 | $1.32 |
+
+### 2.2 Benchmark Resource Usage
+
+This benchmark does **not** use the full instance. The actual resource usage and pro-rated cost:
+
+| Instance | Total Chips/GPUs | Used in Benchmark | Used Accel Memory | Pro-rated $/hr |
+|----------|-----------------|-------------------|-------------------|----------------|
+| trn2.48xlarge | 16 Trainium2 chips | 2 chips (tp=4, cp=2) | 192 GB (2 x 96 GB) | ~$4.47 (2/16) |
+| trn1.32xlarge | 16 Trainium1 chips | 2 chips (tp=4, cp=2) | 64 GB (2 x 32 GB) | ~$2.69 (2/16) |
+| p5.48xlarge | 8x H100 80GB | 1 GPU | 80 GB | ~$4.33 (1/8) |
+| g6.4xlarge | 1x L4 24GB | 1 GPU | 24 GB | $1.32 (1/1) |
+
+> **Note on Trainium**: trn2.48xlarge has 16 chips total. Each Trainium2 chip has 96 GB HBM. Our FLUX benchmark uses NxDI with `world_size=8` (2 chips, since each chip exposes 4 NeuronCores), `backbone_tp_degree=4`. This means only 2 out of 16 chips are used, consuming 192 GB of the total 1.5 TB accelerator memory. The pro-rated cost is $35.76 / 8 = ~$4.47/hr. Similarly, trn1.32xlarge uses 2 out of 16 chips (64 GB of 512 GB), costing $21.50 / 8 = ~$2.69/hr. In a production deployment, multiple model replicas can run on the remaining chips to maximize utilization.
 
 ### 2.2 Software Stack
 
