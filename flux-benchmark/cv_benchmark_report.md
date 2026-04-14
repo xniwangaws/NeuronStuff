@@ -4,8 +4,6 @@ subtitle: ""
 date: "2026-04-14"
 ---
 
-# AWS CV Model Inference Benchmark Report
-
 ## 1. Overview
 
 This report presents inference performance benchmarks for computer vision models on AWS accelerators, including Trainium2, Trainium1, NVIDIA H100, and NVIDIA L4. The primary focus is on diffusion-based image generation models (FLUX.1-dev, SDXL, FLUX.2-dev), with benchmarks covering end-to-end latency, cost efficiency, and quantization strategies.
@@ -134,7 +132,7 @@ Trainium1, H100, and Trainium2 all deliver ~175 images per dollar (within 2% of 
 
 ## 6. Pending Test Items
 
-### 7.1 Not yet tested (planned)
+### 6.1 Not yet tested (planned)
 
 | Category | Model/Test | Notes |
 |----------|-----------|-------|
@@ -148,7 +146,7 @@ Trainium1, H100, and Trainium2 all deliver ~175 images per dollar (within 2% of 
 | Metrics | Cold start / warm start split | Separate load, first inference, and warm inference timing |
 | Metrics | Generated image samples | Collect from each platform with same prompt/seed |
 
-### 7.2 Known limitations
+### 6.2 Known limitations
 
 | Item | Status |
 |------|--------|
@@ -156,7 +154,7 @@ Trainium1, H100, and Trainium2 all deliver ~175 images per dollar (within 2% of 
 | FLUX.2-dev on Trainium2 | Not supported. No official NxDI support for FLUX.2-dev |
 | SDXL on Trainium2 tp>1 | Not supported. Neuron SDXL only supports tp=1 currently |
 
-### 7.3 Trainium Accelerator Virtualization
+### 6.3 Trainium Accelerator Virtualization
 
 Unlike GPU MIG (Multi-Instance GPU), Trainium2 natively supports flexible chip partitioning through NeuronCore allocation. Each Trainium2 chip has 4 NeuronCores, and workloads can request any subset of chips on the instance.
 
