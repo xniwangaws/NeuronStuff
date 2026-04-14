@@ -6,7 +6,7 @@ date: "2026-04-14"
 
 ## 1. Overview
 
-This report presents inference performance benchmarks for computer vision models on AWS accelerators, including Trainium2, Trainium1, NVIDIA H100, and NVIDIA L4. The primary focus is on diffusion-based image generation models (FLUX.1-dev, SDXL, FLUX.2-dev), with benchmarks covering end-to-end latency, cost efficiency, and quantization strategies.
+This report presents inference performance benchmarks for computer vision models on AWS accelerators, including Trainium2, Trainium1, NVIDIA H100, and NVIDIA L4. The primary focus is on diffusion-based image generation models (FLUX.1-dev, SDXL), with benchmarks covering end-to-end latency, cost efficiency, and quantization strategies.
 
 ## 2. Test Environment
 
@@ -123,52 +123,25 @@ Trainium1, H100, and Trainium2 all deliver ~175 images per dollar (within 2% of 
 | stable-diffusion-xl-base-1.0 | 2.27s | 5.74s | 2.53x slower |
 
 
-### 5.2 H100 Multi-Step (p5.48xlarge, tp=1)
+### 5.2 Cost Efficiency (25 steps)
+
+SDXL with tp=1 only requires 1 Trainium2 chip (1/16 of trn2.48xlarge), significantly reducing pro-rated cost.
+
+| Instance | Accelerator | Cost | Latency | Img/hr | Img/Dollar | vs H100 |
+|----------|------------|------|---------|--------|------------|---------|
+| p5.48xlarge | 1x H100 | 4.33 | 2.27s | 1586 | **366.3** | 100% |
+| trn2.48xlarge | 1x Trainium2 (1 chip) | 2.24 | 5.74s | 627 | **280.0** | 76% |
+
+Although Trainium2 is 2.53x slower in latency, it achieves 76% of H100's cost efficiency. With 16 chips available per trn2.48xlarge, up to 16 independent SDXL replicas can run concurrently, delivering ~10,035 images/hr at full instance utilization.
+
+### 5.3 H100 Multi-Step (p5.48xlarge, tp=1)
 
 | Model | 15 steps | 25 steps | 50 steps |
 |-------|----------|----------|----------|
 | SDXL | 1.30s | 2.04s | 3.94s |
 | FLUX.1-dev | 2.91s | 4.76s | 9.39s |
 
-## 6. Pending Test Items
-
-### 6.1 Not yet tested (planned)
-
-| Category | Model/Test | Notes |
-|----------|-----------|-------|
-| Multimodal | Qwen2.5-VL-2B | Need to set up environment |
-| Diffusion | S3Diff | Need to set up environment |
-| Traditional CNN | YOLO (YOLOv8) | Neuron supported, see [sample-YOLOv8-neuron](https://github.com/aws-samples/sample-YOLOv8-neuron) |
-| Diffusion | FLUX.2-dev | 32B model, H100 needs split text_encoder; Trn2 no NxDI support yet |
-| Traditional CNN | Real-ESRGAN | Need to set up environment |
-| Resolution | 2K / 4K testing | Rerun existing models at higher resolutions |
-| Metrics | Peak VRAM recording | Add `torch.cuda.max_memory_allocated()` to scripts |
-| Metrics | Cold start / warm start split | Separate load, first inference, and warm inference timing |
-| Metrics | Generated image samples | Collect from each platform with same prompt/seed |
-
-### 6.2 Known limitations
-
-| Item | Status |
-|------|--------|
-| FP8 on Trainium2 (diffusion) | Not supported. NxDI diffusion pipeline currently runs bf16 only |
-| FLUX.2-dev on Trainium2 | Not supported. No official NxDI support for FLUX.2-dev |
-| SDXL on Trainium2 tp>1 | Not supported. Neuron SDXL only supports tp=1 currently |
-
-### 6.3 Trainium Accelerator Virtualization
-
-Unlike GPU MIG (Multi-Instance GPU), Trainium2 natively supports flexible chip partitioning through NeuronCore allocation. Each Trainium2 chip has 4 NeuronCores, and workloads can request any subset of chips on the instance.
-
-For example, on a trn2.48xlarge (16 chips, 64 NeuronCores):
-
-- **Full instance**: 16 chips (1.5 TB) — e.g., large LLM training
-- **1/2 instance**: 8 chips (768 GB) — e.g., medium model inference
-- **1/4 instance**: 4 chips (384 GB) — e.g., smaller model inference
-- **1/8 instance**: 2 chips (192 GB) — e.g., FLUX.1-dev (this benchmark)
-- **1/16 instance**: 1 chip (96 GB) — e.g., SDXL or small models
-
-This is managed via `world_size` in NxDI or through Kubernetes Dynamic Resource Allocation (DRA). DRA enables attribute-based device selection and topology-aware scheduling, allowing multiple workloads to share a single trn2.48xlarge with isolated chip allocations. No special hardware configuration is needed — multiple model replicas can run concurrently on different chip subsets of the same instance.
-
-## 7. Appendix: Reproduction
+## 6. Appendix: Reproduction
 
 ### GPU (H100)
 
