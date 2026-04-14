@@ -118,9 +118,9 @@ Trainium1, H100, and Trainium2 all deliver ~175 images per dollar (within 2% of 
 
 ### 5.1 H100 vs Trainium2 (25 steps, 1024x1024)
 
-| Model | H100 (tp=1) | Trn2 (tp=1) | Trn2 / H100 |
-|-------|------------|------------|--------------|
-| stable-diffusion-xl-base-1.0 | 2.27s | 5.74s | 2.53x slower |
+| Model | H100 (tp=1) | Trn2 (tp=1) |
+|-------|------------|------------|
+| stable-diffusion-xl-base-1.0 | 2.27s | 5.74s |
 
 
 ### 5.2 Cost Efficiency (25 steps)
