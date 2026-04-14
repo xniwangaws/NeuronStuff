@@ -134,13 +134,6 @@ SDXL with tp=1 only requires 1 NeuronCore (1/4 of a Trainium2 chip). On the same
 
 At comparable cost (~$4.3-4.5/hr), 2 Trainium2 chips deliver ~3x the throughput of 1 H100 for SDXL by running 8 concurrent tp=1 replicas.
 
-### 5.3 H100 Multi-Step (p5.48xlarge, tp=1)
-
-| Model | 15 steps | 25 steps | 50 steps |
-|-------|----------|----------|----------|
-| SDXL | 1.30s | 2.04s | 3.94s |
-| FLUX.1-dev | 2.91s | 4.76s | 9.39s |
-
 ## 6. Appendix: Reproduction
 
 ### GPU (H100)
