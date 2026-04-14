@@ -127,10 +127,10 @@ Trainium1, H100, and Trainium2 all deliver ~175 images per dollar (within 2% of 
 
 SDXL with tp=1 only requires 1 NeuronCore (1/4 of a Trainium2 chip). On the same 2-chip allocation used for FLUX.1-dev (8 NeuronCores total, ~$4.47/hr), 8 independent SDXL replicas can run concurrently. This 2-chip cost is comparable to 1 H100 (~$4.33/hr).
 
-| Instance | Accelerator | Cost | Latency | Replicas | Img/hr (total) | Img/Dollar | vs H100 |
-|----------|------------|------|---------|----------|----------------|------------|---------|
-| p5.48xlarge | 1x H100 | 4.33 | 2.27s | 1 | 1586 | **366.3** | 100% |
-| trn2.48xlarge | 2x Trainium2 | 4.47 | 5.74s | 8 | 5018 | **1122.6** | 307% |
+| Accelerator | Cost | Latency | Replicas | Img/Dollar | vs H100 |
+|------------|------|---------|----------|------------|---------|
+| 1x H100 | 4.33 | 2.27s | 1 | **366.3** | 100% |
+| 2x Trainium2 | 4.47 | 5.74s | 8 | **1122.6** | 307% |
 
 At comparable cost (~$4.3-4.5/hr), 2 Trainium2 chips deliver ~3x the throughput of 1 H100 for SDXL by running 8 concurrent tp=1 replicas.
 
