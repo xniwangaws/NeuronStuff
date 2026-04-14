@@ -41,22 +41,23 @@ This report presents inference performance benchmarks for computer vision models
 
 ### 2.2 Benchmark Resource Usage
 
-This benchmark does **not** use the full instance. The actual resource usage and pro-rated cost:
+This benchmark does **not** use the full instance. Details below:
 
-| Instance | Total Chips/GPUs | Used in Benchmark | Used Accel Memory | Pro-rated $/hr |
-|----------|-----------------|-------------------|-------------------|----------------|
-| trn2.48xlarge | 16 Trainium2 chips | 2 chips (tp=4, cp=2) | 192 GB (2 x 96 GB) | ~$4.47 (2/16) |
-| trn1.32xlarge | 16 Trainium1 chips | 2 chips (tp=4, cp=2) | 64 GB (2 x 32 GB) | ~$2.69 (2/16) |
-| p5.48xlarge | 8x H100 80GB | 1 GPU | 80 GB | ~$4.33 (1/8) |
-| g6.4xlarge | 1x L4 24GB | 1 GPU | 24 GB | $1.32 (1/1) |
+**trn2.48xlarge** — Used 2 of 16 chips, 192 GB of 1.5 TB, pro-rated ~$4.47/hr (2/16)
 
-> **Note on Trainium**: trn2.48xlarge has 16 chips total. Each Trainium2 chip has 96 GB HBM. Our FLUX benchmark uses NxDI with `world_size=8` (2 chips, since each chip exposes 4 NeuronCores), `backbone_tp_degree=4`. This means only 2 out of 16 chips are used, consuming 192 GB of the total 1.5 TB accelerator memory. The pro-rated cost is $35.76 / 8 = ~$4.47/hr. Similarly, trn1.32xlarge uses 2 out of 16 chips (64 GB of 512 GB), costing $21.50 / 8 = ~$2.69/hr. In a production deployment, multiple model replicas can run on the remaining chips to maximize utilization.
+**trn1.32xlarge** — Used 2 of 16 chips, 64 GB of 512 GB, pro-rated ~$2.69/hr (2/16)
 
-### 2.2 Software Stack
+**p5.48xlarge** — Used 1 of 8 H100 GPUs, 80 GB of 640 GB, pro-rated ~$4.33/hr (1/8)
+
+**g6.4xlarge** — Used 1 of 1 L4 GPU, 24 GB, full price $1.32/hr
+
+Trainium benchmark uses NxDI with `world_size=8` (2 chips, each chip exposes 4 NeuronCores), `backbone_tp_degree=4`. In production, multiple model replicas can run on the remaining chips to maximize utilization.
+
+### 2.3 Software Stack
 
 | Component | GPU Instances | Neuron Instances |
 |-----------|--------------|-----------------|
-| OS | Ubuntu 22.04 | Ubuntu 24.04 (Neuron DLAMI) |
+| OS | Ubuntu 22.04 (AWS DLAMI) | Ubuntu 24.04 (Neuron DLAMI) |
 | PyTorch | 2.6.0+cu126 | 2.5.1 (torch-neuronx) |
 | diffusers | 0.37.1 | N/A (uses NxDI) |
 | torchao | 0.17.0 | N/A |
