@@ -133,37 +133,3 @@ SDXL with tp=1 only requires 1 NeuronCore (1/4 of a Trainium2 chip). On the same
 | 2x Trainium2 | 4.47 | 5.74s | 8 | **1122.6** | 307% |
 
 At comparable cost (~$4.3-4.5/hr), 2 Trainium2 chips deliver ~3x the throughput of 1 H100 for SDXL by running 8 concurrent tp=1 replicas.
-
-## 6. Appendix: Reproduction
-
-### GPU (H100)
-
-```bash
-pip install torch diffusers transformers accelerate safetensors sentencepiece protobuf
-huggingface-cli login
-python -c "from huggingface_hub import snapshot_download; \
-  snapshot_download('black-forest-labs/FLUX.1-dev', local_dir='/home/ubuntu/models/FLUX.1-dev/')"
-python benchmark_unified_gpu.py
-```
-
-### GPU (L4 - quantized)
-
-```bash
-pip install torch diffusers transformers accelerate safetensors sentencepiece protobuf
-pip install bitsandbytes  # for NF4
-pip install torchao       # for FP8
-python benchmark_l4_fp8_torchao.py
-python benchmark_l4_nf4_offload.py
-```
-
-### Neuron (Trn2 / Trn1)
-
-```bash
-source ~/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/activate
-huggingface-cli login
-python -c "from huggingface_hub import snapshot_download; \
-  snapshot_download('black-forest-labs/FLUX.1-dev', local_dir='/home/ubuntu/models/FLUX.1-dev/')"
-python benchmark_unified_neuron.py
-```
-
-All benchmark scripts are available at: [github.com/xniwangaws/NeuronStuff/flux-benchmark](https://github.com/xniwangaws/NeuronStuff/tree/main/flux-benchmark)
