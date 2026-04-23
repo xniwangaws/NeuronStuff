@@ -111,9 +111,21 @@ python benchmark_unified_gpu.py
 ```bash
 pip install torch diffusers transformers accelerate safetensors sentencepiece protobuf
 pip install bitsandbytes  # for NF4
-pip install torchao       # for FP8
+pip install torchao       # for FP8 via torchao runtime quantize
+
+huggingface-cli login
+python -c "from huggingface_hub import snapshot_download; snapshot_download('black-forest-labs/FLUX.1-dev', local_dir='/home/ubuntu/models/FLUX.1-dev/')"
+
+# Original offload / quantize sweeps
 python benchmark_l4_fp8_torchao.py
 python benchmark_l4_nf4_offload.py
+
+# ComfyUI-style (component loading + skip-T5 comparison)
+python benchmark_comfyui_style_nf4.py --mode both
+
+# FP8 comfy-style uses Kijai pre-quantized single-file (E4M3FN storage, bf16 compute)
+wget https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors
+python benchmark_comfyui_style_fp8.py --mode both
 ```
 
 ### Neuron (Trn2 / Trn1)
