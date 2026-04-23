@@ -73,37 +73,6 @@ T5-XXL is 9.4GB bf16 and runs once per generation; skipping it trades prompt qua
 | VAE | 160 MB | — | — |
 | **Skip-T5 total (on-GPU)** | 24.2 GB (OOM) | **~6.4 GB** | **~12.4 GB** |
 
-## Cost Efficiency (25 steps)
-
-| Instance | Accelerator | $/hr | Latency | Images/hr | Images/$ |
-|----------|------------|------|---------|-----------|----------|
-| trn1.32xlarge | 2x Trainium1 | $2.69 | 7.53s | 478 | **177.8** |
-| p5.48xlarge | 1x H100 | $4.33 | 4.67s | 771 | **178.1** |
-| trn2.48xlarge | 2x Trainium2 | $4.47 | 4.63s | 778 | **174.0** |
-| g6.4xlarge | 1x L4 (NF4) | $1.32 | 50.45s | 71 | **54.1** |
-| g6.4xlarge | 1x L4 (FP8) | $1.32 | 85.30s | 42 | **32.0** |
-
-> At 25 steps, Trn1, H100, and Trn2 all deliver ~175 images per dollar — nearly identical cost efficiency despite very different latencies. L4 is 3x less cost-efficient due to quantization overhead and low memory bandwidth.
-
-## Why is L4 so slow?
-
-Reference: [JarvisLabs - Best GPU for FLUX](https://jarvislabs.ai/ai-faqs/best-gpu-for-flux)
-
-Despite having the same 24GB VRAM as the RTX 4090, the L4 is 2-3x slower for diffusion models:
-
-| Spec | NVIDIA L4 | RTX 4090 |
-|------|-----------|----------|
-| Memory Bandwidth | **300 GB/s** | **1,008 GB/s** |
-| FP16 TFLOPS | 121 | 82.6 |
-| TDP | 72W | 450W |
-
-The L4 actually has higher theoretical TFLOPS, but diffusion model inference is **memory-bandwidth bound**. The 4090's 3.4x higher bandwidth makes it 2-3x faster in practice.
-
-Additionally, on L4 the model doesn't fit in VRAM at full precision, requiring either:
-- **Quantization** (NF4/FP8/INT8) to shrink the model
-- **CPU offloading** to swap components in/out of GPU memory
-- Both add overhead beyond the raw compute time
-
 ## Scripts
 
 | Script | Description |
