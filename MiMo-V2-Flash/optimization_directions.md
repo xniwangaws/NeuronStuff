@@ -14,16 +14,21 @@ Ranked by evidence strength and expected impact. Each entry lists: **evidence** 
 - **Cost to validate**: 1–2 h with `py-spy record` while serving at c=32. No new capacity block needed if we can re-use the existing compiled NEFFs from S3.
 - **Action**: Run `py-spy record --pid <vllm-engine-pid> --duration 60` during a bench, inspect the flame graph, identify top 3 host functions.
 
-### 2. Switch the MoE blockwise kernel flag to `shard_on_intermediate` (FP8 only)
+### 2. Switch the MoE blockwise kernel flag to `shard_on_intermediate` (FP8 standalone verified; vLLM unverified)
 
-- **Scope**: FP8 path only. BF16 path uses `use_torch_block_wise=true` (PyTorch fallback, not a NKI kernel), so this flag does not apply.
-- **Evidence**: FP8 BS=32 standalone runs (MOE_EP=64):
+- **Scope where verified**: **FP8 standalone NxDI only** (`adapter.generate()` path). Not tested on:
+  - **BF16 path** — uses `use_torch_block_wise=true` (Python fallback), so this flag does not apply.
+  - **FP8 vLLM serving path** — same kernel underneath, but vLLM adds ~100 ms/token host overhead at c=32 which may dominate the 6 ms kernel gain. Needs empirical verification.
+- **Evidence (FP8 standalone, MOE_EP=64, BS=32)**:
   - `use_shard_on_block_dynamic_while=true`: 137.87 tok/s
   - `use_shard_on_intermediate_dynamic_while=true`: **146.29 tok/s (+6%)**
 - **Hypothesis**: `shard_on_intermediate` has a lower-overhead MoE kernel path on SDK 2.29. Not verified mechanistically.
-- **Expected gain**: 6% throughput on FP8 path, free.
-- **Cost to validate**: One line change in `blockwise_matmul_config`, recompile (~30 min), rerun bench (~5 min).
-- **Action**: Update `bench_mimo_v2_flash.sh` to use `use_shard_on_intermediate_dynamic_while: true`. Already proved correct.
+- **Expected gain**:
+  - FP8 standalone: +6% (proven)
+  - FP8 vLLM: unknown — may be dominated by host overhead
+  - BF16: not applicable
+- **Cost to validate on vLLM**: One line change in `COMMON_MIMO_CONFIG` in `bench_mimo_v2_flash.sh`, recompile (~30 min), rerun the three-concurrency bench (~15 min). Can confirm or rule out the hypothesis.
+- **Action**: (1) Update `bench_mimo_v2_flash.sh` (FP8 recipe) to use `use_shard_on_intermediate_dynamic_while: true`. (2) Re-bench c=1/16/32, compare to current 147 tok/s (c=32).
 
 ### 3. Re-enable `qkv_nki_kernel` and `flash_decoding`
 
