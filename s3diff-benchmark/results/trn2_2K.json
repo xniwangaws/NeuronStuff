@@ -1,0 +1,28 @@
+{
+  "device": "neuron-trn2.3xlarge",
+  "accel_name": "Trainium2 (LNC=2)",
+  "resolution": "2K",
+  "lq_side": 512,
+  "sr_side": 2048,
+  "dtype": "fp32+autocast_none",
+  "num_runs": 3,
+  "load_time_s": 42.7026,
+  "cold_start_s": 133.5739,
+  "steady_mean_s": 140.2958,
+  "p50_s": 140.2551,
+  "p95_s": 140.3366,
+  "min_s": 140.2551,
+  "max_s": 140.3366,
+  "peak_hbm_gb": null,
+  "per_run_s": [
+    133.5739,
+    140.3366,
+    140.2551
+  ],
+  "sr_image": "/home/ubuntu/s3diff/bench_out/sr_trn2_2K.png",
+  "seed": 123,
+  "compiler_flags": "--auto-cast=none",
+  "traced_components": "unet (tiled, B=1, latent 96x96)",
+  "cpu_components": "vae_encoder, vae_decoder, text_encoder, DEResNet",
+  "timestamp_utc": "2026-04-27T06:19:54Z"
+}
