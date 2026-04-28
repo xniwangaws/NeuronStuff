@@ -1,0 +1,40 @@
+Cannot initialize model with low cpu memory usage because `accelerate` was not found in the environment. Defaulting to `low_cpu_mem_usage=False`. It is strongly recommended to install `accelerate` for faster and less memory-intense model loading. You can do so with: 
+```
+pip install accelerate
+```
+.
+[load] Flux2Pipeline (BF16 on CPU) ...
+Loading pipeline components...:   0%|          | 0/5 [00:00<?, ?it/s]
+Loading checkpoint shards:   0%|          | 0/10 [00:00<?, ?it/s][ALoading checkpoint shards: 100%|██████████| 10/10 [00:00<00:00, 335.44it/s]
+Loading pipeline components...:  40%|████      | 2/5 [00:00<00:00, 19.07it/s]
+Loading checkpoint shards:   0%|          | 0/7 [00:00<?, ?it/s][A
+Loading checkpoint shards:  29%|██▊       | 2/7 [00:00<00:00,  5.94it/s][A
+Loading checkpoint shards:  43%|████▎     | 3/7 [00:00<00:00,  4.24it/s][A
+Loading checkpoint shards:  57%|█████▋    | 4/7 [00:00<00:00,  3.73it/s][A
+Loading checkpoint shards:  71%|███████▏  | 5/7 [00:01<00:00,  3.41it/s][A
+Loading checkpoint shards:  86%|████████▌ | 6/7 [00:01<00:00,  3.27it/s][A
+Loading checkpoint shards: 100%|██████████| 7/7 [00:01<00:00,  3.63it/s][ALoading checkpoint shards: 100%|██████████| 7/7 [00:01<00:00,  3.74it/s]
+Loading pipeline components...:  80%|████████  | 4/5 [00:02<00:00,  1.70it/s]Loading pipeline components...: 100%|██████████| 5/5 [00:02<00:00,  1.51it/s]Loading pipeline components...: 100%|██████████| 5/5 [00:02<00:00,  1.74it/s]
+  loaded in 2.9s
+[gen] pipeline at 1024² on CPU — THIS IS SLOW (~20-30 min) ...
+  0%|          | 0/28 [00:00<?, ?it/s]  4%|▎         | 1/28 [00:37<16:51, 37.47s/it]2026-Apr-27 06:31:22.0783 103823:105060 [8] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):219 CCOM WARN NET/OFI Failed to initialize rdma protocol
+2026-Apr-27 06:31:22.0786 103823:105060 [8] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):354 CCOM WARN NET/OFI aws-ofi-nccl initialization failed
+2026-Apr-27 06:31:22.0788 103823:105060 [8] ncclResult_t nccl_net_ofi_init_no_atexit_fini_v6(ncclDebugLogger_t):183 CCOM WARN NET/OFI Initializing plugin failed
+2026-Apr-27 06:31:22.0790 103823:105060 [8] net_plugin.cc:97 CCOM WARN OFI plugin initNet() failed is EFA enabled?
+  7%|▋         | 2/28 [01:24<18:47, 43.36s/it] 11%|█         | 3/28 [02:07<17:58, 43.16s/it] 14%|█▍        | 4/28 [02:47<16:39, 41.67s/it] 18%|█▊        | 5/28 [03:25<15:27, 40.34s/it] 21%|██▏       | 6/28 [04:05<14:43, 40.17s/it] 25%|██▌       | 7/28 [04:47<14:21, 41.01s/it] 29%|██▊       | 8/28 [05:25<13:15, 39.80s/it] 32%|███▏      | 9/28 [06:03<12:30, 39.48s/it] 36%|███▌      | 10/28 [06:42<11:43, 39.10s/it] 39%|███▉      | 11/28 [07:20<11:03, 39.00s/it] 43%|████▎     | 12/28 [07:59<10:21, 38.84s/it] 46%|████▋     | 13/28 [08:38<09:43, 38.90s/it] 50%|█████     | 14/28 [09:18<09:11, 39.40s/it] 54%|█████▎    | 15/28 [09:57<08:30, 39.27s/it] 57%|█████▋    | 16/28 [10:35<07:47, 38.92s/it] 61%|██████    | 17/28 [11:13<07:04, 38.61s/it] 64%|██████▍   | 18/28 [11:50<06:19, 37.97s/it] 68%|██████▊   | 19/28 [12:22<05:27, 36.37s/it] 71%|███████▏  | 20/28 [12:56<04:43, 35.42s/it] 75%|███████▌  | 21/28 [13:34<04:13, 36.17s/it] 79%|███████▊  | 22/28 [14:11<03:39, 36.54s/it] 82%|████████▏ | 23/28 [14:49<03:04, 36.99s/it] 86%|████████▌ | 24/28 [15:28<02:30, 37.54s/it] 89%|████████▉ | 25/28 [16:09<01:55, 38.63s/it] 93%|█████████▎| 26/28 [16:49<01:18, 39.02s/it] 96%|█████████▋| 27/28 [17:28<00:39, 39.14s/it]100%|██████████| 28/28 [18:06<00:00, 38.74s/it]100%|██████████| 28/28 [18:06<00:00, 38.81s/it]
+  gen done in 1090.0s; packed shape=(1, 4096, 128) dtype=torch.bfloat16
+  unpacked 4D latent: (1, 32, 128, 128)
+  saved latent to /home/ubuntu/flux2_1024_latent.pt
+[cpu] decoding 1024² (tiled) on CPU — also slow ...
+  cpu tiled decode: 6.6s, shape (1, 3, 1024, 1024)
+[neuron] loading NEFF and tiled decoding ...
+  neuron tiled: 9.63s, shape (1, 3, 1024, 1024)
+
+=== 1024² VAE VALIDATION (real pipeline latent) ===
+cos_sim     : 0.992044
+max_rel_err : 179687.5000
+PSNR        : 28.77 dB
+cpu time    : 6.60s
+neuron time : 9629ms
+
+report -> /home/ubuntu/vae_1k_validation.json

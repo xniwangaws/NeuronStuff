@@ -1,0 +1,84 @@
+[main] loading saved CPU reference from /home/ubuntu/text_encoder_ref_hidden.pt
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:100: DeprecationWarning: torch_neuronx.nki_jit is deprecated, use nki.jit instead.
+  component, error = import_nki(config)
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+[trace] ModelBuilder.trace tp_degree=8 seq_len=512
+INFO:Neuron:Generating HLOs for the following models: ['text_encoder']
+[2026-04-27 06:40:06.503: I neuronx_distributed/parallel_layers/parallel_state.py:638] > initializing tensor model parallel with size 8
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:639] > initializing pipeline model parallel with size 1
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:640] > initializing context model parallel with size 1
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:641] > initializing data parallel with size 1
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:642] > initializing world size to 8
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:387] [rank_0_pp-1_tp-1_dp-1_cp-1] Chosen Logic for replica groups ret_logic=<PG_Group_Logic.LOGIC1: (<function ascending_ring_PG_group at 0x79ed5a8f3ba0>, 'Ascending Ring PG Group')>
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:666] [rank_0_pp-1_tp-1_dp-1_cp-1] tp_groups: replica_groups.tp_groups=[[0, 1, 2, 3, 4, 5, 6, 7]]
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:667] [rank_0_pp-1_tp-1_dp-1_cp-1] dp_groups: replica_groups.dp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:668] [rank_0_pp-1_tp-1_dp-1_cp-1] pp_groups: replica_groups.pp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:669] [rank_0_pp-1_tp-1_dp-1_cp-1] cp_groups: replica_groups.cp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:670] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_model_groups: replica_groups.ep_model_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 06:40:06.504: I neuronx_distributed/parallel_layers/parallel_state.py:671] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_data_groups: replica_groups.ep_data_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+INFO:Neuron:Generating 1 hlos for key: text_encoder
+INFO:Neuron:Minimal metadata will be added to HLO
+INFO:Neuron:Started loading module text_encoder
+INFO:Neuron:Finished loading module text_encoder in 0.10391521453857422 seconds
+INFO:Neuron:generating HLO: text_encoder, input example shape = torch.Size([1, 512])
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/parallel_layers/layers.py:531: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+INFO:Neuron:Finished generating HLO for text_encoder in 0.9114813804626465 seconds, input example shape = torch.Size([1, 512])
+INFO:Neuron:Generated all HLOs in 1.0643024444580078 seconds
+INFO:Neuron:Can't find a priority model, skip marking weights
+INFO:Neuron:Can't find a priority model, skip optimizing weight layout for other HLOs
+INFO:Neuron:Starting compilation for all HLOs
+INFO:Neuron:Neuron compiler flags: --model-type=transformer --enable-saturate-infinity --enable-mixed-precision-accumulation -O1 --auto-cast=none --verbose=35 --logfile=/home/ubuntu/text_encoder_compile/text_encoder/_tp0_bk0/log-neuron-cc.txt
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/libneuronxla/neuron_cc_wrapper.py:246: SyntaxWarning: str format compiler_flags is discouraged as its handling involves repeated joining and splitting, which can easily make mistakes if something is quoted or escaped. Use list[str] instead. Refer to documentation of the Python subprocess module for details.
+  warnings.warn(SyntaxWarning(
+.
+Compiler status PASS
+2026-04-27 06:40:15.000173:  110580  [INFO]: Compilation Successfully Completed for model.MODULE_e5a55547e983eaaadb99+f721b6ce.hlo_module.pb
+INFO:Neuron:Finished Compilation for all HLOs in 7.614824533462524 seconds
+INFO:Neuron:Can't find a priority model, falling back to the existing weight layout
+INFO:Neuron:Sharding weights for ranks: 0...7
+[2026-04-27 06:40:15.616: I neuronx_distributed/parallel_layers/parallel_state.py:638] > initializing tensor model parallel with size 8
+[2026-04-27 06:40:15.616: I neuronx_distributed/parallel_layers/parallel_state.py:639] > initializing pipeline model parallel with size 1
+[2026-04-27 06:40:15.616: I neuronx_distributed/parallel_layers/parallel_state.py:640] > initializing context model parallel with size 1
+[2026-04-27 06:40:15.616: I neuronx_distributed/parallel_layers/parallel_state.py:641] > initializing data parallel with size 1
+[2026-04-27 06:40:15.616: I neuronx_distributed/parallel_layers/parallel_state.py:642] > initializing world size to 8
+[2026-04-27 06:40:15.617: I neuronx_distributed/parallel_layers/parallel_state.py:387] [rank_0_pp-1_tp-1_dp-1_cp-1] Chosen Logic for replica groups ret_logic=<PG_Group_Logic.LOGIC1: (<function ascending_ring_PG_group at 0x79ed5a8f3ba0>, 'Ascending Ring PG Group')>
+[2026-04-27 06:40:15.617: I neuronx_distributed/parallel_layers/parallel_state.py:666] [rank_0_pp-1_tp-1_dp-1_cp-1] tp_groups: replica_groups.tp_groups=[[0, 1, 2, 3, 4, 5, 6, 7]]
+[2026-04-27 06:40:15.617: I neuronx_distributed/parallel_layers/parallel_state.py:667] [rank_0_pp-1_tp-1_dp-1_cp-1] dp_groups: replica_groups.dp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 06:40:15.617: I neuronx_distributed/parallel_layers/parallel_state.py:668] [rank_0_pp-1_tp-1_dp-1_cp-1] pp_groups: replica_groups.pp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 06:40:15.617: I neuronx_distributed/parallel_layers/parallel_state.py:669] [rank_0_pp-1_tp-1_dp-1_cp-1] cp_groups: replica_groups.cp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 06:40:15.617: I neuronx_distributed/parallel_layers/parallel_state.py:670] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_model_groups: replica_groups.ep_model_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 06:40:15.617: I neuronx_distributed/parallel_layers/parallel_state.py:671] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_data_groups: replica_groups.ep_data_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/trace/trace.py:642: UserWarning: Removing redundant keys from checkpoint: []
+  warnings.warn(f"Removing redundant keys from checkpoint: {keys_to_delete}")
+INFO:Neuron:Done Sharding weights in 15.573707955998543
+INFO:Neuron:NxD Model Initialized
+INFO:Neuron:Finished building model in 35.565916299819946 seconds
+[trace] compile+weight-init done in 36.5s
+[trace] saved compiled model to /home/ubuntu/text_encoder_traced
+[main] neuron warm-up forward
+2026-Apr-27 06:41:13.0744 110580:111915 [17] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):219 CCOM WARN NET/OFI Failed to initialize rdma protocol
+2026-Apr-27 06:41:13.0747 110580:111915 [17] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):354 CCOM WARN NET/OFI aws-ofi-nccl initialization failed
+2026-Apr-27 06:41:13.0750 110580:111915 [17] ncclResult_t nccl_net_ofi_init_no_atexit_fini_v6(ncclDebugLogger_t):183 CCOM WARN NET/OFI Initializing plugin failed
+2026-Apr-27 06:41:13.0752 110580:111915 [17] net_plugin.cc:97 CCOM WARN OFI plugin initNet() failed is EFA enabled?
+[main] neuron timed forward (10 iter)
+[main] per-forward latency: 66.4 ms
+[main] accuracy vs CPU reference:
+  [layer 10] shape=(1, 512, 5120) cos_sim=0.691487 max_abs=149.4375 mean_abs=0.0012 mean_rel=26.2497
+  [layer 20] shape=(1, 512, 5120) cos_sim=0.026699 max_abs=149.1562 mean_abs=0.1568 mean_rel=154794.0938
+  [layer 30] shape=(1, 512, 5120) cos_sim=0.025692 max_abs=149.5625 mean_abs=0.2242 mean_rel=220036.3281
+  [stack] shape=(1, 512, 3, 5120) cos_sim=0.028559 max_abs=149.5625 mean_abs=0.1274 mean_rel=124952.2109
+
+=== summary ===
+tp_degree       : 8
+seq_len         : 512
+extract_layers  : (10, 20, 30)
+cpu_ref_time    : 3.2s
+compile_time    : 36.5s
+neuron_latency  : 66.4 ms / prompt
+neff_dir        : /home/ubuntu/text_encoder_traced

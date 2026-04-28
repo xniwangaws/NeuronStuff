@@ -1,0 +1,17 @@
+Cannot initialize model with low cpu memory usage because `accelerate` was not found in the environment. Defaulting to `low_cpu_mem_usage=False`. It is strongly recommended to install `accelerate` for faster and less memory-intense model loading. You can do so with: 
+```
+pip install accelerate
+```
+.
+...............................................................
+Compiler status PASS
+[load] AutoencoderKLFlux2 from /home/ubuntu/flux2_weights
+[probe] latent shape: (1, 32, 64, 64); VAE config: block_out_channels=[128, 256, 512, 512]
+[cpu] running decoder on CPU for sanity...
+[cpu] out shape=(1, 3, 512, 512) dtype=torch.bfloat16 in 1.1s
+[trace] torch_neuronx.trace(...) for 512²
+[trace] compiled in 1247.8s
+[save] vae_traced/vae_decoder_512.pt (0.22 GB)
+[neuron] running 3 warmup + 5 measured iterations...
+[neuron] mean=1065.0ms  ts=['1065.0', '1065.0', '1065.0', '1065.1', '1065.0']
+[acc] max_rel_err=1.0537e+00  cos_sim=0.906858

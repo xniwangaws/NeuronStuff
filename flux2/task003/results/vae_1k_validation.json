@@ -1,0 +1,19 @@
+{
+  "resolution": 1024,
+  "prompt": "a high-resolution photograph of a red panda sitting on a tree branch in a misty forest, volumetric lighting",
+  "seed": 42,
+  "steps": 28,
+  "guidance": 4.0,
+  "pipeline_cpu_gen_time_s": 1090.0281875133514,
+  "vae_cpu_tiled_time_s": 6.598776817321777,
+  "vae_neuron_tiled_time_s": 9.628787755966187,
+  "cos_sim": 0.9920439720153809,
+  "max_rel_err": 179687.5,
+  "psnr_db": 28.768303394317627,
+  "latents_4d_shape": [
+    1,
+    32,
+    128,
+    128
+  ]
+}

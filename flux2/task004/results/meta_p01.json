@@ -1,0 +1,18 @@
+{
+  "model": "/home/ubuntu/flux2_weights",
+  "precision": "BF16",
+  "device": "cpu",
+  "resolution": 512,
+  "steps": 28,
+  "guidance": 4.0,
+  "seed": 43,
+  "prompt": "an oil painting of a medieval castle at sunset, dramatic clouds, style of Caspar David Friedrich",
+  "prompt_index": 1,
+  "load_time_s": 2.9811806009993234,
+  "inference_time_s": 285.18239031899975,
+  "image_tensor_shape": [
+    3,
+    512,
+    512
+  ]
+}
