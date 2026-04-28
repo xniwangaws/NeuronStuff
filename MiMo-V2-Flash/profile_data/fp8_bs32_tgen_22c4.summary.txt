@@ -1,0 +1,26 @@
+neuron-profile view --output-format summary-text
+NEFF: /var/tmp/neuron-compile-cache/neuronxcc-2.24.5133.0+58f8de22/MODULE_22c49b16c5288374111f+bd3eb4b8/model.neff
+Role: FP8 BS=32 TGEN, rank 0 of TP=64
+Captured: 2026-04-27 03:18 UTC
+
+Key metrics:
+
+    matmul_instruction_count                          527943
+    mbu_estimated_percent                             0.2923901097894972
+    spill_reload_bytes                                26240
+    tensor_engine_active_time_percent                 0.49848564321045763
+    mfu_estimated_percent                             0.034240410085209116
+    total_time                                        0.058657506681
+    vector_engine_active_time_percent                 0.48330004286020395
+    mm_arithmetic_intensity                           26.2878567430959
+    hbm_write_bytes                                   1269151430
+    dma_active_time_percent                           0.6660879595084405
+    scalar_engine_active_time_percent                 0.20143328081190387
+    mfu_hlo_max_achievable_estimated_percent          0.11710522667767422
+    spill_save_bytes                                  16256
+    hbm_read_bytes                                    11010874940
+
+Interpretation:
+- FP8 TGEN 58.7 ms/step (vs BF16 34.7 ms — FP8 is actually slower for decode here)
+- Lower mfu_max (11.7%) than BF16 (12.5%) suggests FP8 kernel has less compute density
+- With MoE blockwise kernels unable to use shard_hidden path on SDK 2.29, FP8 loses its theoretical 2x advantage

@@ -1,0 +1,30 @@
+{
+  "comment": "FP8 BS=1 TGEN (MOE_EP=1 selective-loading path). Smoke test only — not a real workload.",
+  "role": "BS=1 standalone token generation, rank 0, TP=64, MOE_EP=1",
+  "captured_utc": "2026-04-27T00:20:00Z",
+  "neff_size_bytes": 7700000,
+  "metrics": {
+    "total_time_seconds": 0.01964190931,
+    "tensor_engine_active_time_percent": 0.17904935317105383,
+    "vector_engine_active_time_percent": 0.40749342763358887,
+    "scalar_engine_active_time_percent": 0.45978953122454874,
+    "dma_active_time_percent": 0.22561500804526421,
+    "hbm_read_bytes": 461033298,
+    "hbm_write_bytes": 3187248,
+    "spill_save_bytes": 0,
+    "spill_reload_bytes": 49248,
+    "mfu_estimated_percent": 0.00022762301007861303,
+    "mfu_hlo_max_achievable_estimated_percent": 0.006895861461755867,
+    "mbu_estimated_percent": 0.033008640231680965,
+    "mm_arithmetic_intensity": 1.5915232498132472,
+    "matmul_instruction_count": 63840
+  },
+  "interpretation": [
+    "SE active 46% — scalar/dispatch dominant, not compute",
+    "TE active only 18% — tensor engine idle most of the time",
+    "mfu_max_achievable only 0.69% — even in theory this kernel is compute-starved",
+    "Zero SBUF spill — not a tuning problem, it's the selective-loading MoE design",
+    "MOE_EP=1 only activates 1 expert per token, wastes 7/8 of top-8 routing capacity",
+    "Takeaway: BS=1 FP8 smoke is not representative of a real workload. Use BS=32+ with moe_ep_degree=64."
+  ]
+}

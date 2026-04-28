@@ -1,0 +1,28 @@
+neuron-profile view --output-format summary-text
+NEFF: /var/tmp/neuron-compile-cache/neuronxcc-2.24.5133.0+58f8de22/MODULE_8861bde4c3c47c54d959+7d9f298c/model.neff
+Role: BF16 BS=32 CTE (context_encoding_model), rank 0 of TP=64
+Captured: 2026-04-27 10:01 UTC
+
+Key metrics:
+
+    vector_engine_active_time_percent                 0.2541684126226683
+    mbu_estimated_percent                             0.5813119646648567
+    hbm_read_bytes                                    119324492036
+    matmul_instruction_count                          2491521
+    weight_size_bytes                                 1118396
+    scalar_engine_active_time_percent                 0.19707339960983936
+    mm_arithmetic_intensity                           160.29368975188797
+    total_time                                        0.348789920015
+    mfu_estimated_percent                             0.42484936922256655
+    hbm_write_bytes                                   25848627584
+    dma_active_time_percent                           0.8247908818713228
+    spill_reload_bytes                                4264840
+    tensor_engine_active_time_percent                 0.6930590406357046
+    mfu_hlo_max_achievable_estimated_percent          0.7308457335253792
+    spill_save_bytes                                  88560
+
+Interpretation:
+- Prefill (context encoding) 348.79 ms for 1024 tokens BS=32
+- 69% tensor engine utilization (good)
+- mfu 42% of theoretical 73% achievable
+- Streams 119 GB of BF16 weights through HBM per prefill (expected for 286 GB model)

@@ -1,0 +1,30 @@
+neuron-profile view --output-format summary-text
+NEFF: /var/tmp/neuron-compile-cache/neuronxcc-2.24.5133.0+58f8de22/MODULE_f40194d28b2efd2d8964+a2997a89/model.neff
+Role: FP8 BS=32 CTE (context_encoding_model), rank 0 of TP=64
+Captured: 2026-04-27 03:18 UTC
+
+Key metrics:
+
+    mfu_hlo_max_achievable_estimated_percent          1
+    hbm_write_bytes                                   22437928080
+    spill_reload_bytes                                75563360
+    inputs_outputs_weights_size_bytes                 7442043872
+    dma_active_time_percent                           0.7884044731571217
+    hbm_read_bytes                                    66618286184
+    mm_arithmetic_intensity                           264.7776633729646
+    mbu_estimated_percent                             0.3111846679600296
+    vector_engine_active_time_percent                 0.4446091763761438
+    total_time                                        0.399672326345
+    mfu_estimated_percent                             0.38000033395469146
+    matmul_instruction_count                          2647525
+    spill_save_bytes                                  128300
+    tensor_engine_active_time_percent                 0.7496508082121124
+    total_active_time                                 0.392834938301
+    scalar_engine_active_time_percent                 0.3051603970292561
+    weight_size_bytes                                 1078944
+
+Interpretation:
+- FP8 CTE 400 ms (vs BF16 349 ms — FP8 not faster for prefill)
+- **mfu_hlo_max_achievable = 100%** — compiler says this kernel CAN be fully compute-bound
+- Actual mfu 38% → **2.6x headroom** left on the table
+- The gap is inside the compiled NEFF itself (scheduling, pipeline stalls), not config tunable
