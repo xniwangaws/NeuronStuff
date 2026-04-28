@@ -14,13 +14,14 @@ Ranked by evidence strength and expected impact. Each entry lists: **evidence** 
 - **Cost to validate**: 1–2 h with `py-spy record` while serving at c=32. No new capacity block needed if we can re-use the existing compiled NEFFs from S3.
 - **Action**: Run `py-spy record --pid <vllm-engine-pid> --duration 60` during a bench, inspect the flame graph, identify top 3 host functions.
 
-### 2. Switch the MoE blockwise kernel flag to `shard_on_intermediate`
+### 2. Switch the MoE blockwise kernel flag to `shard_on_intermediate` (FP8 only)
 
-- **Evidence**: FP8 BS=32 standalone runs:
-  - `shard_on_block`: 137.87 tok/s
-  - `shard_on_intermediate`: **146.29 tok/s (+6%)**
-- **Hypothesis**: `shard_on_intermediate` has a lower-overhead MoE path on SDK 2.29.
-- **Expected gain**: 6% throughput, free.
+- **Scope**: FP8 path only. BF16 path uses `use_torch_block_wise=true` (PyTorch fallback, not a NKI kernel), so this flag does not apply.
+- **Evidence**: FP8 BS=32 standalone runs (MOE_EP=64):
+  - `use_shard_on_block_dynamic_while=true`: 137.87 tok/s
+  - `use_shard_on_intermediate_dynamic_while=true`: **146.29 tok/s (+6%)**
+- **Hypothesis**: `shard_on_intermediate` has a lower-overhead MoE kernel path on SDK 2.29. Not verified mechanistically.
+- **Expected gain**: 6% throughput on FP8 path, free.
 - **Cost to validate**: One line change in `blockwise_matmul_config`, recompile (~30 min), rerun bench (~5 min).
 - **Action**: Update `bench_mimo_v2_flash.sh` to use `use_shard_on_intermediate_dynamic_while: true`. Already proved correct.
 
@@ -115,7 +116,7 @@ Ranked by evidence strength and expected impact. Each entry lists: **evidence** 
 | Order | Action | When |
 |---|---|---|
 | 1 | `py-spy` trace on c=32 serving to locate host gap | Next capacity block, within first hour |
-| 2 | Flip to `shard_on_intermediate` (free +6%) | Same capacity block, hour 2 |
+| 2 | Flip to `shard_on_intermediate` — FP8 path only (free +6%) | Same capacity block, hour 2 |
 | 3 | Re-enable NKI kernels one by one | Same capacity block, hours 3–6 |
 | 4 | File compiler ticket for CTE mfu gap | No instance needed |
 | 5 | Watch SDK 2.30 release notes for `shard_hidden` | No instance needed, months out |
