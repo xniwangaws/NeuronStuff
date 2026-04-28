@@ -1,0 +1,29 @@
+neuron-profile view --output-format summary-text
+NEFF: /var/tmp/neuron-compile-cache/neuronxcc-2.24.5133.0+58f8de22/MODULE_544b4e87568f3464958c+dfa78774/model.neff
+Role: BF16 BS=32 TGEN (token_generation_model), rank 0 of TP=64
+Captured: 2026-04-27 09:53 UTC
+
+Key metrics (extracted via grep from full summary-text output):
+
+    weight_size_bytes                                 1661576
+    mbu_estimated_percent                             0.4621977317003138
+    spill_reload_bytes                                26240
+    hbm_write_bytes                                   58033472
+    total_time                                        0.034668474164
+    scalar_engine_active_time_percent                 0.22319431268870193
+    dma_active_time_percent                           0.8559956147656433
+    mm_arithmetic_intensity                           28.136257681916103
+    mfu_estimated_percent                             0.05793324141790267
+    mfu_hlo_max_achievable_estimated_percent          0.12534298081641437
+    spill_save_bytes                                  16256
+    hbm_read_bytes                                    11414928654
+    matmul_instruction_count                          411783
+    tensor_engine_active_time_percent                 0.4740513662717193
+    vector_engine_active_time_percent                 0.11812328447533577
+
+Interpretation:
+- Device time per TGEN step: 34.67 ms
+- Memory-bandwidth-bound (DMA 86%)
+- 2x headroom: mfu 5.8% vs max achievable 12.5%
+- Zero SBUF pressure
+- This equals the measured vLLM TPOT at c=1 (33.72 ms), confirming no vLLM overhead at c=1
