@@ -101,7 +101,7 @@
 ### 3.3 速度关系
 
 - **Neuron BF16 混合模式** (27.0 s) vs **H100 BF16** (91.2 s) → Neuron **快 3.38×**
-- **Neuron ALL-Neuron** (23.0 s,WIP) vs **H100 BF16** → **快 3.97×**
+- **Neuron ALL-Neuron** (22.68 s,✅ Bug 2 已修) vs **H100 BF16** → **快 4.02×**
 - Neuron BF16 vs H100 FP8 (68.6 s) → 仍快 **2.54×**
 - L4 NF4 (210.1 s) 最慢,适合低端场景;1024² 可用,2K 不可用。
 
