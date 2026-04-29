@@ -1,9 +1,5 @@
 # FLUX.2-dev Neuron (Trainium2) 端口与基准测试报告
 
-**日期**: 2026-04-29
-**版本**: v1.0
-**联系人**: Neuron Port Team
-
 ---
 
 ## 1. 测试概要
