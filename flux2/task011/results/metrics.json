@@ -1,0 +1,190 @@
+{
+  "reference": {
+    "label": "H100 BF16",
+    "directory": "/Users/xniwang/oppo-opencode/working/flux2/task002/results/h100_bf16_1024"
+  },
+  "metric_notes": "PSNR and pixel-L1 on 0-1 normalized RGB. LPIPS skipped because the `lpips` package is not installed locally and requires torch plus a model download; this task is laptop-only.",
+  "resolution": 1024,
+  "comparisons": [
+    {
+      "label": "L4 NF4",
+      "directory": "/Users/xniwang/oppo-opencode/working/flux2/task001/results/l4_nf4_1024",
+      "mean_psnr_db": 14.05667636699028,
+      "mean_l1": 0.14184584170579911,
+      "min_psnr_db": 11.485202955355389,
+      "max_l1": 0.19693152606487274,
+      "per_prompt": [
+        {
+          "prompt_idx": 0,
+          "psnr_db": 15.502131125541936,
+          "l1": 0.1219574585556984
+        },
+        {
+          "prompt_idx": 1,
+          "psnr_db": 21.171018007195382,
+          "l1": 0.06142725050449371
+        },
+        {
+          "prompt_idx": 2,
+          "psnr_db": 11.485202955355389,
+          "l1": 0.1813051700592041
+        },
+        {
+          "prompt_idx": 3,
+          "psnr_db": 14.786345057843286,
+          "l1": 0.10133663564920425
+        },
+        {
+          "prompt_idx": 4,
+          "psnr_db": 12.551609217939061,
+          "l1": 0.14658379554748535
+        },
+        {
+          "prompt_idx": 5,
+          "psnr_db": 12.944269704087588,
+          "l1": 0.14976876974105835
+        },
+        {
+          "prompt_idx": 6,
+          "psnr_db": 11.507138978697117,
+          "l1": 0.19693152606487274
+        },
+        {
+          "prompt_idx": 7,
+          "psnr_db": 11.902319661329129,
+          "l1": 0.17724525928497314
+        },
+        {
+          "prompt_idx": 8,
+          "psnr_db": 13.061796740263372,
+          "l1": 0.15888869762420654
+        },
+        {
+          "prompt_idx": 9,
+          "psnr_db": 15.654932221650528,
+          "l1": 0.12301385402679443
+        }
+      ]
+    },
+    {
+      "label": "H100 FP8",
+      "directory": "/Users/xniwang/oppo-opencode/working/flux2/task002/results/h100_fp8_1024",
+      "mean_psnr_db": 23.38704065560557,
+      "mean_l1": 0.0434025221504271,
+      "min_psnr_db": 15.210526771434903,
+      "max_l1": 0.09953033924102783,
+      "per_prompt": [
+        {
+          "prompt_idx": 0,
+          "psnr_db": 27.9758653567134,
+          "l1": 0.025066932663321495
+        },
+        {
+          "prompt_idx": 1,
+          "psnr_db": 32.38948696057457,
+          "l1": 0.015295400284230709
+        },
+        {
+          "prompt_idx": 2,
+          "psnr_db": 16.89159527697539,
+          "l1": 0.09511557966470718
+        },
+        {
+          "prompt_idx": 3,
+          "psnr_db": 26.266200608639192,
+          "l1": 0.017798656597733498
+        },
+        {
+          "prompt_idx": 4,
+          "psnr_db": 15.210526771434903,
+          "l1": 0.09953033924102783
+        },
+        {
+          "prompt_idx": 5,
+          "psnr_db": 25.615658628079263,
+          "l1": 0.021592915058135986
+        },
+        {
+          "prompt_idx": 6,
+          "psnr_db": 20.415871258294523,
+          "l1": 0.045034393668174744
+        },
+        {
+          "prompt_idx": 7,
+          "psnr_db": 22.458976948362945,
+          "l1": 0.0297013521194458
+        },
+        {
+          "prompt_idx": 8,
+          "psnr_db": 19.474317585216852,
+          "l1": 0.0583389513194561
+        },
+        {
+          "prompt_idx": 9,
+          "psnr_db": 27.171907161764658,
+          "l1": 0.02655070088803768
+        }
+      ]
+    },
+    {
+      "label": "Neuron BF16",
+      "directory": "/Users/xniwang/oppo-opencode/working/flux2/task010/results/neuron_bf16_1024",
+      "mean_psnr_db": 9.936182932886508,
+      "mean_l1": 0.2876346856355667,
+      "min_psnr_db": 7.280061693993919,
+      "max_l1": 0.4056112766265869,
+      "per_prompt": [
+        {
+          "prompt_idx": 0,
+          "psnr_db": 10.87354112266118,
+          "l1": 0.24436061084270477
+        },
+        {
+          "prompt_idx": 1,
+          "psnr_db": 11.316123998605432,
+          "l1": 0.2384634017944336
+        },
+        {
+          "prompt_idx": 2,
+          "psnr_db": 8.940498832726059,
+          "l1": 0.3197583258152008
+        },
+        {
+          "prompt_idx": 3,
+          "psnr_db": 7.280061693993919,
+          "l1": 0.4056112766265869
+        },
+        {
+          "prompt_idx": 4,
+          "psnr_db": 7.633037263378829,
+          "l1": 0.38959217071533203
+        },
+        {
+          "prompt_idx": 5,
+          "psnr_db": 11.933052708059037,
+          "l1": 0.209483340382576
+        },
+        {
+          "prompt_idx": 6,
+          "psnr_db": 9.435262274397479,
+          "l1": 0.29212886095046997
+        },
+        {
+          "prompt_idx": 7,
+          "psnr_db": 9.077520556088883,
+          "l1": 0.31760141253471375
+        },
+        {
+          "prompt_idx": 8,
+          "psnr_db": 10.030546419250053,
+          "l1": 0.2713054120540619
+        },
+        {
+          "prompt_idx": 9,
+          "psnr_db": 12.842184459704216,
+          "l1": 0.1880420446395874
+        }
+      ]
+    }
+  ]
+}

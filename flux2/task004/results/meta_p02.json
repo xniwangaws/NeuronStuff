@@ -1,0 +1,18 @@
+{
+  "model": "/home/ubuntu/flux2_weights",
+  "precision": "BF16",
+  "device": "cpu",
+  "resolution": 512,
+  "steps": 28,
+  "guidance": 4.0,
+  "seed": 44,
+  "prompt": "a futuristic cyberpunk city street at night, neon signs in Japanese, rain-slicked pavement, cinematic",
+  "prompt_index": 2,
+  "load_time_s": 2.990245061000678,
+  "inference_time_s": 274.9297664229998,
+  "image_tensor_shape": [
+    3,
+    512,
+    512
+  ]
+}

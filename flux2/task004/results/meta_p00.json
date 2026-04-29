@@ -1,0 +1,18 @@
+{
+  "model": "/home/ubuntu/flux2_weights",
+  "precision": "BF16",
+  "device": "cpu",
+  "resolution": 512,
+  "steps": 28,
+  "guidance": 4.0,
+  "seed": 42,
+  "prompt": "a high-resolution photograph of a red panda sitting on a tree branch in a misty forest, volumetric lighting",
+  "prompt_index": 0,
+  "load_time_s": 5.961347277000641,
+  "inference_time_s": 291.4910231599997,
+  "image_tensor_shape": [
+    3,
+    512,
+    512
+  ]
+}

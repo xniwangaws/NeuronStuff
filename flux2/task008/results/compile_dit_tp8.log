@@ -1,0 +1,91 @@
+[main] example_inputs shapes:
+    [0] shape=(1, 4096, 128) dtype=torch.bfloat16
+    [1] shape=(1, 512, 15360) dtype=torch.bfloat16
+    [2] shape=(1,) dtype=torch.bfloat16
+    [3] shape=(1,) dtype=torch.bfloat16
+    [4] shape=(4608, 128, 2) dtype=torch.bfloat16
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:100: DeprecationWarning: torch_neuronx.nki_jit is deprecated, use nki.jit instead.
+  component, error = import_nki(config)
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+[main] builder.trace tp=8 L_img=4096 L_txt=512
+[main] working in /home/ubuntu/dit_compile_workdir
+INFO:Neuron:Generating HLOs for the following models: ['dit']
+[2026-04-27 07:57:21.633: I neuronx_distributed/parallel_layers/parallel_state.py:638] > initializing tensor model parallel with size 8
+[2026-04-27 07:57:21.633: I neuronx_distributed/parallel_layers/parallel_state.py:639] > initializing pipeline model parallel with size 1
+[2026-04-27 07:57:21.633: I neuronx_distributed/parallel_layers/parallel_state.py:640] > initializing context model parallel with size 1
+[2026-04-27 07:57:21.633: I neuronx_distributed/parallel_layers/parallel_state.py:641] > initializing data parallel with size 1
+[2026-04-27 07:57:21.633: I neuronx_distributed/parallel_layers/parallel_state.py:642] > initializing world size to 8
+[2026-04-27 07:57:21.633: I neuronx_distributed/parallel_layers/parallel_state.py:387] [rank_0_pp-1_tp-1_dp-1_cp-1] Chosen Logic for replica groups ret_logic=<PG_Group_Logic.LOGIC1: (<function ascending_ring_PG_group at 0x7b1351e5bf60>, 'Ascending Ring PG Group')>
+[2026-04-27 07:57:21.633: I neuronx_distributed/parallel_layers/parallel_state.py:666] [rank_0_pp-1_tp-1_dp-1_cp-1] tp_groups: replica_groups.tp_groups=[[0, 1, 2, 3, 4, 5, 6, 7]]
+[2026-04-27 07:57:21.633: I neuronx_distributed/parallel_layers/parallel_state.py:667] [rank_0_pp-1_tp-1_dp-1_cp-1] dp_groups: replica_groups.dp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 07:57:21.634: I neuronx_distributed/parallel_layers/parallel_state.py:668] [rank_0_pp-1_tp-1_dp-1_cp-1] pp_groups: replica_groups.pp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 07:57:21.634: I neuronx_distributed/parallel_layers/parallel_state.py:669] [rank_0_pp-1_tp-1_dp-1_cp-1] cp_groups: replica_groups.cp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 07:57:21.634: I neuronx_distributed/parallel_layers/parallel_state.py:670] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_model_groups: replica_groups.ep_model_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 07:57:21.634: I neuronx_distributed/parallel_layers/parallel_state.py:671] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_data_groups: replica_groups.ep_data_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+INFO:Neuron:Generating 1 hlos for key: dit
+INFO:Neuron:Minimal metadata will be added to HLO
+INFO:Neuron:Started loading module dit
+INFO:Neuron:Finished loading module dit in 0.8398656845092773 seconds
+INFO:Neuron:generating HLO: dit, input example shape = torch.Size([1, 4096, 128])
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/parallel_layers/layers.py:531: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+INFO:Neuron:Finished generating HLO for dit in 6.603155612945557 seconds, input example shape = torch.Size([1, 4096, 128])
+INFO:Neuron:Generated all HLOs in 7.508668899536133 seconds
+INFO:Neuron:Can't find a priority model, skip marking weights
+INFO:Neuron:Can't find a priority model, skip optimizing weight layout for other HLOs
+INFO:Neuron:Starting compilation for all HLOs
+INFO:Neuron:Neuron compiler flags: --model-type=transformer -O1 --auto-cast=none --tensorizer-options='--enable-ccop-compute-overlap' --internal-hlo2tensorizer-options='--verify-hlo=true' --verbose=35 --logfile=/home/ubuntu/dit_compile_workdir/dit/_tp0_bk0/log-neuron-cc.txt
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/libneuronxla/neuron_cc_wrapper.py:246: SyntaxWarning: str format compiler_flags is discouraged as its handling involves repeated joining and splitting, which can easily make mistakes if something is quoted or escaped. Use list[str] instead. Refer to documentation of the Python subprocess module for details.
+  warnings.warn(SyntaxWarning(
+...
+Compiler status PASS
+2026-04-27 07:58:19.000231:  131128  [INFO]: Compilation Successfully Completed for model.MODULE_e9aeb5273a6ec484b1d0+46c40422.hlo_module.pb
+INFO:Neuron:Finished Compilation for all HLOs in 50.11614465713501 seconds
+INFO:Neuron:Can't find a priority model, falling back to the existing weight layout
+INFO:Neuron:Sharding weights for ranks: 0...7
+[2026-04-27 07:58:19.395: I neuronx_distributed/parallel_layers/parallel_state.py:638] > initializing tensor model parallel with size 8
+[2026-04-27 07:58:19.395: I neuronx_distributed/parallel_layers/parallel_state.py:639] > initializing pipeline model parallel with size 1
+[2026-04-27 07:58:19.395: I neuronx_distributed/parallel_layers/parallel_state.py:640] > initializing context model parallel with size 1
+[2026-04-27 07:58:19.395: I neuronx_distributed/parallel_layers/parallel_state.py:641] > initializing data parallel with size 1
+[2026-04-27 07:58:19.395: I neuronx_distributed/parallel_layers/parallel_state.py:642] > initializing world size to 8
+[2026-04-27 07:58:19.396: I neuronx_distributed/parallel_layers/parallel_state.py:387] [rank_0_pp-1_tp-1_dp-1_cp-1] Chosen Logic for replica groups ret_logic=<PG_Group_Logic.LOGIC1: (<function ascending_ring_PG_group at 0x7b1351e5bf60>, 'Ascending Ring PG Group')>
+[2026-04-27 07:58:19.396: I neuronx_distributed/parallel_layers/parallel_state.py:666] [rank_0_pp-1_tp-1_dp-1_cp-1] tp_groups: replica_groups.tp_groups=[[0, 1, 2, 3, 4, 5, 6, 7]]
+[2026-04-27 07:58:19.396: I neuronx_distributed/parallel_layers/parallel_state.py:667] [rank_0_pp-1_tp-1_dp-1_cp-1] dp_groups: replica_groups.dp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 07:58:19.396: I neuronx_distributed/parallel_layers/parallel_state.py:668] [rank_0_pp-1_tp-1_dp-1_cp-1] pp_groups: replica_groups.pp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 07:58:19.396: I neuronx_distributed/parallel_layers/parallel_state.py:669] [rank_0_pp-1_tp-1_dp-1_cp-1] cp_groups: replica_groups.cp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 07:58:19.396: I neuronx_distributed/parallel_layers/parallel_state.py:670] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_model_groups: replica_groups.ep_model_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-04-27 07:58:19.396: I neuronx_distributed/parallel_layers/parallel_state.py:671] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_data_groups: replica_groups.ep_data_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/trace/trace.py:642: UserWarning: Removing redundant keys from checkpoint: []
+  warnings.warn(f"Removing redundant keys from checkpoint: {keys_to_delete}")
+INFO:Neuron:Done Sharding weights in 28.958277078003448
+INFO:Neuron:NxD Model Initialized
+INFO:Neuron:Finished building model in 105.92155504226685 seconds
+[main] trace + compile + weight-init done in 106.0s
+[main] saved to /home/ubuntu/dit_traced/dit_tp8_1024.pt  (61481.5 MB)
+[main] dummy forward with example inputs
+2026-Apr-27 07:59:54.0945 131128:132551 [2] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):219 CCOM WARN NET/OFI Failed to initialize rdma protocol
+2026-Apr-27 07:59:54.0948 131128:132551 [2] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):354 CCOM WARN NET/OFI aws-ofi-nccl initialization failed
+2026-Apr-27 07:59:54.0950 131128:132551 [2] ncclResult_t nccl_net_ofi_init_no_atexit_fini_v6(ncclDebugLogger_t):183 CCOM WARN NET/OFI Initializing plugin failed
+2026-Apr-27 07:59:54.0953 131128:132551 [2] net_plugin.cc:97 CCOM WARN OFI plugin initNet() failed is EFA enabled?
+[main] first forward latency: 1134 ms
+[main] output: shape=(1, 4096, 128) dtype=torch.bfloat16
+[main] warm per-iter latency: 518 ms
+
+=== SUMMARY ===
+tp_degree       : 8
+L_img           : 4096
+L_txt           : 512
+num_layers      : 8 double
+num_single      : 48 single
+compile_time    : 106.0s
+neff_path       : /home/ubuntu/dit_traced/dit_tp8_1024.pt
+neff_size       : 61481.5 MB
+first_forward   : 1134 ms
+warm_forward    : 518 ms
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=127401984.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=127401984.00.
