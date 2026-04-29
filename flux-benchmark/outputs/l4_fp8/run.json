@@ -1,0 +1,25 @@
+{
+  "instance": "g6.4xlarge",
+  "accelerator": "1x L4 24GB",
+  "dtype": "FP8 (torchao weight-only) + bf16 compute",
+  "offload": "enable_model_cpu_offload",
+  "prompt": "A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest",
+  "steps": 28,
+  "seed": 0,
+  "resolution": "1024x1024",
+  "guidance_scale": 3.5,
+  "n_runs": 6,
+  "compile_s": null,
+  "load_s": 93.98,
+  "first_inference_s": 789.44,
+  "steady_mean_s": 78.68,
+  "steady_runs_s": [
+    77.78,
+    78.42,
+    78.88,
+    79.06,
+    79.27
+  ],
+  "peak_mem_gb": 11.7,
+  "gpu_info": "NVIDIA L4, 23034 MiB, 3 MiB"
+}
