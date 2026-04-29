@@ -98,3 +98,21 @@ Full setup in `scripts/setup_and_trace_vae.sh`.
 - Phase 1 (v1, UNet only): complete, 9-cell matrix populated
 - Phase 2 (v2, UNet + VAE): 1K done; 2K stdout only; 4K lost; **needs another block to finish**
 - Phase 3 (fix tile seam via `de_mod` refactor): designed, not started
+
+---
+
+## Phase 3 update (2026-04-29)
+
+Full re-run with a natural cat photo on all 3 devices. Added attribute-routing
+UNet NEFF so the compiled graph is image-agnostic (Phase 1/2 NEFF was tied to
+the LQ image used at compile time). Added traced VAE encoder + decoder.
+
+**Phase 3 Trn2 v3 on cat image, BF16, N=10:**
+
+| Res | Steady | PSNR vs CPU | Seam luma (GPU: 1-3) |
+|---|---|---|---|
+| 1K | 24.91s | 24.55 dB | 39.0 |
+| 2K | 82.67s | — | 33.3 |
+| 4K | 360.10s | — | 18.6 |
+
+See `phase3/README.md` for full matrix + GPU cat benchmark.
