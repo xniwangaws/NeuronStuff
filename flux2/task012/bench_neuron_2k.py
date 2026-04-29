@@ -1,0 +1,84 @@
+"""Neuron 2K (2048x2048) benchmark using 2K DiT NEFF + 1K VAE tiled decoder."""
+import argparse, json, time
+from pathlib import Path
+import torch, torch_neuronx  # noqa
+
+CAT_PROMPT = "A cat holding a sign that says hello world"
+PROMPTS_10 = [
+    "a high-resolution photograph of a red panda sitting on a tree branch in a misty forest, volumetric lighting",
+    "an oil painting of a medieval castle at sunset, dramatic clouds, style of Caspar David Friedrich",
+    "a futuristic cyberpunk city street at night, neon signs in Japanese, rain-slicked pavement, cinematic",
+    "a watercolor illustration of a hummingbird drinking nectar from a hibiscus flower, soft pastel colors",
+    "a studio product photograph of a luxury mechanical wristwatch on black velvet, shallow depth of field",
+    "an astronaut riding a horse on the surface of Mars, photorealistic, wide-angle shot",
+    "a cozy coffee shop interior on a rainy afternoon, warm lighting, people reading books, bokeh",
+    "a macro photograph of a dewdrop on a spider web at sunrise, iridescent refraction",
+    "a detailed pencil sketch of a Victorian mansion with ivy climbing the walls, moonlit",
+    "a fantasy landscape with floating islands, waterfalls cascading into clouds, dual moons in the sky",
+]
+SEED_BASE = 42
+
+
+def percentile(values, p):
+    s = sorted(values); k = (len(s) - 1) * p; f = int(k); c = min(f + 1, len(s) - 1)
+    return s[f] + (s[c] - s[f]) * (k - f)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--resolution", type=int, default=2048)
+    ap.add_argument("--steps", type=int, default=28)
+    ap.add_argument("--guidance", type=float, default=4.0)
+    ap.add_argument("--out-dir", default="/home/ubuntu/bench_neuron_2k")
+    ap.add_argument("--dit-neff", default="/home/ubuntu/flux2_tap_debug/compiled_full_2k/dit_full.pt")
+    ap.add_argument("--te-neff", default="/home/ubuntu/text_encoder_traced/text_encoder.pt")
+    ap.add_argument("--vae-neff", default="/home/ubuntu/vae_traced/vae_decoder_512.pt")
+    ap.add_argument("--cat", action="store_true", help="Use cat prompt 50-step (OPPO spec)")
+    ap.add_argument("--n-seeds", type=int, default=10)
+    args = ap.parse_args()
+
+    prompts = [CAT_PROMPT] * args.n_seeds if args.cat else PROMPTS_10[:args.n_seeds]
+    suffix = f"cat_{args.steps}step" if args.cat else "10prompt"
+    out = Path(args.out_dir) / f"neuron_bf16_{args.resolution}_{suffix}"
+    out.mkdir(parents=True, exist_ok=True)
+
+    import sys
+    sys.path.insert(0, "/home/ubuntu")
+    from neuron_flux2_pipeline import NeuronFlux2Pipeline
+
+    print(f"[load] DiT={args.dit_neff}")
+    t0 = time.perf_counter()
+    pipe = NeuronFlux2Pipeline.from_traced(
+        dit_neff=args.dit_neff, te_neff=args.te_neff, vae_neff=args.vae_neff,
+        weights_dir="/home/ubuntu/flux2_weights")
+    load_time = time.perf_counter() - t0
+    print(f"[load] {load_time:.2f}s")
+
+    per_run = []
+    for i, prompt in enumerate(prompts):
+        gen = torch.Generator(device="cpu").manual_seed(SEED_BASE + i)
+        t = time.perf_counter()
+        image = pipe(prompt=prompt, height=args.resolution, width=args.resolution,
+                     num_inference_steps=args.steps, guidance_scale=args.guidance, generator=gen)
+        dt = time.perf_counter() - t
+        per_run.append(dt)
+        name = f"seed{SEED_BASE + i:04d}_cat.png" if args.cat else f"seed{SEED_BASE + i:04d}_p{i:02d}.png"
+        image.save(out / name)
+        print(f"[run {i}] {dt:.2f}s")
+
+    first = per_run[0]; rest = per_run[1:]
+    results = {
+        "device": "Neuron-trn2.48xlarge", "precision": "BF16",
+        "prompt": "cat" if args.cat else "10-prompt",
+        "resolution": args.resolution, "steps": args.steps, "guidance": args.guidance,
+        "seed_base": SEED_BASE, "load_time_s": load_time, "first_image_s": first,
+        "mean_steady_s": sum(rest) / len(rest) if rest else 0.0,
+        "p50_s": percentile(per_run, 0.5), "p95_s": percentile(per_run, 0.95),
+        "per_run_s": per_run,
+    }
+    (out / "results.json").write_text(json.dumps(results, indent=2))
+    print(f"[done] load={load_time:.2f}s first={first:.2f}s mean_rest={results['mean_steady_s']:.2f}s p95={results['p95_s']:.2f}s")
+
+
+if __name__ == "__main__":
+    main()
