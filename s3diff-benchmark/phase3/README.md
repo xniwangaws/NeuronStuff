@@ -98,3 +98,54 @@ plus load / cold / steady / p50 / p95 derived metrics.
   like Phase 1).
 - Phase 2 data (`trn2v2_{1K,2K}.json` in parent `results/`) is still the v2
   baseline — left there for A/B comparison in the matrix.
+
+## Generated images
+
+All SR outputs from the cat benchmark are in `phase3/images/`:
+
+| File | Device | Resolution | Notes |
+|---|---|---|---|
+| `cat_LQ_256_input.png` | — | 256×256 | Source LQ (resized by bench to each bucket's LQ side) |
+| `CPU_eager_cat_1K.png` | CPU eager | 1024×1024 | Reference (official S3Diff pipeline, no Neuron) |
+| `H100_cat_{1K,2K,4K}.png` | H100 80GB | 1K/2K/4K | p5.4xlarge, diffusers 0.25.1 + `--mixed_precision bf16` |
+| `L4_cat_{1K,2K,4K}.png` | L4 24GB | 1K/2K/4K | g6.4xlarge, same config (4K used `--vae_decoder_tiled_size 128` to avoid OOM) |
+| `Trn2v3_cat_{1K,2K,4K}.png` | Trainium2 | 1K/2K/4K | v3 pipeline (attribute-routed UNet + traced VAE) |
+| `Trn2v3_cat_1K_stitch_no_overlap.png` | Trainium2 | 1024×1024 | v3 baseline: VAE decoder tile stitch, no overlap (seam luma 73) |
+| `Trn2v3_cat_1K_overlap16.png` | Trainium2 | 1024×1024 | v3 + overlap 16 gaussian blend (seam luma 39) |
+| `Trn2v3_cat_1K_overlap32.png` | Trainium2 | 1024×1024 | v3 + overlap 32 gaussian blend (seam luma 38, plateau) |
+
+Open the 1K images side-by-side to see:
+- **GPU outputs**: no visible tile seam (luma discontinuity 1-3)
+- **Trn2 stitch**: horizontal band at row 511 (seam 73)
+- **Trn2 overlap 16**: softened but still visible band (seam 39)
+- **Trn2 overlap 32**: marginal further improvement (seam 38)
+
+## Why VAE decoder is slow (next-phase target)
+
+From the AWS Neuron agentic-dev knowledge base `TEXT_TO_VIDEO_MODEL_PORTING.md`
+and `Category2_Sharding_Memory_Issues.md`:
+
+- **Root cause**: SD-Turbo's VAE decoder is Conv2d-dominant. Neuron's Tensor
+  Engine is matmul-optimized (systolic array); small spatial Conv2d patches
+  underutilize the hardware. On H100, tensor cores vectorize conv well; on
+  Neuron, each patch becomes a small matmul (<128×128) with poor utilization.
+- **Compile limit** (`NCC_EVRF007`): whole-decoder at latent 80/96/128 generates
+  8-26M instructions vs 5M NEFF limit. This blocks the "trace at larger latent
+  to eliminate tile" approach.
+- **No TP benefit**: CNN decoder can't benefit from tensor parallelism like
+  attention-heavy DiT — all-reduce overhead exceeds compute savings for
+  sub-128 matmuls.
+
+**Next-phase optimization ideas** (unvalidated):
+
+1. **Block-by-block NEFF**: split decoder into ~6 NEFFs (conv_in, mid_resnets,
+   mid_attn, each up_resnet, norm_out). Chain at runtime (~1-2ms boundary
+   overhead). Each block small enough that compile at latent 128 succeeds.
+   This would eliminate tiling altogether at 1K. Expected: 2× speedup + no
+   seam. `TEXT_TO_VIDEO §4 Type C`.
+2. **NKI Conv2d kernel**: `neuron-nki-agent/examples/conv2d_scaling_min/` has a
+   fused Conv2d + bias + scaling kernel template. Expected 2-3× on Conv-heavy
+   blocks if targeted correctly.
+3. **Compiler flag tuning**: try `--vectorize-strided-dma` (conv-friendly).
+   Expected 10-20%.
+4. **TP/CP**: ruled out for VAE.
