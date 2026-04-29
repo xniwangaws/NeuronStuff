@@ -85,7 +85,7 @@
 | L4 g6.4xlarge | NF4 2K | — | — | **OOM** | OOM | OOM | > 24 (不支持) |
 | H100 p5.4xlarge | BF16 2K | 1.7 | 0 | 158.7 | **162.9** | 164.1 | 68.9 |
 | H100 p5.4xlarge | FP8 2K | 67.5 | 67.5 ** | 132.8 | **133.2** | 134.4 | 48.4 |
-| Neuron trn2.48xlarge | BF16 2K | 待补测 | — | — | — | — | 待补测 † |
+| **Neuron trn2.48xlarge** | **BF16 2K** | **96.3** | ~3 min (DiT 2K 重编译) | **101.3** | **101.06** | **101.49** | **~192 †** |
 
 注解:
 * L4 NF4 使用 HF 预量化 checkpoint,无额外编译。
@@ -279,14 +279,56 @@ export NEURON_COMPILE_CACHE_URL=s3://xniwang-neuron-models-us-east-2/flux2-neff-
 
 ---
 
-## 10. 交付物清单
+## 10. 客户指定 prompt + 50 步补测 ("A cat holding a sign that says hello world")
+
+客户邮件明确要求 50 步 + cat prompt 的 1K benchmark,本节提供 4 设备对照结果(10 seeds, guidance 4.0)。
+
+### 10.1 结果表
+
+| 设备 | 精度 | Load (s) | First (s) | **Mean (s)** | P95 (s) | Peak HBM/VRAM (GB) | 视觉 |
+|---|---|---:|---:|---:|---:|---:|---|
+| L4 g6.4xlarge | NF4 (bnb) | 428.9 | 395.4 | **372.17** | 386.57 | 19.7 | ✅ 猫 + "Hello World" 牌子清晰 |
+| H100 p5.4xlarge | BF16 + offload | 2.0 | 143.2 | **104.28** | 126.07 | 65.7 | ✅ 猫 + "Hello World" 清晰 |
+| H100 p5.4xlarge | FP8 (torchao) | 121.6 | 29.0 | **28.58** | 28.81 | 59.8 | ✅ 猫 + "Hello World" 清晰 |
+| **Neuron trn2.48xlarge** | **BF16 (ALL-Neuron)** | 195.2 | 33.2 | **33.24** | 33.57 | **~192 (TP=8)** | ✅ **猫 + "Hello World" 清晰** |
+
+### 10.2 速度解读 (50 步时)
+
+- **Neuron BF16** (33.24 s/image) vs **H100 BF16 + CPU offload** (104.28 s) → **Neuron 快 3.14×**
+- **H100 FP8** (28.58 s/image) 首次超过 Neuron BF16,因为 offload 被关闭 + FP8 matmul 3×-4× tensor-core 吞吐。若 H100 有足够显存不做 offload,50 步 BF16 也会显著加速,但 FLUX.2-dev (32B DiT + 24B TE, BF16 ≈ 128 GB) 单卡 80 GB 装不下必须 offload。
+- **L4 NF4** (372.17 s) 相对 Neuron BF16 慢 **11.2×**,但内存占用最低 (19.7 GB),适合 prosumer / 低端部署。
+- 28 步 vs 50 步: Neuron 22.68 → 33.24 (×1.47,步数从 28→50 = ×1.79,VAE/load 不随步数变),H100 FP8 68.6 → 28.58 (28 步时未做 offload 对比本次,解读需结合两配置差异)。
+
+### 10.3 样例路径 (seed 42, cat prompt)
+
+| 设备 / 精度 | 样例 PNG |
+|---|---|
+| L4 NF4 | `task012/results/l4_nf4_1024_cat_50step/seed0042_cat.png` |
+| H100 BF16 | `task012/results/h100_bf16_1024_cat_50step/seed0042_cat.png` |
+| H100 FP8 | `task012/results/h100_fp8_1024_cat_50step/seed0042_cat.png` |
+| **Neuron BF16** | `task012/results/bench_neuron_cat_50/neuron_bf16_1024_cat_50step/seed0042_cat.png` |
+
+### 10.4 客户需求对齐状态
+
+| 客户要求项 | 状态 |
+|---|---|
+| 推理步数 50 | ✅ 已补测 (本节) |
+| Prompt: "A cat holding a sign that says hello world" | ✅ 已补测 (本节) |
+| 分辨率 1K / 2K | ✅ 1K + 2K 均已测 (第 3 节 & 本节) |
+| 4K (4096²) | ❌ FLUX.2 官方最大支持 4 MP (~2048²),4K 超规格,**跳过** |
+| 显存虚拟化 1/2 / 1/4 | ❌ trn2 LNC 是计算切分不是显存隔离,不适用 (第 7 节已说明) |
+
+---
+
+## 11. 交付物清单
 
 | 交付物 | 位置 | 备注 |
 |---|---|---|
 | 本报告 (Markdown) | `/Users/xniwang/oppo-opencode/working/flux2/REPORT_flux2.md` | |
 | 原始 benchmark JSON / CSV | `/Users/xniwang/oppo-opencode/working/flux2/task001/results/`, `task002/results/` | per-device 10-seed 数据 |
 | 生图样例包 (1K × 10 seed) | `task001/results/l4_nf4_1024/`, `task002/results/{h100_bf16,h100_fp8}_1024/`, `task010/results/neuron_bf16_1024/` | PNG,按 device/resolution/seed 分类 |
-| 生图样例包 (2K) | `task002/results/{h100_bf16,h100_fp8}_2048/` | 2K L4 OOM, 2K Neuron 待补 |
+| 生图样例包 (2K × 10 seed) | `task002/results/{h100_bf16,h100_fp8}_2048/`, `task010/results/neuron_bf16_2048/` | 2K L4 OOM (超 24 GB) |
+| 生图样例包 (cat 50-step × 10 seed) | `task012/results/{l4_nf4,h100_bf16,h100_fp8}_1024_cat_50step/`, `task012/results/bench_neuron_cat_50/neuron_bf16_1024_cat_50step/` | OPPO 客户邮件指定 prompt + 步数 |
 | 4-列对比 grid | `task011/results/grid_1024.png` | H100 BF16 / H100 FP8 / L4 NF4 / Neuron BF16 |
 | Code repo (GitHub) | `github.com/xniwangaws/NeuronStuff` | branch: `main` |
 | Code repo (GitLab AWS) | `gitlab.aws.dev/xniwang/NeuronStuff-flux2` | branch: `main` |
@@ -306,8 +348,9 @@ export NEURON_COMPILE_CACHE_URL=s3://xniwang-neuron-models-us-east-2/flux2-neff-
 | `task006/` | Neuron Text Encoder trace + cos_sim |
 | `task008/` | Neuron end-to-end smoke (ALL-Neuron 初版) |
 | `task009/` | Neuron pipeline driver 与 smoke |
-| `task010/` | Neuron 10-seed benchmark (ALL-Neuron v2) |
+| `task010/` | Neuron 10-seed benchmark (ALL-Neuron v2) — 1K + 2K |
 | `task011/` | PSNR/L1 指标计算 + 4-列对比 grid 生成 |
+| `task012/` | **客户补测**: cat prompt + 50 步 on L4 / H100 BF16 / H100 FP8 / Neuron BF16 |
 | `debug/` | 迭代调试图与 snapshot 对比 |
 | `neff_backups/` | DiT / TE / VAE NEFF 本地备份 |
 
