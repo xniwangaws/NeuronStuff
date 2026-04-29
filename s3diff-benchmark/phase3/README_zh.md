@@ -125,8 +125,3 @@ s3diff-benchmark/phase3/
    - 替换 diffusers 默认 attention 为 flash 实现, 修复 BF16 softmax 16K token drift
    - 1-2 天工作量
 
-## 成本
-
-- Phase 3 trn2.48xlarge capacity block: $474 (13h × 2 次)
-- Phase 3 H100 + L4 re-benchmark with cat: ~$12
-- 累计 (含 Phase 1/2): **~$1163**

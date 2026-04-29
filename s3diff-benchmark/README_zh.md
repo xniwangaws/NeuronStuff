@@ -134,14 +134,6 @@ python bench.py --device cuda --resolution 1K --num_runs 10 \
 | NxDI | 0.9.0 | — |
 | DLAMI | `Deep Learning AMI Neuron (Ubuntu 24.04) 20260410` | PyTorch 2.7 Ubuntu 22.04 |
 
-## 成本汇总
-
-| 阶段 | 花费 |
-|------|------|
-| GPU 实例 (3 天连跑意外) | ~$587 |
-| Trainium2 capacity block × 3 | ~$102 + $474 |
-| 总计 | **~$1163** |
-
 ## Phase 发展时间线
 
 - **Phase 1** (2026-04-24→27): GPU baseline + Neuron UNet 初版 (baked de_mod, tile 96)
