@@ -1,0 +1,43 @@
+{
+  "res_2048": {
+    "device": "H100-80GB",
+    "instance": "p5.4xlarge",
+    "model": "black-forest-labs/FLUX.2-dev",
+    "precision": "FP8",
+    "prompt": "A cat holding a sign that says hello world",
+    "resolution": 2048,
+    "steps": 50,
+    "guidance": 4.0,
+    "seed_base": 42,
+    "load_time_s": 121.45472057200004,
+    "first_image_s": 143.4997091629998,
+    "mean_steady_s": 144.20232545033338,
+    "p50_s": 144.20770034099996,
+    "p95_s": 144.2616854406005,
+    "per_run_s": [
+      143.4997091629998,
+      144.0607498749996,
+      144.1710487549999,
+      144.20019420100016,
+      144.26224951200038,
+      144.26099602000068,
+      144.21520648099977,
+      144.18564182499995,
+      144.2220925470001,
+      144.2427498369998
+    ],
+    "peak_vram_gb": 67.360241664,
+    "ok": true
+  },
+  "res_4096": {
+    "device": "H100-80GB",
+    "precision": "FP8",
+    "prompt": "A cat holding a sign that says hello world",
+    "resolution": 4096,
+    "steps": 50,
+    "ok": false,
+    "error_type": "OutOfMemoryError",
+    "error_msg": "CUDA out of memory. Tried to allocate 4.50 GiB. GPU 0 has a total capacity of 79.18 GiB of which 2.55 GiB is free. Including non-PyTorch memory, this process has 76.62 GiB memory in use. Of the allocated memory 68.38 GiB is allocated by PyTorch, and 7.57 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+    "per_run_s": []
+  }
+}

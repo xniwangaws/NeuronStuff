@@ -314,13 +314,72 @@ export NEURON_COMPILE_CACHE_URL=s3://xniwang-neuron-models-us-east-2/flux2-neff-
 |---|---|
 | 推理步数 50 | ✅ 已补测 (本节) |
 | Prompt: "A cat holding a sign that says hello world" | ✅ 已补测 (本节) |
-| 分辨率 1K / 2K | ✅ 1K + 2K 均已测 (第 3 节 & 本节) |
-| 4K (4096²) | ❌ FLUX.2 官方最大支持 4 MP (~2048²),4K 超规格,**跳过** |
+| 分辨率 1K / 2K | ✅ 1K + 2K 均已测 (第 3 节 & 本节 + §11) |
+| 4K (4096²) | ❌ FLUX.2 官方最大支持 4 MP (~2048²),4K 超规格,**所有设备 OOM (实测验证)** |
 | 显存虚拟化 1/2 / 1/4 | ❌ trn2 LNC 是计算切分不是显存隔离,不适用 (第 7 节已说明) |
 
 ---
 
-## 11. 交付物清单
+## 11. 补测: 2K cat-50-step + 4K 可行性 + Load time 优化 (session 2)
+
+### 11.1 2K cat-50-step benchmark (10 seeds, cat prompt)
+
+| 设备 | 精度 | Load (s) | Mean (s) | Peak HBM/VRAM (GB) |
+|---|---|---:|---:|---:|
+| L4 g6.4xlarge | NF4 2K | — | **OOM** (22 GB 装不下) | >22 |
+| H100 p5.4xlarge | BF16+offload | 883 | **232.15** | 68.9 |
+| H100 p5.4xlarge | FP8 (torchao) | 122 | **144.23** | 67.4 |
+| **Neuron trn2.48xlarge** | **BF16 (TP=8)** | 650 (EBS) | **178.59** | ~192 (TP=8) |
+
+**解读**: H100 FP8 144s 略快于 Neuron BF16 178s (约 1.24×)。Neuron BF16 比 H100 BF16+offload (232s) 快 1.30×。
+
+### 11.2 4K (4096²) 可行性 — 全部设备 OOM
+
+| 设备 | 结果 | 错误 |
+|---|---|---|
+| L4 NF4 | **OOM** | CUDA OOM: 4K 激活 >22 GB |
+| H100 BF16+offload | **OOM** | CUDA OOM: 73 GB alloc vs 80 GB cap |
+| H100 FP8 | **OOM** | CUDA OOM: 68 GB alloc + 4.5 GB activation request |
+| Neuron TP=8 4K | **未完成编译** | HLO 生成超时 (15+ min),4K NUM_PATCHES=65536 过大 |
+
+结论: **FLUX.2-dev 在当前公开 diffusers pipeline 下不支持 4K**。客户要求的 4K 超出 FLUX.2 官方 `max_area=4 MP` 规格。需要降分辨率或等 FLUX 更高 spec 版本。
+
+### 11.3 TP=4 可行性 — Neuron HBM 不够
+
+| 配置 | 结果 |
+|---|---|
+| Neuron TP=4 @ 1K NEFF | ✅ 编译成功 (60 GB) |
+| Neuron TP=4 @ 2K NEFF | ❌ 编译失败: `Allocation Failure` (HBM 不够) |
+| Neuron TP=4 @ 1K runtime | ❌ 运行失败: DiT+TE 一起共享 HBM, 每 NC pair 48 GB 容纳不下 TP=4 shard (2× TP=8 大小) + 512 MB scratchpad |
+
+**结论**: FLUX.2 (32B DiT + 24B TE = 56B BF16) 用 **TP=4 塞不下 4 个 Neuron 芯片**。官方推荐 TP=8 (8 芯片各承担 1/8 权重 ≈ 7 GB)。
+
+### 11.4 Load Time 优化: EBS gp3 baseline → NVMe RAID0
+
+客户关心 cold-start 加载时间,我们验证了两种 storage 方案:
+
+| Storage 方案 | TP=8 1K Load | 加速 |
+|---|---|---|
+| **EBS gp3 baseline (125 MB/s)** | **795s** (13.3 min) | 1× |
+| **NVMe RAID0 (4 × 1.7 TB trn2 instance store)** | **88s** (1.5 min) | **9.1× 快** |
+| 同实例 warm 启动 (page cache hit) | ~5s 估 | **>150×** |
+
+**推荐部署方案**: 在 `/etc/fstab` 挂载 4× NVMe 为 RAID0 at `/mnt/nvme/neff/`,NEFF 一次性 `aws s3 sync s3://bucket/neff/` 下来(~5-10 min,受 S3 并发),之后 `torch.jit.load` 从 NVMe ~90s 就完成。容器冷启 total ~10 min (首次) → 常驻后 **毫秒级**。
+
+### 11.5 数据来源 (全部实测 results.json)
+
+| 设备/分辨率 | 路径 |
+|---|---|
+| Neuron TP=8 1K cat-50 (EBS) | `task013/results/neuron_tp8_1024_cat_50step/results.json` |
+| Neuron TP=8 1K cat-50 (NVMe) | `task013/results/neuron_tp8_1024_cat_50step_nvme/results.json` |
+| Neuron TP=8 2K cat-50 | `task013/results/neuron_tp8_2048_cat_50step/results.json` |
+| H100 BF16 2K/4K cat-50 | `task013/results/h100/h100_bf16_{2048,4096}_cat_50step/results.json` |
+| H100 FP8 2K/4K cat-50 | `task013/results/h100/h100_fp8_{2048,4096}_cat_50step/results.json` |
+| L4 NF4 2K/4K smoke OOM | `task013/results/l4_nf4_smoke/smoke_results.json` |
+
+---
+
+## 12. 交付物清单
 
 | 交付物 | 位置 | 备注 |
 |---|---|---|
