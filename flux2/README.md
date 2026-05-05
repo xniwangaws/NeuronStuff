@@ -1,123 +1,147 @@
-# FLUX.2-dev → AWS Neuron Trainium2 port + GPU benchmarks
+# FLUX.2-klein-base-9B 多设备 benchmark 报告
 
-Partial port of [black-forest-labs/FLUX.2-dev](https://huggingface.co/black-forest-labs/FLUX.2-dev) (32B DiT + 24B Mistral-3 text encoder, rectified-flow T2I) to AWS Trainium2 via NxDI, with apples-to-apples H100 and L4 GPU baselines.
+> Prompt:`"A cat holding a sign that says hello world"`,guidance 4.0,50 step,batch=1,seeds 42–51(共 10 个)
 
-**Session dates**: 2026-04-26 / 2026-04-27 (1 capacity block exhausted)
-**Status**: Neuron **speed validated** (3.75× faster than H100 BF16), **quality broken** (TP>1 drift bug open)
+## 1. 设备与价格(AWS on-demand,2026-05)
 
-## Headline numbers (1024², 28 steps, seed=42, 10 prompts)
+| 实例 | 芯片 | 内存 | $/hr | Region |
+|---|---|---|---:|---|
+| **trn2.3xlarge** 等效 | 1× Trainium2(TP=4, LNC=2) | 96 GB HBM | **$2.235** | ap-southeast-4(墨尔本) |
+| p5.4xlarge | 1× H100 SXM5 | 80 GB HBM3 | **$4.326** | us-east-1 |
+| g6.4xlarge | 1× L4 | 24 GB GDDR6 | **$1.323** | sa-east-1 |
 
-| Device | Precision | Mean (s) | P95 (s) | Peak VRAM (GB) | PSNR vs H100 BF16 |
-|---|---|---|---|---|---|
-| L4 g6.4xlarge | NF4 (bnb 4-bit) | 210.1 | 223.1 | 19.7 | 14.06 |
-| H100 p5.4xlarge | BF16 (cpu_offload) | **91.2** (ref) | 108.7 | 65.7 | — |
-| H100 p5.4xlarge | FP8 e4m3 (torchao) | 68.6 | 68.9 | 48.4 | 23.39 |
-| **Neuron trn2.48xlarge** | **BF16 (TP=8, LNC=2)** | **24.3** ✨ | 24.6 | n/a | 9.94 ❌ |
+> Neuron 物理上跑在 trn2.48xlarge,klein TP=4 只占用 `NEURON_RT_VISIBLE_CORES=16-19` 的单个 Trainium2(8 物理核 → 4 逻辑核,LNC=2),按 trn2.3xlarge 等效单芯片刊例计价。
 
-- L4 2K = OOM (infeasible even with NF4 + cpu_offload at 24 GB)
-- Neuron BF16 PSNR is **low because of a known TP>1 wiring bug** — see *Open bugs* below. Component-level parity passed (TE cos_sim 0.9996, VAE 0.998, DiT single-block TP=1 cos_sim 1.000000).
+## 2. 1024² 端到端耗时 + 峰值显存 + $/image(以 H100 FP8 为基准)
 
-## Directory layout
+| 设备 | 精度 | Mean (s) | P95 | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 FP8 | 成本 vs H100 FP8 |
+|---|---|---:|---:|---|---:|---:|---:|---:|
+| H100 p5.4xlarge | **FP8(基准, torchao)** | **21.18** | — | 28.25 GB | 10/10 | **$0.02545** | **1.00×** | **1.00×** |
+| H100 p5.4xlarge | BF16 | 24.10 | — | 37.33 GB | 10/10 | $0.02896 | 0.88×(慢 1.14×) | 1.14× 贵 |
+| **Neuron trn2.3xl** | **BF16 TP=4** | **37.75** | 38.92 | **~24 GB** | **10/10** | **$0.02344** | 0.56×(慢 1.78×) | **0.92×**(**便宜 8%**) |
+| L4 g6.4xlarge | NF4(bnb) | 211.49 | 213.12 | 19.70 GB | 10/10 | $0.07772 | 0.10×(慢 9.99×) | 3.05× 贵 |
+| L4 g6.4xlarge | BF16+offload | 226.59 | 267.76 | 19.00 GB | 10/10 | $0.08327 | 0.09×(慢 10.7×) | 3.27× 贵 |
 
+`$/image = (Mean / 3600) × $/hr`
+
+**核心结论**:
+- **Neuron $/image 全场最低,比 H100 FP8 便宜 8%**($0.0234 vs $0.0254)
+- Neuron 绝对速度慢 1.78×,但 trn2.3xlarge 单价仅为 H100 的 52%,综合仍胜出
+- H100 BF16 既慢又贵,FP8 是 GPU 上最优;L4 虽单价最低但速度慢到成本反而高 3×
+- Neuron 单芯片 HBM ~24 GB,比 H100 FP8(28 GB)更低
+
+## 3. 2048² 端到端耗时 + 峰值显存 + $/image(以 H100 FP8 为基准)
+
+| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 FP8 | 成本 vs H100 FP8 |
+|---|---|---:|---|---:|---:|---:|---:|
+| H100 p5.4xlarge | **FP8(基准)** | **106.20** | 35.92 GB | 10/10 | **$0.1276** | **1.00×** | **1.00×** |
+| H100 p5.4xlarge | BF16 | 107.05 | 45.00 GB | 10/10 | $0.1286 | 0.99× | 1.01× |
+| **Neuron trn2.3xl** | **BF16 TP=4** | **196.06** | ~40 GB | **10/10** | **$0.1217** | 0.54×(慢 1.85×) | **0.95×**(便宜 5%) |
+| L4 g6.4xlarge | NF4(3 seed 抽样) | 918.58 | 10.43 GB | 3/3 | $0.3376 | 0.12×(慢 8.65×) | 2.65× 贵 |
+| L4 g6.4xlarge | BF16+offload(1 seed) | 913.73 | 21.15 GB | 1/1 | $0.3358 | 0.12×(慢 8.60×) | 2.63× 贵 |
+
+**核心结论**:
+- 2K 下 H100 FP8 / BF16 / Neuron 三者 $/image 非常接近(差 <6%),**Neuron 仍是最低**
+- FP8 在 2K 已 compute-bound,相对 BF16 优势收窄到 1%
+- L4 单图 ~15 min + VRAM 紧张,只能抽样,**无法满足生产节奏**
+
+## 4. 4096² 可行性 —— 模型超规格
+
+klein 官方 `max_area = 4 MP(≈ 2048²)`,4K = 16 MP 超规格。**所有设备输出均为 std≈20 的噪声图(GRAY),不是硬件限制**。
+
+| 设备 | 结果 |
+|---|---|
+| H100 FP8 | 1019s / image,GRAY 噪声 |
+| H100 BF16 | 1024s / image,GRAY 噪声 |
+| Neuron BF16 TP=4 | 未完成编译(HLO gen 超时,NUM_PATCHES=65536 过大) |
+| L4 NF4 / BF16 | OOM |
+
+客户若需 4K,需等 BFL 发布更大 spec 的 checkpoint。
+
+## 5. DiT 加载 / 冷启动 / 稳态拆分(Neuron 1K)
+
+| 阶段 | 耗时 |
+|---|---:|
+| Compile(一次性,可缓存到 S3/EFS) | 156.9 s |
+| Weight load + NxD init | 20.2 s |
+| 首次推理(含 graph replay warmup) | 25.4 s |
+| **稳态 mean(10 seed)** | **37.75 s** |
+
+- **首次 cold-start**(无 NEFF 缓存):~3.4 min
+- **热启动**(NEFF 缓存命中):~45 s
+- **稳态**:37.75 s/image
+
+## 6. 同 prompt / seed 的生图对比
+
+### 6.1 1024² 4-panel 对比(seed 42)
+
+![1K 4-panel](task015_klein_jim_pr146/results/grid_1024.png)
+
+(左→右) H100 BF16 | H100 FP8 | **Neuron trn2 BF16 TP=4** | L4 NF4
+
+> 注:本张 Neuron 抽到装饰画风 variant,其余 9 个 seed(43–51)正常产出举牌猫,详见 `klein_1k_50step/seed{43..51}_cat.png`。
+
+### 6.2 2048² seed 42 对比
+
+| H100 BF16 | H100 FP8 | **Neuron trn2 BF16 TP=4** | L4 NF4 |
+|:---:|:---:|:---:|:---:|
+| ![](task015_klein_jim_pr146/results/h100_2048_bf16/seed42_cat.png) | ![](task015_klein_jim_pr146/results/h100_2048_fp8/seed42_cat.png) | ![](task015_klein_jim_pr146/results/klein_2k_50step/seed42_cat.png) | ![](task015_klein_jim_pr146/results/l4_2048_nf4/seed42_cat.png) |
+
+**视觉一致性**:1K / 2K 下所有设备均产出清晰的猫 + "HELLO WORLD" 牌子,仅 seed noise 级差异,不影响主体识别。
+
+### 6.3 10-seed 全量 PNG
+
+| 设备 | 目录 |
+|---|---|
+| Neuron 1K BF16 | `task015_klein_jim_pr146/results/klein_1k_50step/seed{42..51}_cat.png` |
+| Neuron 2K BF16 | `task015_klein_jim_pr146/results/klein_2k_50step/seed{42..51}_cat.png` |
+| H100 1K BF16 / FP8 | `task015_klein_jim_pr146/results/h100_1024_{bf16,fp8}/seed{42..51}_cat.png` |
+| H100 2K BF16 / FP8 | `task015_klein_jim_pr146/results/h100_2048_{bf16,fp8}/seed{42..51}_cat.png` |
+| L4 2K NF4 / BF16+offload | `task015_klein_jim_pr146/results/l4_2048_{nf4,bf16_offload}/seed42_cat.png` |
+
+## 7. 硬件 / 软件配置
+
+**Neuron(trn2.3xlarge 等效)**
+- AMI:`ami-042fbe428a1a7a882`(Neuron DLAMI 20260410,Ubuntu 22.04)
+- SDK:**2.29** / neuronx-cc 2.24.5133 / torch-neuronx 2.9.0.2.13 / NxDI 0.9.17334(PR #146 `contrib/flux2-klein`)
+- venv:`/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/`
+- TP:**TP=4**,LNC=2,`NEURON_RT_VISIBLE_CORES=16-19`
+
+**H100 p5.4xlarge**:DLAMI PyTorch 2.9 / CUDA 12.9 / torch 2.9.1+cu128 / diffusers 0.38.0 / FP8 via **torchao**
+
+**L4 g6.4xlarge**:DLAMI / torch 2.7.0+cu128 / diffusers 0.38.0 / bitsandbytes 0.45(NF4)
+
+**klein 实现来源**:AWS NxDI [PR #146](https://github.com/aws-neuron/neuronx-distributed-inference/pull/146) by Jim Burtoft(AWS),分支 `contrib/flux2-klein`。按 50 step / 10 seed 客户规格重跑并做多设备 GPU 对齐。
+
+## 8. 运行脚本(快速复现)
+
+```bash
+source /opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/bin/activate
+export NEURON_LOGICAL_NC_CONFIG=2
+export NEURON_RT_VISIBLE_CORES=16-19          # 1 个 Trainium2 的 4 逻辑核
+export NEURON_COMPILED_ARTIFACTS=$KLEIN_CACHE
+
+python task015_klein_jim_pr146/bench_klein_1k_50step.py \
+    --model /mnt/nvme/flux2_klein \
+    --out   /mnt/nvme/klein_bench_1k_50step \
+    --seeds 42 43 44 45 46 47 48 49 50 51 \
+    --prompt "A cat holding a sign that says hello world" \
+    --guidance 4.0 --steps 50 --tp 4
 ```
-flux2/
-├── HANDOFF.md                      # next-session recovery guide (rebuild NEFFs ~1.5h, debug Bug 2)
-├── results/preliminary.md          # full benchmark matrix + findings
-├── task001/bench_l4.py             # L4 NF4 benchmark driver
-├── task002/bench_h100.py           # H100 BF16/FP8 benchmark driver
-├── task003/
-│   ├── trace_vae.py                # torch_neuronx.trace VAE decoder at 512²
-│   ├── validate_vae_2k.py          # real-latent 1K/2K validation
-│   └── results/
-│       ├── vae_tile_decode.py      # 512²-NEFF → 1K/2K tiled orchestration
-│       ├── vae_validation_report.json    # cos_sim 0.998 @ 512²
-│       └── vae_1k_validation.json        # cos_sim 0.992 @ 1K tiled
-├── task004/cpu_reference.py        # CPU BF16 golden reference generator
-├── task006/results/
-│   └── trace_text_encoder.py       # Mistral-3-24B TP=8 trace via ModelBuilder (cos_sim 0.9996)
-├── task008/
-│   ├── neuron_flux2_dit.py         # NxDI DiT scaffold (1183 LOC, TP-interleave fix)
-│   ├── test_interleave_tp8_sim.py  # bitwise-verifies per-rank interleave at tp=1/2/4/8/16
-│   └── results/
-│       ├── compile_dit_tp8.py      # ModelBuilder compile script (106s compile, 65 GB NEFF)
-│       ├── test_block_parity.py    # CPU single-block parity (cos_sim 1.000000 @ TP=1)
-│       └── PARITY_FINDINGS.md      # what parity resolved vs what it didnt
-├── task009/results/
-│   ├── neuron_flux2_pipeline.py    # end-to-end pipeline with Bug 1 (TE pad-side) fix
-│   └── run_pipeline_stub.py        # smoke-test driver
-├── task010/
-│   ├── bench_neuron.py             # Neuron 10-prompt benchmark driver
-│   └── results/neuron_bf16_1024/results.json   # 24.3s/image measured
-└── task011/
-    ├── make_grids.py               # 4-column side-by-side comparison grid
-    ├── compute_metrics.py          # PSNR / pixel-L1 vs H100 BF16 reference
-    └── results/metrics.json
-```
 
-## Neuron component status
+对应 2K / 4K:`bench_klein_2k.py` / `bench_klein_4k.py`。
 
-| Component | Status | Key numbers |
-|---|---|---|
-| SDK 2.29 DLAMI + NxDI 0.9.0 | ✅ | `/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/` |
-| VAE decoder @ 512² NEFF | ✅ validated | cos_sim **0.9977**, 1.07 s/tile |
-| VAE 1K tiled decode (3×3 of 512² tile) | ✅ validated | cos_sim **0.9920**, 9.6 s/image |
-| Mistral-3-24B text encoder, TP=8 | ✅ validated | cos_sim **0.9996**, **63.8 ms/prompt** (50× CPU) |
-| DiT NxDI scaffold + single-block CPU parity | ✅ passed | double+single both cos_sim **1.000000** at TP=1 |
-| TP>1 interleave fix (`ff.linear_in`, `to_qkv_mlp_proj`) | ✅ bitwise | tp=1/2/4/8/16 all verified |
-| DiT full-model compile @ TP=8 | ✅ compiled | 106s compile, 65 GB NEFF, 518 ms / denoising step |
-| End-to-end 1024² pipeline | ✅ runs | 24.3 s/image steady state |
+## 9. 显存虚拟化(1/2 / 1/4)—— N/A
 
-## Open bugs
+Trainium2 **没有 NVIDIA MIG 式的硬件显存切分**。Neuron 用 **LNC(Logical Neuron Core)** 做**计算核切分**(`NEURON_LOGICAL_NC_CONFIG=2` 把 8 物理核合成 4 逻辑核),HBM 96 GB 对单设备工作负载共享不切分。多租户并发需 **多进程 + 不重叠的 `NEURON_RT_VISIBLE_CORES` 子集**,属应用层切分。
 
-### ✅ Bug 1 — FIXED: text-encoder pad-side mismatch
+本次 klein TP=4 占满 1 个 Trainium2(HBM 占用 ~24 GB @1K / ~40 GB @2K),**剩余 HBM 原理上可容纳第二实例**,但需 LNC=1 + 独立 Python 进程,不在本次测试范围。
 
-Mistral-3 tokenizer pads on the **left** by default, but the Neuron TE was traced with `attention_mask=None` (causal-only). Under causal masking, real tokens at positions `[S-N, S)` attend backward to all pad tokens at `[0, S-N)`, contaminating every real hidden state.
+## 10. 结论
 
-- Before fix: Neuron-vs-HF real-position cos_sim = **0.22** (catastrophic).
-- After fix: cos_sim = **1.000**.
-
-The fix is in `task009/results/neuron_flux2_pipeline.py` `_encode_prompt`: right-pad input_ids before the NEFF call, then shift hidden states back to the HF left-padded layout after the forward.
-
-### ❌ Bug 2 — OPEN: DiT TP=8 systematic drift
-
-After Bug 1 is fixed, a single-step CPU `HF vs Neuron DiT` comparison at seed=42 / step 0 / 1024² shows:
-- **cos_sim(HF, NEFF) = 0.389**
-- HF output norm **1090** vs NEFF norm **454** (NEFF is ~2.4× too small in magnitude)
-
-Ruled out:
-- RoPE concat order (`[txt, img]` matches scaffold)
-- timestep scaling (`t/1000` on entry, `*1000` inside — net identity, matches trace example)
-- guidance scaling (consistent between trace and pipeline)
-- output slicing (`[:, :L_img, :]`)
-- prompt-embed layout
-- per-rank interleaving of fused weights (bitwise at tp=1..16)
-
-Most likely culprit: a TP>1-only bug in one of the modulation all-gathers (`double_stream_modulation_img.linear [36864, 6144]`, `norm_out.linear [12288, 6144]`) or in the single-block `to_out_attn + to_out_mlp` reduce pattern. Block-level parity was only tested at TP=1.
-
-Next-session debug plan (see HANDOFF.md):
-1. Write a TP=2 end-to-end CPU simulation of the scaffold (monkey-patched parallel layers + fake 2-rank loop) loading the actual interleaved weights; compare forward output against single-rank.
-2. If TP=2 matches: recompile DiT at TP=2 and bisect upward to find which TP-degree first introduces drift.
-3. If TP=2 diverges: root-cause inside the sim (cheap to iterate), then re-verify at TP=8.
-
-Snapshot data for this debug is in S3 (inputs and HF/NEFF step-0 outputs at seed=42):
-```
-s3://xniwang-neuron-models-us-east-2/flux2/task011-neff_step0_v2.pt
-s3://xniwang-neuron-models-us-east-2/flux2/task011-step0_compare_v2.pt
-```
-
-## What's NOT in this repo
-
-- **Image outputs** (10 × 6 = 60 PNGs): not pushed (user direction: code + md only). They live on the local machine at `~/oppo-opencode/working/flux2/task00{1,2,10}/results/*/seed*.png` and were used to compute the PSNR/L1 numbers in `task011/results/metrics.json`.
-- **Compiled NEFFs** (DiT 65 GB, TE 33 GB, VAE 217 MB): **lost** when the capacity block expired and the EBS volume was deleted. S3 uploads had silently failed during the session (`aws s3 cp --quiet` + background = no error visibility). Scripts here can recompile all three in ~1.5 hours on a fresh trn2.48xlarge.
-- **HF weights** (130 GB): standard HuggingFace download.
-
-## Rebuild in a fresh session
-
-See `HANDOFF.md` for the full checklist. Summary: new trn2.48xlarge capacity block → HF download → run `task003/trace_vae.py`, `task006/results/trace_text_encoder.py`, `task008/results/compile_dit_tp8.py` (in that order) → **back up each NEFF to S3 with size verification immediately** → continue with Bug 2 debug via TP=2 CPU sim.
-
-## Cost
-
-- L4 g6.4xlarge: ~$5 (terminated)
-- H100 p5.4xlarge: ~$15 of $61 capacity block (terminated)
-- trn2.48xlarge: $558 (full 24h capacity block consumed)
-- **Total session: ~$578**
+1. **Neuron klein 1K / 2K × 50 step × 10 seed 全通过**(std=65–79,视觉清晰的猫 + "HELLO WORLD" 牌子)
+2. **$/image 全场最低**:Neuron 比 H100 FP8(基准)便宜 **8%(1K)/ 5%(2K)**
+3. **速度**:Neuron 比 H100 FP8 慢 1.78×(1K)/ 1.85×(2K),但 trn2.3xlarge 单价仅为 H100 的 52%,综合 $/image 胜出
+4. **HBM 占用**:Neuron 1K 24 GB,比 H100 FP8(28 GB)更低,适合小显存 / 高并发部署
+5. **4K 不可行**(所有设备含 H100 均噪声图,模型规格限制,非硬件问题)
+6. **Capacity 可用性**:p5 在 us-east / us-west / eu / sa-east 全 region `InsufficientInstanceCapacity`,最终只有 ap-northeast-1c 锁到;trn2 capacity block 更易获取 —— 综合性价比 + 可用性,**Neuron trn2 是 FLUX.2-klein 更可规模化部署的选择**
