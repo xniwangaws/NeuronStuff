@@ -1,0 +1,30 @@
+[load] S3Diff...
+[R4b] replaced UNet LoRA: 257, VAE LoRA: 31
+[load] total 13.4s
+[compile] wrapped 2 submodules: ['conv_in', 'conv_out']
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+WARNING:torch_neuronx.python_ops.dtype_autocast:Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 34.691s
+[run 1 COLD] 34.79s
+[saved] /tmp/phase_r4b_cat.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.099s
+[run 2 warm#1] 8.13s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.205s
+[run 3 warm#2] 8.23s
+
+=== Phase R4b scope=convs RESULT ===
+  run 1: 34.79442954399565
+  run 2: 8.129496203007875
+  run 3: 8.232826514009503
+sr_image: /tmp/phase_r4b_cat.png
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.

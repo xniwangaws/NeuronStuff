@@ -8,15 +8,25 @@ per site) into a single `DeModLoRA*` module that folds the matmul and einsum
 Ship target: **eager bf16 with DeModLoRA**, 8.19s mean warm latency on 5 test
 images, PSNR 42.78 dB ± 2.44 vs CPU fp32 reference.
 
-## TL;DR comparison
+## TL;DR comparison (cat 1K)
 
-| Stack | Warm mean | Cold | PSNR mean | PSNR range | NEFFs/warm |
-|---|---|---|---|---|---|
-| Phase 3 trace fp32 (1K cat) | 24.91s | ~30 min/image | 24.55 dB (seam) | — | N/A |
-| **Phase E eager bf16** (baseline) | 8.75s | 30-73s | 42.72 dB | 38.54–45.65 | 7,344 ops |
-| **Phase R eager bf16 DeModLoRA** | **8.19s** (-6.4%) | 30s first, 8s cached | **42.78 dB** (+0.06) | **38.64–45.63** | ~7,000 ops |
+| Stack | Warm | Cold | PSNR vs CPU fp32 |
+|---|---|---|---|
+| H100 bf16 | **1.26s** | 9.6s | 45.10 dB |
+| L4 bf16 | 2.34s | 6.4s | 45.15 dB |
+| CPU eager fp32 | 54.0s | — | ref |
+| Trn2 Phase 3 trace fp32 | 24.91s | ~30 min/image | 24.55 dB (seam) |
+| Trn2 Phase E eager bf16 (baseline) | 8.60s | 73s | 43.26 dB |
+| **Trn2 Phase R eager bf16 DeModLoRA** | **8.19s** (-4.8%) | 30s first, 8s cached | **43.40 dB** (+0.14) |
+| **Trn2 Phase R + R4c selective compile** | **7.93s** (-7.8%) | 64s | **43.41 dB** (+0.15) |
 
-On the cat image specifically: Phase E 8.60s / 43.26 dB → **Phase R 8.17s / 43.40 dB** (+0.14 dB).
+Mean across 5 test images (cat/bus/bird/butterfly/woman): Phase E 8.75s /
+42.72 dB → Phase R 8.19s / 42.78 dB (+0.06 dB mean). On cat specifically,
+Phase R is 8.17s / 43.40 dB and **R4c is 7.93s / 43.41 dB**.
+
+**Still 6.3× slower than H100.** The remaining gap is host dispatch and
+attention-on-Neuron compile bugs (see section 4). Path B full NxDI port (4-6
+person-weeks) remains the only known path to ~2s on Trn2.
 
 ## What changed
 
@@ -71,21 +81,33 @@ Linear(lora_A) + einsum(fold) + einsum(apply) + mul + add` = ~6 ops still —
 **The 7,344 ops/image host dispatch gap (42% wall) is still there**. Only a
 real trace (which this `torch_neuron_eager` SDK doesn't expose) can attack that.
 
-### 4. torch.compile still doesn't work
+### 4. torch.compile partial works — selective compile (R4c)
 
-`phase_r4_compile_unet.py` tries `torch.compile(backend="neuron")` on the
-DeModLoRA-replaced UNet. Outcome:
-- Compile completes (no NCC_IRPX901 this time! The DeModLoRA IR pattern is
-  different enough to avoid the peft-LoRA-proj_in bug.)
-- Warm latency drops to **4.83s** (-44% vs Phase E)
-- BUT: PSNR is **13.41 dB** — output is recognizably a cat but hallucinated
-  (extra eyes, banded textures). The log shows many `CPU fallback failed for
-  'model_default': No CPU implementation found for operation: model_default`
-  warnings — some subgraph silently produces wrong output. Not shippable
-  without debugging the specific failing op.
+Tried `torch.compile(backend="neuron")` at multiple granularities. Results:
 
-Artifact: `logs/phase_r4.log`. Image (visibly broken): would save as
-`images/cat_phase_r_compile_broken.png` if committed (skipping).
+| Compile scope | Warm | PSNR | Status | Log |
+|---|---|---|---|---|
+| Full UNet | 4.83s | **13.41 dB** | ❌ Hallucinated output | `phase_r4.log` |
+| `down_blocks` (4 CrossAttnDownBlock2D) | 7.33s | **24.53 dB** | ❌ Garbage | `phase_r4b_down.log` |
+| `mid_block` (UNetMidBlock2DCrossAttn) | 7.98s | 43.24 dB | ⚠️ -0.16 dB | `phase_r4b_mid.log` |
+| `conv_in + conv_out` only | 8.13s | 43.40 dB | ✅ Safe | `phase_r4b_convs.log` |
+| **R4c: non-attention (conv_in, conv_out, time_emb, DownBlock2D[3], UpBlock2D[0])** | **7.93s** | **43.41 dB** | ✅ **Ship candidate** | `phase_r4c.log` |
+
+**Finding**: any compile unit that contains `Attention` (diffusers' `Attention`
+class under `BasicTransformerBlock`) silently produces wrong output. The log
+shows `CPU fallback failed for 'model_default': No CPU implementation found
+for operation: model_default` — some op in the attention graph has no Neuron
+kernel, and fallback fails without raising. `NCC_IRPX901` from Phase E didn't
+fire this time (DeModLoRA changed the IR enough) but a different compile path
+is broken.
+
+**R4c (non-attention compile)** compiles only the 5 submodules without
+attention. Warm drops from 8.19s (eager DeMod) to **7.93s** with identical
+PSNR. This is the best _shippable_ compile scope.
+
+Artifact images: `cat_phase_r4c.png` (safe, 43.41 dB), `cat_phase_r4b_cat.png`
+(convs only), `cat_phase_r4b_mid.png` (mid, 43.24 dB), `cat_phase_r4b_down.png`
+(visibly broken, 24.5 dB).
 
 ## 5-image bench (1K SR, cat_LQ_256 size)
 

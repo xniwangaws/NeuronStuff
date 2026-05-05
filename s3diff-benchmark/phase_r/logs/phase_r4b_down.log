@@ -1,0 +1,32 @@
+[load] S3Diff...
+[R4b] replaced UNet LoRA: 257, VAE LoRA: 31
+[load] total 14.5s
+[compile] wrapped 4 submodules: ['down_blocks[0]', 'down_blocks[1]', 'down_blocks[2]', 'down_blocks[3]']
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+WARNING:torch_neuronx.python_ops.dtype_autocast:Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 147.057s
+[run 1 COLD] 147.16s
+[saved] /tmp/phase_r4b_down.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.298s
+[run 2 warm#1] 7.33s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.430s
+[run 3 warm#2] 7.46s
+
+=== Phase R4b scope=down RESULT ===
+  run 1: 147.15729759300302
+  run 2: 7.327667445002589
+  run 3: 7.4605060659960145
+sr_image: /tmp/phase_r4b_down.png
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
