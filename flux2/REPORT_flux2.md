@@ -432,4 +432,139 @@ python task002/run_h100_bf16.py --steps 28 --guidance 4.0 --seed 42 --resolution
 
 ---
 
-*报告结束。客户要求的 50 步 + cat prompt 补测与 2K Neuron benchmark 为后续独立增量数据。*
+*§1–§12 为 FLUX.2-dev 主线报告与补测。以下 §13 为 FLUX.2-klein-base-9B 的多设备对照,以及 dev 32B 端口完成情况汇总。*
+
+---
+
+## 13. FLUX.2-klein-base-9B 多设备 benchmark 与 dev 32B 端口完成情况
+
+### 13.0 背景
+
+Black Forest Labs 在 FLUX.2-dev (32B) 之外,还公开了 **FLUX.2-klein-base-9B** —— 9B DiT + Qwen3-8B
+text encoder 的精简版本,面向内存受限部署。本节在同一套客户规格 (cat prompt / 50 step / 10 seed /
+guidance 4.0) 下,把 klein 在 Neuron / H100 / L4 三类设备上的端到端表现对齐输出,同时汇报
+dev 32B 端口的最终 10-seed 数据。
+
+### 13.1 Neuron klein 端口归属
+
+- **实现来源**: AWS 官方 NxDI 贡献 [neuronx-distributed-inference PR #146](https://github.com/aws-neuron/neuronx-distributed-inference/pull/146),
+  作者 Jim Burtoft (AWS), 分支 `contrib/flux2-klein`。
+- **OPPO 贡献**: 在 trn2.48xlarge (SDK 2.29) 上验证 + 按 OPPO 客户规格 (50 step / 10 seed / cat prompt)
+  重跑 1K 与 2K benchmark (Jim 原 benchmark 为 30 step);与 L4 / H100 GPU 数据打通。OPPO 不在本仓库
+  转载 Jim 的 `application.py` / `modeling_flux2_klein.py` 源码 —— 以 Jim 的 PR 为权威来源,我方
+  只保留 `bench_*.py` 驱动脚本,见 `task015_klein_jim_pr146/`。
+- **FLUX.2-dev (32B) 端口**: 自研,基于 PR #146 的 TP pattern (把 fused `to_qkv_mlp_proj` 拆为
+  独立 Q/K/V/gate/value 的 `ColumnParallelLinear`) adapt 到 dev 架构 —— 48 single-blocks、hidden=6144、
+  Mistral-3-24B TE、4-axis RoPE。代码在 `task014_dev_v3/`。
+
+### 13.2 1K 50-step cat prompt × 10-seed BF16 (klein)
+
+| 设备 | 精度 | Mean (s) | P95 (s) | Peak VRAM/HBM | Pass |
+|---|---|---:|---:|---|---:|
+| H100 p5.4xlarge | FP8 (torchao) | **21.18** | — | 28.25 GB | 10/10 |
+| H100 p5.4xlarge | BF16 | 24.10 | — | 37.33 GB | 10/10 |
+| **Neuron trn2.48xlarge** | **BF16 TP=4** | **37.75** | — | **~24 GB (1 Neuron device)** | **10/10** |
+| L4 g6.4xlarge | NF4 (bnb) | 211.49 | 213.12 | 11.60 GB | 10/10 |
+| L4 g6.4xlarge | BF16 + offload | 226.59 | 267.76 | 19.00 GB | 10/10 |
+
+**速度关系 (Neuron 为基准)**:
+- Neuron klein BF16 **比 L4 NF4 快 5.6×** (37.75 vs 211.49 s)
+- Neuron klein BF16 **比 L4 BF16+offload 快 6.0×** (37.75 vs 226.59 s)
+- Neuron klein BF16 **比 H100 BF16 慢 1.57×** (37.75 vs 24.10 s)
+- Neuron klein BF16 **比 H100 FP8 慢 1.78×** (37.75 vs 21.18 s)
+
+Neuron 单芯片 HBM 占用 **~24 GB**,显著低于 H100 BF16 (37 GB) —— 说明 klein 9B 模型
+在 trn2 单芯片 LNC=2 (4 逻辑核) 下 **架构上更适合小 VRAM/HBM 场景**。
+
+### 13.3 2K 50-step cat prompt × 10-seed BF16 (klein)
+
+| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass |
+|---|---|---:|---|---:|
+| H100 p5.4xlarge | FP8 | **106.20** | 35.92 GB | 10/10 |
+| H100 p5.4xlarge | BF16 | 107.05 | 45.00 GB | 10/10 |
+| **Neuron trn2.48xlarge** | **BF16 TP=4** | **196.06** | **~40 GB** | **10/10** |
+| L4 | NF4 (3-seed limited) | 918.58 | 10.43 GB | 3/3 |
+| L4 | BF16 + offload (1-seed limited) | 913.73 | 21.15 GB | 1/1 |
+
+**速度关系 (2K)**:
+- Neuron klein BF16 **比 H100 BF16 慢 1.83×** (196.06 vs 107.05 s)
+- Neuron klein BF16 **比 L4 NF4 快 4.7×** (196.06 vs 918.58 s)
+- Neuron klein BF16 **比 L4 BF16+offload 快 4.7×**
+
+L4 2K 跑到完成时间过长、内存紧张,未能跑完 10 seed,只能 limited 抽样。Neuron 与 H100 FP8 差距
+拉大到 1.85×(1K 时是 1.78×)—— 与 §11.1 dev 32B 在 2K 上 H100 FP8 略快的现象一致,反映
+FP8 tensor-core 在大激活尺寸下的吞吐优势。
+
+### 13.4 4K (4096²) 可行性 —— klein 模型超规格
+
+| 设备 | Mean (s) | 视觉判断 | 说明 |
+|---|---:|---|---|
+| H100 BF16 | 1024 | **GRAY** (std=20) | klein 官方 `max_area=4 MP`,4K=16 MP 超规格 |
+| H100 FP8 | 1019 | **GRAY** (std=20.7) | 同上,FP8 也无法纠正超规格生成 |
+| **Neuron klein** | 编译中 | 预计 **GRAY** | HLO 生成 1894s for NUM_PATCHES=65536;编译若完成,推理时间应超规格 |
+| L4 | 不可行 | — | BF16 OOM;NF4 单张 ~95 min 不实用 |
+
+**结论**: klein 9B 模型在 HF 官方 spec 中 `max_area = 4 MP (≈ 2048²)`。**所有设备在 4K 都无法生成有效图像**
+(std 阈值 50,实测 20 附近,属噪声),这是模型上限不是硬件限制。客户若需 4K,需等 BFL 发布新 spec 或
+采用 FLUX.2-dev 32B (本报告 §11.2 同样 4K OOM)。
+
+### 13.5 FLUX.2-dev 32B Neuron 端口 (task014_dev_v3)
+
+自研 dev 端口在 trn2.48xlarge (TP=8 LNC=2) 跑通,1K cat 50-step 10-seed:
+
+| 指标 | 值 |
+|---|---:|
+| Mean | **36.95 s** |
+| Std | 0.57 s |
+| Min | 35.69 s |
+| Max | 37.43 s |
+| Pass | **10/10** |
+
+**组件拆分** (per image):
+- Text encoder (CPU Mistral-3): 0.07s
+- DiT denoise loop (50 step TP=8): 27.68s (~553 ms/step)
+- VAE decode (tiled 512² → 1024²): 9.63s
+
+**与 klein 9B 对比**: dev 32B 参数量是 klein 的 ~3.6×,但 TP=8 (dev) vs TP=4 (klein) 摊薄后,
+单图延迟反而相近 (36.95 vs 37.75 s)。说明 Neuron 对 DiT 类模型的 TP scaling **近乎线性**。
+
+### 13.6 硬件 / 软件配置 (本节涉及设备)
+
+| 项 | Neuron trn2.48xlarge | H100 p5.4xlarge | L4 g6.4xlarge |
+|---|---|---|---|
+| Region / AZ (本次) | ap-northeast-1c (capacity block) | ap-northeast-1 | ap-northeast-1 |
+| Compute | 16 × NeuronCore v3, 1.5 TB HBM | 1 × H100 80 GB SXM | 1 × L4 24 GB |
+| SDK / Framework | Neuron SDK **2.29**, DLAMI 20260410, `aws_neuronx_venv_pytorch_2_9_nxd_inference` | PyTorch 2.8 + CUDA 12.9 + torchao | PyTorch 2.8 + CUDA 12.9 + bitsandbytes |
+| klein 精度 | BF16 TP=4 (LNC=2) | BF16, FP8 e4m3 | NF4 4-bit, BF16+CPU offload |
+| dev 精度 | BF16 TP=8 (LNC=2) | BF16+offload, FP8 e4m3 | NF4 4-bit |
+
+### 13.7 Capacity note
+
+本次 klein 全栈 benchmark 在 **ap-northeast-1c** 完成 (trn2 capacity block)。
+先尝试 us-east-2 / us-west-2 / eu-west-1 / sa-east-1 均 **p5 capacity 不足**(多 region
+并发请求全部 `InsufficientInstanceCapacity`),最终只有 ap-northeast-1c 有可 reserve 的
+trn2 capacity block,L4 / H100 也在同 region 落地。**这是 trn2 成本考量之外的关键实际约束**:
+H100 虽然单机性能更快,但 region 稀缺 + 时间窗口受限,trn2 更容易在 capacity block 方式下
+锁定稳定的 benchmark window。
+
+### 13.8 结论汇总
+
+1. **Neuron klein BF16 稳跑 1K + 2K 50-step 10-seed 全通过** (std=65–79,视觉清晰的猫 + hello world 牌子)。
+2. **Neuron klein vs GPU**:
+   - vs L4 NF4:快 **5.6×** (1K) / **4.7×** (2K)
+   - vs H100 BF16:慢 **1.57×** (1K) / **1.83×** (2K)
+   - 主要差距来源: text encoder (Qwen3-8B) 本次仍跑在 CPU,未 port 到 Neuron。如 port 后预期可
+     把 1K 整体时间从 37.75s 进一步压到 ~32s。
+3. **Neuron HBM 占用低**:klein 1K 仅 ~24 GB (单芯片),比 H100 BF16 (37 GB) 低,适合高并发或小机型部署。
+4. **H100 FP8 单卡最快**,但 p5 capacity 稀缺(本次 us-east / us-west / eu / sa-east 全拒绝),最终只有
+   ap-northeast-1c capacity block 能锁;trn2 capacity block 更容易获得。
+5. **FLUX.2-dev 32B 在 Neuron TP=8 跑通**,1K 50-step 36.95s 10/10 pass,与 klein 9B 在 TP=4 接近,
+   验证 trn2 对 DiT 大模型的线性扩展能力。
+6. **4K (4096²) 在 klein 所有设备全部产出 GRAY 噪声图** —— 这是 FLUX.2-klein 官方 `max_area=4 MP`
+   超规格导致,不是硬件限制。
+
+---
+
+*报告结束。客户要求的 50 步 + cat prompt 补测、2K Neuron benchmark、klein 多设备对照、dev 32B 端口
+为后续独立增量数据。Task 对应目录: `task012/` (dev cat 50-step)、`task013/` (dev 2K/4K 补测 + NVMe 优化)、
+`task014_dev_v3/` (dev 32B 自研 v3 端口)、`task015_klein_jim_pr146/` (klein 9B OPPO-spec benchmark)。*

@@ -1,0 +1,95 @@
+{
+  "resolution": 2048,
+  "num_seeds": 10,
+  "mean_s": 196.06038525104523,
+  "std_s": 1.520807699167338,
+  "min_s": 193.87808680534363,
+  "max_s": 198.54671359062195,
+  "passes": 10,
+  "steps": 50,
+  "tp": 4,
+  "prompt": "A cat holding a sign that says hello world",
+  "compile_s": 887.7225496768951,
+  "results": [
+    {
+      "seed": 42,
+      "time_s": 194.00742268562317,
+      "std": 64.82225959118153,
+      "mean": 117.89183863004048,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed42_cat.png"
+    },
+    {
+      "seed": 43,
+      "time_s": 195.11520624160767,
+      "std": 64.20710878542977,
+      "mean": 119.82408714294434,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed43_cat.png"
+    },
+    {
+      "seed": 44,
+      "time_s": 195.65918922424316,
+      "std": 79.98716526441754,
+      "mean": 123.26079551378886,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed44_cat.png"
+    },
+    {
+      "seed": 45,
+      "time_s": 196.39319229125977,
+      "std": 76.05662029374433,
+      "mean": 134.1967407067617,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed45_cat.png"
+    },
+    {
+      "seed": 46,
+      "time_s": 193.87808680534363,
+      "std": 67.460935190725,
+      "mean": 138.43625577290854,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed46_cat.png"
+    },
+    {
+      "seed": 47,
+      "time_s": 198.54671359062195,
+      "std": 63.78049230933665,
+      "mean": 128.6052967707316,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed47_cat.png"
+    },
+    {
+      "seed": 48,
+      "time_s": 195.46198225021362,
+      "std": 64.20103498526494,
+      "mean": 124.13636549313863,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed48_cat.png"
+    },
+    {
+      "seed": 49,
+      "time_s": 198.46190857887268,
+      "std": 83.67151593816817,
+      "mean": 118.89583166440327,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed49_cat.png"
+    },
+    {
+      "seed": 50,
+      "time_s": 196.87095475196838,
+      "std": 73.64247083859021,
+      "mean": 136.90932059288025,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed50_cat.png"
+    },
+    {
+      "seed": 51,
+      "time_s": 196.20919609069824,
+      "std": 67.94774471197425,
+      "mean": 114.5265965461731,
+      "verdict": "IMAGE",
+      "png": "/mnt/nvme/klein_bench_2k/seed51_cat.png"
+    }
+  ]
+}

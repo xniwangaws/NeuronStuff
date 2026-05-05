@@ -1,0 +1,106 @@
+[load] DiT=/mnt/nvme/neff/dit_tp8_1024_v3.pt
+[pipeline] initialized NxD weights for text_encoder
+[pipeline] initialized NxD weights for dit
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:100: DeprecationWarning: torch_neuronx.nki_jit is deprecated, use nki.jit instead.
+  component, error = import_nki(config)
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+[load] 61.3s
+2026-May-05 13:26:50.0023 36598:36825 [6] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):219 CCOM WARN NET/OFI Failed to initialize rdma protocol
+2026-May-05 13:26:50.0026 36598:36825 [6] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):354 CCOM WARN NET/OFI aws-ofi-nccl initialization failed
+2026-May-05 13:26:50.0028 36598:36825 [6] ncclResult_t nccl_net_ofi_init_no_atexit_fini_v6(ncclDebugLogger_t):183 CCOM WARN NET/OFI Initializing plugin failed
+2026-May-05 13:26:50.0031 36598:36825 [6] net_plugin.cc:97 CCOM WARN OFI plugin initNet() failed is EFA enabled?
+[pipe] text encoder: 0.23s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 25.78s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 42] t=35.69s std=49.59 mean=121.1 corr=0.966 verdict=PASS
+[pipe] text encoder: 0.07s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 26.46s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 43] t=36.19s std=45.91 mean=96.0 corr=0.964 verdict=PASS
+[pipe] text encoder: 0.07s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 26.92s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 44] t=36.64s std=45.84 mean=116.3 corr=0.973 verdict=PASS
+[pipe] text encoder: 0.07s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 27.20s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 45] t=36.93s std=46.37 mean=135.0 corr=0.963 verdict=PASS
+[pipe] text encoder: 0.07s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 27.39s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 46] t=37.12s std=47.77 mean=123.2 corr=0.961 verdict=PASS
+[pipe] text encoder: 0.07s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 27.55s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 47] t=37.27s std=45.07 mean=121.6 corr=0.966 verdict=PASS
+[pipe] text encoder: 0.07s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 27.65s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 48] t=37.37s std=47.36 mean=122.2 corr=0.965 verdict=PASS
+[pipe] text encoder: 0.07s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 27.68s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 49] t=37.41s std=40.99 mean=98.2 corr=0.974 verdict=PASS
+[pipe] text encoder: 0.07s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 27.71s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 50] t=37.43s std=46.29 mean=108.0 corr=0.963 verdict=PASS
+[pipe] text encoder: 0.07s  prompt_embeds=(1, 512, 15360) text_ids=(1, 512, 4)
+[pipe] latents init: (1, 4096, 128)  latent_ids=(1, 4096, 4)  latent_hw=(128,128)
+[pipe] step 1/50  t=1000.000  latents=(1, 4096, 128)
+[pipe] step 50/50  t=133.719  latents=(1, 4096, 128)
+[pipe] denoise loop: 27.69s (50 steps)
+[pipe] VAE input (unpacked, unpatchified): (1, 32, 128, 128)
+[pipe] VAE decode: 9.63s  image=(1, 3, 1024, 1024)
+[seed 51] t=37.41s std=47.17 mean=134.0 corr=0.961 verdict=PASS
+
+=== SUMMARY ===
+Samples : 10
+mean_s  : 36.95
+std_s   : 0.57
+min_s   : 35.69
+max_s   : 37.43
+pass    : 10/10
+stds    : [np.float32(49.6), np.float32(45.9), np.float32(45.8), np.float32(46.4), np.float32(47.8), np.float32(45.1), np.float32(47.4), np.float32(41.0), np.float32(46.3), np.float32(47.2)]
+corrs   : [0.966, 0.964, 0.973, 0.963, 0.961, 0.966, 0.965, 0.974, 0.963, 0.961]
