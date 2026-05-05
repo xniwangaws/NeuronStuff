@@ -1,0 +1,20 @@
+stack,device,resolution,input_hw,output_hw,dtype,load_time_s,cold_start_s,warm_mean_s,num_runs,psnr_db_vs_cpu_fp32,psnr_db_vs_h100,peak_hbm_gb,notes
+cpu_eager_fp32,"AMD EPYC 7R13 (CPU)",1K,256x256,1024x1024,fp32,0.9,54.0,54.0,1,ref,45.10,,Phase E CPU reference
+h100_diffusers_eager,"NVIDIA H100 80GB HBM3",1K,256x256,1024x1024,bf16,4.80,9.64,1.26,10,45.10,ref,9.03,Phase 3
+h100_diffusers_eager,"NVIDIA H100 80GB HBM3",2K,512x512,2048x2048,bf16,4.02,24.67,24.26,10,,ref,15.70,Phase 3
+h100_diffusers_eager,"NVIDIA H100 80GB HBM3",4K,1024x1024,4096x4096,bf16,4.03,109.71,107.54,10,,ref,42.21,Phase 3
+l4_diffusers_eager,"NVIDIA L4 24GB",1K,256x256,1024x1024,bf16,4.52,6.41,2.34,10,45.15,,7.93,Phase 3
+l4_diffusers_eager,"NVIDIA L4 24GB",2K,512x512,2048x2048,bf16,4.07,29.11,28.45,10,,,15.22,Phase 3
+l4_diffusers_eager,"NVIDIA L4 24GB",4K,1024x1024,4096x4096,bf16,4.08,132.42,130.63,10,,,16.50,Phase 3
+trn2_trace_phase3,"AWS Trn2.3xl (LNC=2)",1K,256x256,1024x1024,fp32,55.9,24.94,24.91,10,24.55,24.55,,"Phase 3 trace mode. Visible tile seam artifact."
+trn2_trace_phase3,"AWS Trn2.3xl (LNC=2)",2K,512x512,2048x2048,fp32,55.9,61.80,61.76,10,,,,"Phase 3 trace"
+trn2_trace_phase3,"AWS Trn2.3xl (LNC=2)",4K,1024x1024,4096x4096,fp32,55.9,218.81,218.81,10,,,,"Phase 3 trace"
+trn2_eager_phase_e,"AWS Trn2.3xl (LNC=2)",1K,256x256,1024x1024,bf16,9.0,73.16,8.60,10,43.26,42.18,,"Phase E eager — no tile seam"
+trn2_eager_phase_e,"AWS Trn2.3xl (LNC=2)",2K,512x512,2048x2048,bf16,9.0,486.94,70.57,3,41.67,,,"Phase E 2K"
+trn2_eager_phase_e,"AWS Trn2.3xl (LNC=2)",4K,1024x1024,4096x4096,bf16,9.0,,,0,,,,"Phase E 4K — OOM on UNet tile (failed)"
+trn2_eager_phase_r,"AWS Trn2.3xl (LNC=2)",1K,256x256,1024x1024,bf16,13.4,30.5,8.19,3,43.40,42.44,,"Phase R DeModLoRA folded einsum"
+trn2_compile_trial6,"AWS Trn2.3xl (LNC=2)",1K,256x256,1024x1024,bf16,13.4,96.08,6.14,3,43.10,42.20,,"Trial 6: torch.compile(Transformer2DModel) x16 - BEST 1K"
+trn2_compile_trial6,"AWS Trn2.3xl (LNC=2)",2K,512x512,2048x2048,bf16,13.4,100.78,60.26,3,,40.60,,"Trial 6 2K - BEST 2K"
+trn2_compile_trial6,"AWS Trn2.3xl (LNC=2)",4K,1024x1024,4096x4096,bf16,13.4,354.49,303.18,2,,37.07,,"Trial 6 4K - BEST 4K; Phase E 4K OOM was fixed"
+trn2_jim_lr128,"AWS Trn2.48xl (LNC=2)",0.5K,128x128,512x512,bf16,,49.58,0.482,5,,,,"Jim port torch_neuronx.trace - OUTPUT IS NaN (auto-cast bug)"
+trn2_jim_lr256,"AWS Trn2.48xl (LNC=2)",1K,256x256,1024x1024,bf16,,100.00,2.45,3,5.85,,,"Jim port - OUTPUT IS NaN (auto-cast bug, recompile pending)"
