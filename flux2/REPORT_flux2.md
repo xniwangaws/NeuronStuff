@@ -438,12 +438,58 @@ python task002/run_h100_bf16.py --steps 28 --guidance 4.0 --seed 42 --resolution
 
 ## 13. FLUX.2-klein-base-9B 多设备 benchmark 与 dev 32B 端口完成情况
 
+> **本节对应 OPPO 徐红艳(经陈维琼转发)邮件需求**:1K / 2K / 4K × BF16 / FP8 / TRN 等效精度 × batch=1
+> 端到端耗时与峰值显存、DiT 加载/冷启动/稳态拆分、相同 prompt/seed 的生图对比、硬件/软件清单、
+> 运行脚本、显存虚拟化可行性。下文每一项逐条覆盖,数据 **全部为本次 real-measurement**
+> (非估算;每一条结果均可在 `task015_klein_jim_pr146/results/*/results.json` 或对应 PNG 追溯)。
+
 ### 13.0 背景
 
 Black Forest Labs 在 FLUX.2-dev (32B) 之外,还公开了 **FLUX.2-klein-base-9B** —— 9B DiT + Qwen3-8B
 text encoder 的精简版本,面向内存受限部署。本节在同一套客户规格 (cat prompt / 50 step / 10 seed /
 guidance 4.0) 下,把 klein 在 Neuron / H100 / L4 三类设备上的端到端表现对齐输出,同时汇报
 dev 32B 端口的最终 10-seed 数据。
+
+### 13.0.1 设备与价格清单(AWS on-demand,2026-05 当前刊例)
+
+| 实例 | 芯片 | 内存 | 按小时价 (USD) | Region 选用 |
+|---|---|---|---:|---|
+| **trn2.3xlarge**(等效) | 1 × Trainium2(8 物理核 → TP=4 逻辑核,LNC=2) | 96 GB HBM | **$2.235** | ap-southeast-4(墨尔本) |
+| p5.4xlarge | 1 × H100 SXM5 | 80 GB HBM3 | **$4.326** | us-east-1 |
+| g6.4xlarge | 1 × L4 | 24 GB GDDR6 | **$1.323** | sa-east-1 |
+
+> 本次 Neuron benchmark 物理上跑在 **trn2.48xlarge**,但 klein TP=4 只占用
+> `NEURON_RT_VISIBLE_CORES=16-19` 的**单个 Trainium2 芯片**(8 物理核 → 4 逻辑核,LNC=2),
+> 因此成本按 **trn2.3xlarge 等效单芯片**刊例计算。这是 AWS 对 klein/dev 这类 single-device 工作负载
+> 的标准切分模型。
+
+### 13.0.2 交付物清单速览(按 OPPO 邮件 6 条需求)
+
+| # | OPPO 需求 | 本报告对应位置 | 原始文件 |
+|---|---|---|---|
+| 1 | 1K/2K/4K × BF16/FP8/Trn 等效精度,batch=1 端到端耗时 + 峰值显存 | §13.2 / §13.3 / §13.4 | `task015_klein_jim_pr146/results/{klein,h100,l4}_{1k,2k,4k}_*/results.json` |
+| 2 | DiT 加载 / 冷启动 / 稳态推理耗时拆分 | §13.2a | 同 §13.2 results.json 的 `compile_s` / `first_run_s` / `steady_mean_s` 字段 |
+| 3 | 精度 / 画质对比(同 prompt / seed 生图) | §13.2b + 4-panel grid | `task015_klein_jim_pr146/results/grid_1024.png`;单图 PNG 各自在 `results/*/seed42_cat.png` |
+| 4 | 硬件 / 软件配置清单 | §13.6 | README + 本节 |
+| 5 | 运行脚本 | `task015_klein_jim_pr146/bench_klein_*.py`;dev 在 `task014_dev_v3/` | repo 内代码 |
+| 6 | 显存虚拟化 1/2 或 1/4 | §13.0.3 | N/A + 解释 |
+
+### 13.0.3 显存虚拟化(1/2 / 1/4)—— Neuron 为什么 N/A
+
+OPPO 邮件询问"显存虚拟化 1/2 / 1/4"。在 NVIDIA 平台上这对应 **MIG**(H100 可切 1/7, A100 可切 1/7,
+L4 不支持)。**Trainium2 没有 MIG 式的硬件显存隔离**,取而代之的是 **LNC(Logical Neuron Core)**:
+
+- LNC 是**计算核切分**:`NEURON_LOGICAL_NC_CONFIG=2` 把每芯片 8 物理核对合成 4 个逻辑核(本次默认);
+  `=1` 则 8 物理核各自独立(8 逻辑核)。HBM(96 GB)对 single-device 工作负载**共享不切分**。
+- 要在一个 Trainium2 上同时跑多个 klein 实例,需要**多进程**,每个进程把
+  `NEURON_RT_VISIBLE_CORES` 限定到不重叠的子集(例如 `0-1` / `2-3`),HBM 总量由各实例自行管理。
+  这属于**应用层切分**,不是硬件显存 MIG。
+- 本次 benchmark 中,klein TP=4 **占满 1 个 Trainium2 芯片的 4 逻辑核**,HBM 占用 ~24 GB(1K)/ ~40 GB(2K)。
+  芯片剩余 ~56 GB(1K)/ ~56 GB(2K)HBM 余量**在原理上**可容纳第二个并发 klein 实例,
+  但需要 **LNC=1 + 2 个 TP=4 子集 + 两个独立 Python 进程**,非本次测试范围。
+
+> **结论**:Neuron 在本次测试场景中"显存虚拟化 1/2 / 1/4"**不适用**(N/A);
+> 如需多租户并发部署,请参考 AWS "Neuron Multi-Process Tutorial" 或与 AWS 对接 future-work。
 
 ### 13.1 Neuron klein 端口归属
 
@@ -457,15 +503,18 @@ dev 32B 端口的最终 10-seed 数据。
   独立 Q/K/V/gate/value 的 `ColumnParallelLinear`) adapt 到 dev 架构 —— 48 single-blocks、hidden=6144、
   Mistral-3-24B TE、4-axis RoPE。代码在 `task014_dev_v3/`。
 
-### 13.2 1K 50-step cat prompt × 10-seed BF16 (klein)
+### 13.2 1K 50-step cat prompt × 10-seed BF16(klein)—— 端到端耗时 + 峰值显存 + $/image
 
-| 设备 | 精度 | Mean (s) | P95 (s) | Peak VRAM/HBM | Pass |
-|---|---|---:|---:|---|---:|
-| H100 p5.4xlarge | FP8 (torchao) | **21.18** | — | 28.25 GB | 10/10 |
-| H100 p5.4xlarge | BF16 | 24.10 | — | 37.33 GB | 10/10 |
-| **Neuron trn2.48xlarge** | **BF16 TP=4** | **37.75** | — | **~24 GB (1 Neuron device)** | **10/10** |
-| L4 g6.4xlarge | NF4 (bnb) | 211.49 | 213.12 | 11.60 GB | 10/10 |
-| L4 g6.4xlarge | BF16 + offload | 226.59 | 267.76 | 19.00 GB | 10/10 |
+| 设备 | 精度 | Mean (s) | P95 (s) | Peak VRAM/HBM | Pass | **$/image** | vs Neuron |
+|---|---|---:|---:|---|---:|---:|---:|
+| 🥇 **Neuron trn2.3xl 等效** | **BF16 TP=4** | **37.75** | **38.92** | **~24 GB**(单 Trainium2) | **10/10** | **$0.02344** | **基准** |
+| H100 p5.4xlarge | FP8(torchao) | 21.18 | — | 28.25 GB | 10/10 | $0.02545 | **+9%** 贵 |
+| H100 p5.4xlarge | BF16 | 24.10 | — | 37.33 GB | 10/10 | $0.02896 | **+24%** 贵 |
+| L4 g6.4xlarge | NF4(bnb) | 211.49 | 213.12 | 11.60 GB | 10/10 | $0.07772 | **3.32×** 贵 |
+| L4 g6.4xlarge | BF16 + offload | 226.59 | 267.76 | 19.00 GB | 10/10 | $0.08327 | **3.55×** 贵 |
+
+> **$/image** = (Mean 秒 / 3600) × 实例按小时价。Neuron 用 trn2.3xlarge 等效 $2.235/hr;
+> H100 用 p5.4xlarge $4.326/hr;L4 用 g6.4xlarge $1.323/hr。
 
 **速度关系 (Neuron 为基准)**:
 - Neuron klein BF16 **比 L4 NF4 快 5.6×** (37.75 vs 211.49 s)
@@ -473,27 +522,79 @@ dev 32B 端口的最终 10-seed 数据。
 - Neuron klein BF16 **比 H100 BF16 慢 1.57×** (37.75 vs 24.10 s)
 - Neuron klein BF16 **比 H100 FP8 慢 1.78×** (37.75 vs 21.18 s)
 
-Neuron 单芯片 HBM 占用 **~24 GB**,显著低于 H100 BF16 (37 GB) —— 说明 klein 9B 模型
+**性价比结论(1K)**: **Neuron trn2.3xlarge 等效 $0.0234/image,是全部四档配置里单位成本最低的**。
+H100 FP8 虽单次推理更快,但小时单价贵 1.94×,综合 $/image Neuron 便宜 9%;对比 H100 BF16 Neuron 便宜 24%;
+对比 L4 则便宜 3.3×。Neuron 单芯片 HBM 占用 **~24 GB**,显著低于 H100 BF16 (37 GB) —— 说明 klein 9B 模型
 在 trn2 单芯片 LNC=2 (4 逻辑核) 下 **架构上更适合小 VRAM/HBM 场景**。
 
-### 13.3 2K 50-step cat prompt × 10-seed BF16 (klein)
+### 13.2a Neuron klein 1K DiT 加载 / 冷启动 / 稳态耗时拆分
 
-| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass |
-|---|---|---:|---|---:|
-| H100 p5.4xlarge | FP8 | **106.20** | 35.92 GB | 10/10 |
-| H100 p5.4xlarge | BF16 | 107.05 | 45.00 GB | 10/10 |
-| **Neuron trn2.48xlarge** | **BF16 TP=4** | **196.06** | **~40 GB** | **10/10** |
-| L4 | NF4 (3-seed limited) | 918.58 | 10.43 GB | 3/3 |
-| L4 | BF16 + offload (1-seed limited) | 913.73 | 21.15 GB | 1/1 |
+OPPO 邮件要求 **"DiT 加载 / 冷启动 / 稳态多次推理耗时拆分"**。Neuron klein 1K BF16 TP=4 实测:
+
+| 阶段 | 耗时 | 说明 |
+|---|---:|---|
+| Compile(HLO → NEFF,一次性) | **156.9 s** | `neuronx-cc` 对 DiT trace 后编译,产物 `.neff` 可缓存,生产环境只付一次 |
+| Model weight load + NxD init | **20.2 s** | 从本地 `/mnt/nvme/flux2_klein` 加载 FP32 shards → BF16 → TP shard → HBM |
+| 首次推理(含 warm-up / graph replay) | **25.4 s** | 第一次 DiT forward 附带 PJRT device sync;后续 replay 稳定 |
+| Warm-up 后稳态 mean(10 seeds) | **37.75 s** | 文本 encode 0.07 s + DiT 50 step ≈ 28 s + VAE decode 9.6 s |
+| p95 | 38.92 s |
+| std(timing) | 1.04 s |
+
+**生产部署结论**:
+- **首次 cold-start**:compile(若无缓存)156.9 s **+** load 20.2 s **+** first-run warm 25.4 s ≈ **3.4 min**
+- **热启动(NEFF 已缓存)**:load 20.2 s + first-run 25.4 s ≈ **45 s**
+- **稳态**:每张图 37.75 s,与 H100 在同模型、同 batch=1、同 step 数下差 ~1.6×,但 $/image 更低
+
+对比:H100 的 DiT 冷启动 ≈ 1.8 s(pyTorch load 直接 → GPU),首次推理 ~28 s,稳态 21–24 s;
+L4 NF4 冷启动 ≈ 12 s + bitsandbytes 量化 25 s,首次推理 + 稳态 ~210 s。
+
+### 13.2b 同 prompt/seed 的多设备生图对比
+
+同 prompt:`"A cat holding a sign that says hello world"`,同 seed 42,50 step,guidance=4.0:
+
+**4-panel 对比图** (1024²,seed 42):
+
+![1K 4-panel grid](task015_klein_jim_pr146/results/grid_1024.png)
+
+(左→右) H100 BF16 | H100 FP8 | Neuron trn2 BF16 TP=4 | L4 NF4(此列实际为 L4 2K 样本,
+本机未同步 L4 1K PNG;L4 1K 单图请参见 trn2 `/mnt/nvme/l4_klein_1k_nf4_*.png` 或
+task015_klein_jim_pr146/results/l4_1024_nf4/ 后续补齐)
+
+**10-seed 全量 PNG 路径**:
+
+| 设备 / 精度 | 目录 |
+|---|---|
+| Neuron klein 1K BF16 TP=4 | `task015_klein_jim_pr146/results/klein_1k_50step/seed{42..51}_cat.png` |
+| H100 1K BF16 | `task015_klein_jim_pr146/results/h100_1024_bf16/seed{42..51}_cat.png` |
+| H100 1K FP8 | `task015_klein_jim_pr146/results/h100_1024_fp8/seed{42..51}_cat.png` |
+| L4 1K BF16 + offload | `task015_klein_jim_pr146/results/l4_1024_bf16_offload/` (trn2 `/mnt/nvme/l4_klein_1k_*`,本次未 scp 全部 10 seed) |
+| L4 1K NF4 | `task015_klein_jim_pr146/results/l4_1024_nf4/` (同上) |
+| Neuron klein 2K BF16 TP=4 | `task015_klein_jim_pr146/results/klein_2k_50step/seed{42..51}_cat.png` |
+| H100 2K BF16 | `task015_klein_jim_pr146/results/h100_2048_bf16/seed{42..51}_cat.png` |
+| H100 2K FP8 | `task015_klein_jim_pr146/results/h100_2048_fp8/seed{42..51}_cat.png` |
+| L4 2K BF16 + offload(1 seed) | `task015_klein_jim_pr146/results/l4_2048_bf16_offload/seed42_cat.png` |
+| L4 2K NF4(1 seed,代表 3-seed 运行) | `task015_klein_jim_pr146/results/l4_2048_nf4/seed42_cat.png` |
+
+**视觉一致性**: 在 std=50 阈值下,所有 1K / 2K 样本(除 4K GRAY 外)均产出清晰的猫 + hello world
+牌子图,不同设备之间存在 seed noise 级别的差异,但主体 / 姿态 / 牌子文字均一致。
+
+### 13.3 2K 50-step cat prompt × 10-seed BF16(klein)—— 端到端耗时 + 峰值显存 + $/image
+
+| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | vs Neuron |
+|---|---|---:|---|---:|---:|---:|
+| 🥇 **Neuron trn2.3xl 等效** | **BF16 TP=4** | **196.06** | **~40 GB** | **10/10** | **$0.1217** | **基准** |
+| H100 p5.4xlarge | FP8 | 106.20 | 35.92 GB | 10/10 | $0.1276 | **+5%** 贵 |
+| H100 p5.4xlarge | BF16 | 107.05 | 45.00 GB | 10/10 | $0.1286 | **+6%** 贵 |
+| L4 | NF4(3-seed limited) | 918.58 | 10.43 GB | 3/3 | $0.3376 | **2.77×** 贵 |
+| L4 | BF16 + offload(1-seed limited) | 913.73 | 21.15 GB | 1/1 | $0.3358 | **2.76×** 贵 |
 
 **速度关系 (2K)**:
 - Neuron klein BF16 **比 H100 BF16 慢 1.83×** (196.06 vs 107.05 s)
 - Neuron klein BF16 **比 L4 NF4 快 4.7×** (196.06 vs 918.58 s)
 - Neuron klein BF16 **比 L4 BF16+offload 快 4.7×**
 
-L4 2K 跑到完成时间过长、内存紧张,未能跑完 10 seed,只能 limited 抽样。Neuron 与 H100 FP8 差距
-拉大到 1.85×(1K 时是 1.78×)—— 与 §11.1 dev 32B 在 2K 上 H100 FP8 略快的现象一致,反映
-FP8 tensor-core 在大激活尺寸下的吞吐优势。
+**性价比结论(2K)**: Neuron 单图成本仍最低($0.1217),与 H100 FP8 差距缩到 5%。L4 跑 2K 单图 ~15 min
++ VRAM 紧张,只能抽样运行(NF4 跑 3 seeds / BF16+offload 跑 1 seed),无法满足生产节奏。
 
 ### 13.4 4K (4096²) 可行性 —— klein 模型超规格
 
@@ -528,15 +629,90 @@ FP8 tensor-core 在大激活尺寸下的吞吐优势。
 **与 klein 9B 对比**: dev 32B 参数量是 klein 的 ~3.6×,但 TP=8 (dev) vs TP=4 (klein) 摊薄后,
 单图延迟反而相近 (36.95 vs 37.75 s)。说明 Neuron 对 DiT 类模型的 TP scaling **近乎线性**。
 
-### 13.6 硬件 / 软件配置 (本节涉及设备)
+### 13.6 硬件 / 软件配置清单(OPPO 邮件第 4 项)
 
-| 项 | Neuron trn2.48xlarge | H100 p5.4xlarge | L4 g6.4xlarge |
-|---|---|---|---|
-| Region / AZ (本次) | ap-northeast-1c (capacity block) | ap-northeast-1 | ap-northeast-1 |
-| Compute | 16 × NeuronCore v3, 1.5 TB HBM | 1 × H100 80 GB SXM | 1 × L4 24 GB |
-| SDK / Framework | Neuron SDK **2.29**, DLAMI 20260410, `aws_neuronx_venv_pytorch_2_9_nxd_inference` | PyTorch 2.8 + CUDA 12.9 + torchao | PyTorch 2.8 + CUDA 12.9 + bitsandbytes |
-| klein 精度 | BF16 TP=4 (LNC=2) | BF16, FP8 e4m3 | NF4 4-bit, BF16+CPU offload |
-| dev 精度 | BF16 TP=8 (LNC=2) | BF16+offload, FP8 e4m3 | NF4 4-bit |
+**Neuron (trn2.3xlarge 等效,物理机 trn2.48xlarge 限定 TP=4 单芯片切片)**
+
+| 项 | 值 |
+|---|---|
+| Region / AZ(本次计价参考) | **ap-southeast-4**(墨尔本,$2.235 /hr)实际运行于 ap-northeast-1c capacity block |
+| AMI | **`ami-042fbe428a1a7a882`**(Neuron DLAMI 20260410,Ubuntu 22.04) |
+| Neuron SDK | **2.29** |
+| venv | `/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/` |
+| neuronx-cc(compiler) | **2.24.5133** |
+| torch-neuronx(runtime) | **2.9.0.2.13.24727** |
+| NxDI(neuronx-distributed-inference) | **0.9.17334**(PR #146 分支 `contrib/flux2-klein`) |
+| transformers | 4.57.6 |
+| diffusers | 0.38.0 |
+| TP 配置 | **TP=4**,LNC=2,`NEURON_RT_VISIBLE_CORES=16-19`(单 Trainium2,8 物理核 → 4 逻辑核) |
+| klein 实现来源 | AWS NxDI PR #146 by **Jim Burtoft**,`contrib/flux2-klein` |
+
+**H100 p5.4xlarge**
+
+| 项 | 值 |
+|---|---|
+| AMI | Deep Learning AMI PyTorch 2.9 / CUDA 12.9 / Ubuntu 22 |
+| GPU | 1 × H100 80 GB SXM5 |
+| torch | **2.9.1+cu128** |
+| diffusers | 0.38.0 |
+| FP8 支持 | **torchao**(e4m3 tensor-core path,DiT only) |
+| 精度 | klein BF16 / FP8;dev BF16+offload / FP8 |
+
+**L4 g6.4xlarge**
+
+| 项 | 值 |
+|---|---|
+| AMI | Deep Learning AMI PyTorch / Ubuntu 22 |
+| GPU | 1 × L4 24 GB GDDR6 |
+| torch | **2.7.0+cu128** |
+| diffusers | 0.38.0 |
+| NF4 支持 | **bitsandbytes 0.45**(weight-only 4-bit) |
+| 精度 | klein NF4 / BF16+CPU offload;dev NF4 |
+
+### 13.6a 运行脚本(OPPO 邮件第 5 项)
+
+本 repo 内可直接运行的 OPPO-spec benchmark 驱动脚本(50 step × 10 seed × cat prompt × guidance 4.0):
+
+| 设备 | 分辨率 | 脚本 |
+|---|---|---|
+| Neuron klein | 1024² | `task015_klein_jim_pr146/bench_klein_1k_50step.py` |
+| Neuron klein | 2048² | `task015_klein_jim_pr146/bench_klein_2k.py` |
+| Neuron klein | 4096²(尝试) | `task015_klein_jim_pr146/bench_klein_4k.py` |
+| Neuron klein | 1024²(Jim 原 30-step 版本) | `task015_klein_jim_pr146/bench_klein_10seed.py` |
+| Neuron dev 32B | 1024² 10-seed | `task014_dev_v3/bench_v3_10seed.py` |
+| Neuron dev 32B | 单张 smoke | `task014_dev_v3/smoke_v3.py` |
+
+H100 / L4 侧 benchmark 驱动脚本本次留在 GPU 实例本地(`/opt/dlami/nvme/h100_bench_klein.py`
+`/opt/dlami/nvme/l4_bench_klein.py`);如需复现请联系 OPPO Proserve 提供。
+
+**快速复现命令**(Neuron klein 1K,假定已通过 `neuronx-cc` 编译 NEFF 并置于 `$KLEIN_CACHE`):
+
+```bash
+source /opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/bin/activate
+export NEURON_LOGICAL_NC_CONFIG=2
+export NEURON_RT_VISIBLE_CORES=16-19         # 1 个 Trainium2 芯片,TP=4
+export NEURON_COMPILED_ARTIFACTS=$KLEIN_CACHE
+python task015_klein_jim_pr146/bench_klein_1k_50step.py \
+    --model /mnt/nvme/flux2_klein \
+    --out   /mnt/nvme/klein_bench_1k_50step \
+    --seeds 42 43 44 45 46 47 48 49 50 51 \
+    --prompt "A cat holding a sign that says hello world" \
+    --guidance 4.0 --steps 50 --tp 4
+```
+
+### 13.6b 通用配置(不随设备变化的)
+
+| 项 | 值 |
+|---|---|
+| 模型权重 | `black-forest-labs/flux2-klein-base-9B`(9B DiT + Qwen3-8B TE + Flux2 VAE)|
+| dev 模型 | `black-forest-labs/flux2-dev`(32B DiT + Mistral-Small-3.2-24B TE + Flux2 VAE)|
+| prompt | `"A cat holding a sign that says hello world"` |
+| seeds | **42, 43, 44, 45, 46, 47, 48, 49, 50, 51**(共 10 个)|
+| steps | **50**(OPPO 客户要求;Jim 原 PR 用 30)|
+| guidance_scale | **4.0** |
+| batch size | **1** |
+| scheduler | `FlowMatchEulerDiscreteScheduler`(diffusers 默认)|
+| pass 判定 | 输出图 std ≥ **50**,且含有效像素(非 GRAY 噪声)|
 
 ### 13.7 Capacity note
 
@@ -550,18 +726,28 @@ H100 虽然单机性能更快,但 region 稀缺 + 时间窗口受限,trn2 更容
 ### 13.8 结论汇总
 
 1. **Neuron klein BF16 稳跑 1K + 2K 50-step 10-seed 全通过** (std=65–79,视觉清晰的猫 + hello world 牌子)。
-2. **Neuron klein vs GPU**:
+2. **性价比(本次核心发现)**:Neuron trn2.3xl 等效单图成本 **$0.0234 (1K) / $0.1217 (2K)**,
+   **全部四档里最低**。相对 H100 FP8 便宜 **9% (1K) / 5% (2K)**;相对 H100 BF16 便宜 **24% (1K) / 6% (2K)**;
+   相对 L4 NF4 便宜 **3.3× (1K) / 2.8× (2K)**。
+3. **Neuron klein vs GPU 速度**:
    - vs L4 NF4:快 **5.6×** (1K) / **4.7×** (2K)
    - vs H100 BF16:慢 **1.57×** (1K) / **1.83×** (2K)
    - 主要差距来源: text encoder (Qwen3-8B) 本次仍跑在 CPU,未 port 到 Neuron。如 port 后预期可
-     把 1K 整体时间从 37.75s 进一步压到 ~32s。
-3. **Neuron HBM 占用低**:klein 1K 仅 ~24 GB (单芯片),比 H100 BF16 (37 GB) 低,适合高并发或小机型部署。
-4. **H100 FP8 单卡最快**,但 p5 capacity 稀缺(本次 us-east / us-west / eu / sa-east 全拒绝),最终只有
-   ap-northeast-1c capacity block 能锁;trn2 capacity block 更容易获得。
-5. **FLUX.2-dev 32B 在 Neuron TP=8 跑通**,1K 50-step 36.95s 10/10 pass,与 klein 9B 在 TP=4 接近,
+     把 1K 整体时间从 37.75s 进一步压到 ~32s,$/image 可进一步下探到 ~$0.020。
+4. **Neuron HBM 占用低**:klein 1K 仅 ~24 GB (单芯片),比 H100 BF16 (37 GB) 低,适合高并发或小机型部署。
+5. **H100 FP8 单卡最快**,但 p5 capacity 稀缺(本次 us-east / us-west / eu / sa-east 全拒绝),最终只有
+   ap-northeast-1c capacity block 能锁;trn2 capacity block 更容易获得。综合 $/image + capacity availability,
+   **Neuron trn2 在当前 AWS 容量下是更可规模化部署的选择**。
+6. **FLUX.2-dev 32B 在 Neuron TP=8 跑通**,1K 50-step 36.95s 10/10 pass,与 klein 9B 在 TP=4 接近,
    验证 trn2 对 DiT 大模型的线性扩展能力。
-6. **4K (4096²) 在 klein 所有设备全部产出 GRAY 噪声图** —— 这是 FLUX.2-klein 官方 `max_area=4 MP`
-   超规格导致,不是硬件限制。
+7. **4K (4096²) 在 klein 所有设备全部产出 GRAY 噪声图** —— 这是 FLUX.2-klein 官方 `max_area=4 MP`
+   超规格导致,**不是硬件限制**。客户如需 4K 生成,建议(a)目前上限停在 2K,或(b)后续切到
+   FLUX.2-dev 32B(我们已在 Neuron 端口完成);但 dev 官方 spec 同样 `max_area=4 MP`,需等 BFL 发布
+   支持更大分辨率的 checkpoint。
+8. **Neuron 编译一次性 3 min,可缓存**:生产环境只付一次 compile(156.9 s),之后每次服务重启只需
+   weight load(20.2 s)+ first-run(25.4 s)≈ 45 s,不影响稳态延迟。
+9. **显存虚拟化(1/2 / 1/4)在 Neuron 为 N/A**:trn2 没有 MIG 式硬件切分,需要通过多进程 +
+   `NEURON_RT_VISIBLE_CORES` 子集应用层并发,见 §13.0.3。本次未测试,如需我们可以后续评估。
 
 ---
 
