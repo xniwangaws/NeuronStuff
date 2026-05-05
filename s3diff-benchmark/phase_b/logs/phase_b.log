@@ -1,0 +1,34 @@
+[config] device=neuron dtype=bf16
+[load] S3Diff...
+[build] NeuronS3DiffUNet + copy weights...
+[build] VAE LoRA replaced: 31
+[move] to neuron bf16...
+[load] total 13.3s
+[load] DEResNet...
+[input] shape (1, 3, 256, 256)
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+WARNING:torch_neuronx.python_ops.dtype_autocast:Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 68.806s
+[run 1] 68.91s
+[saved] /tmp/phase_b_cat.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.152s
+[run 2] 8.18s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.168s
+[run 3] 8.20s
+
+=== Phase B RESULT (neuron/bf16) ===
+load_time_s:      13.30
+first_inference_s: 68.91
+warm_mean_s:      8.19
+sr_image:         /tmp/phase_b_cat.png
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.

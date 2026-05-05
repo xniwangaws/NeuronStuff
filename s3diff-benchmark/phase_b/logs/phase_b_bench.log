@@ -1,0 +1,92 @@
+[build] Phase B pipeline...
+[build] 15.3s
+
+[run] cat...
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 29.666s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.680s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.802s
+[result] cat: cold=29.77s warm=7.77s PSNR=43.40 dB
+
+[run] bus...
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.874s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.892s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.094s
+[result] bus: cold=7.90s warm=8.02s PSNR=38.64 dB
+
+[run] bird...
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.114s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.261s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.804s
+[result] bird: cold=8.14s warm=8.06s PSNR=45.63 dB
+
+[run] butterfly...
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.024s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.079s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.839s
+[result] butterfly: cold=8.05s warm=7.99s PSNR=41.71 dB
+
+[run] woman...
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.882s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.974s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.953s
+[result] woman: cold=7.91s warm=7.99s PSNR=44.52 dB
+
+======================================================================
+image            cold     warm       PSNR
+----------------------------------------------------------------------
+cat            29.77s    7.77s     43.40 dB
+bus             7.90s    8.02s     38.64 dB
+bird            8.14s    8.06s     45.63 dB
+butterfly       8.05s    7.99s     41.71 dB
+woman           7.91s    7.99s     44.52 dB
+----------------------------------------------------------------------
+mean                -    7.97s     42.78 dB
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.

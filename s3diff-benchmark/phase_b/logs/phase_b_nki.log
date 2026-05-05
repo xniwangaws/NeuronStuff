@@ -1,0 +1,36 @@
+[config] device=neuron dtype=bf16
+[load] S3Diff...
+[build] NeuronS3DiffUNet + copy weights...
+[build] VAE LoRA replaced: 31
+[move] to neuron bf16...
+[load] total 12.8s
+[load] DEResNet...
+[input] shape (1, 3, 256, 256)
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 37.107s
+[run 1] 37.21s
+[saved] /tmp/phase_b_nki_cat.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.288s
+[run 2] 8.32s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.272s
+[run 3] 8.30s
+
+=== Phase B RESULT (neuron/bf16) ===
+load_time_s:      12.83
+first_inference_s: 37.21
+warm_mean_s:      8.31
+sr_image:         /tmp/phase_b_nki_cat.png
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=53084160.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=6635520.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=414720.00.
