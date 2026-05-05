@@ -1,0 +1,73 @@
+{
+  "device": "Neuron trn2.3xlarge (WORLD=4, backbone_tp=4, LNC=2)",
+  "model": "FLUX.1-dev BF16",
+  "prompt": "A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest",
+  "steps": 28,
+  "guidance": 3.5,
+  "resolution": "1024x1024",
+  "compile_s": 103.4,
+  "load_s": 78.0,
+  "mean_s": 8.03,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 8.03,
+      "std": 47.5,
+      "png": "/home/ubuntu/flux1_alien_out/seed42_alien.png"
+    },
+    {
+      "seed": 43,
+      "time_s": 8.03,
+      "std": 52.24,
+      "png": "/home/ubuntu/flux1_alien_out/seed43_alien.png"
+    },
+    {
+      "seed": 44,
+      "time_s": 8.03,
+      "std": 41.29,
+      "png": "/home/ubuntu/flux1_alien_out/seed44_alien.png"
+    },
+    {
+      "seed": 45,
+      "time_s": 8.03,
+      "std": 49.01,
+      "png": "/home/ubuntu/flux1_alien_out/seed45_alien.png"
+    },
+    {
+      "seed": 46,
+      "time_s": 8.03,
+      "std": 50.86,
+      "png": "/home/ubuntu/flux1_alien_out/seed46_alien.png"
+    },
+    {
+      "seed": 47,
+      "time_s": 8.04,
+      "std": 48.18,
+      "png": "/home/ubuntu/flux1_alien_out/seed47_alien.png"
+    },
+    {
+      "seed": 48,
+      "time_s": 8.04,
+      "std": 47.69,
+      "png": "/home/ubuntu/flux1_alien_out/seed48_alien.png"
+    },
+    {
+      "seed": 49,
+      "time_s": 8.04,
+      "std": 46.33,
+      "png": "/home/ubuntu/flux1_alien_out/seed49_alien.png"
+    },
+    {
+      "seed": 50,
+      "time_s": 8.04,
+      "std": 54.05,
+      "png": "/home/ubuntu/flux1_alien_out/seed50_alien.png"
+    },
+    {
+      "seed": 51,
+      "time_s": 8.03,
+      "std": 47.72,
+      "png": "/home/ubuntu/flux1_alien_out/seed51_alien.png"
+    }
+  ]
+}

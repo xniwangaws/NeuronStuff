@@ -1,0 +1,23 @@
+{
+  "device": "l4 res=4096 bf16",
+  "model": "SDXL-base-1.0",
+  "prompt": "An astronaut riding a green horse",
+  "steps": 50,
+  "guidance": 7.5,
+  "resolution": "4096x4096",
+  "load_s": 4.9,
+  "peak_vram_gb": 9.91,
+  "mean_s": 619.18,
+  "n_ok": 1,
+  "n_total": 1,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 619.18,
+      "peak_vram_gb": 9.91,
+      "std": 55.77,
+      "png": "/home/ubuntu/sdxl_astro_l4_4096/seed42_astro.png",
+      "status": "ok"
+    }
+  ]
+}

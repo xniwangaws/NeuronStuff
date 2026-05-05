@@ -1,0 +1,83 @@
+{
+  "device": "H100 p5.4xlarge (BF16)",
+  "model": "FLUX.1-dev",
+  "prompt": "A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest",
+  "steps": 28,
+  "guidance": 3.5,
+  "resolution": "1024x1024",
+  "load_s": 5.9,
+  "peak_vram_gb": 33.85,
+  "mean_s": 5.87,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 5.88,
+      "peak_vram_gb": 33.85,
+      "std": 48.64,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed42_alien.png"
+    },
+    {
+      "seed": 43,
+      "time_s": 5.87,
+      "peak_vram_gb": 33.85,
+      "std": 53.48,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed43_alien.png"
+    },
+    {
+      "seed": 44,
+      "time_s": 5.88,
+      "peak_vram_gb": 33.85,
+      "std": 43.95,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed44_alien.png"
+    },
+    {
+      "seed": 45,
+      "time_s": 5.88,
+      "peak_vram_gb": 33.85,
+      "std": 49.96,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed45_alien.png"
+    },
+    {
+      "seed": 46,
+      "time_s": 5.88,
+      "peak_vram_gb": 33.85,
+      "std": 51.09,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed46_alien.png"
+    },
+    {
+      "seed": 47,
+      "time_s": 5.88,
+      "peak_vram_gb": 33.85,
+      "std": 49.5,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed47_alien.png"
+    },
+    {
+      "seed": 48,
+      "time_s": 5.87,
+      "peak_vram_gb": 33.85,
+      "std": 48.75,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed48_alien.png"
+    },
+    {
+      "seed": 49,
+      "time_s": 5.87,
+      "peak_vram_gb": 33.85,
+      "std": 46.88,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed49_alien.png"
+    },
+    {
+      "seed": 50,
+      "time_s": 5.87,
+      "peak_vram_gb": 33.85,
+      "std": 55.24,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed50_alien.png"
+    },
+    {
+      "seed": 51,
+      "time_s": 5.87,
+      "peak_vram_gb": 33.85,
+      "std": 47.34,
+      "png": "/opt/dlami/nvme/flux1_alien_h100_bf16/seed51_alien.png"
+    }
+  ]
+}

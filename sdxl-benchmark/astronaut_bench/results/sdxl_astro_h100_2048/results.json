@@ -1,0 +1,95 @@
+{
+  "device": "h100 res=2048 bf16",
+  "model": "SDXL-base-1.0",
+  "prompt": "An astronaut riding a green horse",
+  "steps": 50,
+  "guidance": 7.5,
+  "resolution": "2048x2048",
+  "load_s": 2.8,
+  "peak_vram_gb": 9.0,
+  "mean_s": 12.14,
+  "n_ok": 10,
+  "n_total": 10,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 12.11,
+      "peak_vram_gb": 9.0,
+      "std": 57.84,
+      "png": "sdxl_astro_h100_2048/seed42_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 43,
+      "time_s": 12.1,
+      "peak_vram_gb": 9.0,
+      "std": 54.75,
+      "png": "sdxl_astro_h100_2048/seed43_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 44,
+      "time_s": 12.13,
+      "peak_vram_gb": 9.0,
+      "std": 56.63,
+      "png": "sdxl_astro_h100_2048/seed44_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 45,
+      "time_s": 12.14,
+      "peak_vram_gb": 9.0,
+      "std": 56.98,
+      "png": "sdxl_astro_h100_2048/seed45_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 46,
+      "time_s": 12.15,
+      "peak_vram_gb": 9.0,
+      "std": 52.07,
+      "png": "sdxl_astro_h100_2048/seed46_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 47,
+      "time_s": 12.16,
+      "peak_vram_gb": 9.0,
+      "std": 51.11,
+      "png": "sdxl_astro_h100_2048/seed47_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 48,
+      "time_s": 12.14,
+      "peak_vram_gb": 9.0,
+      "std": 61.8,
+      "png": "sdxl_astro_h100_2048/seed48_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 49,
+      "time_s": 12.17,
+      "peak_vram_gb": 9.0,
+      "std": 49.14,
+      "png": "sdxl_astro_h100_2048/seed49_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 50,
+      "time_s": 12.15,
+      "peak_vram_gb": 9.0,
+      "std": 59.95,
+      "png": "sdxl_astro_h100_2048/seed50_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 51,
+      "time_s": 12.17,
+      "peak_vram_gb": 9.0,
+      "std": 62.09,
+      "png": "sdxl_astro_h100_2048/seed51_astro.png",
+      "status": "ok"
+    }
+  ]
+}

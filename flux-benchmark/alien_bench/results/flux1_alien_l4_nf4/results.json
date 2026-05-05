@@ -1,0 +1,83 @@
+{
+  "device": "L4 g6.4xlarge (NF4)",
+  "model": "FLUX.1-dev",
+  "prompt": "A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest",
+  "steps": 28,
+  "guidance": 3.5,
+  "resolution": "1024x1024",
+  "load_s": 678.1,
+  "peak_vram_gb": 6.79,
+  "mean_s": 57.65,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 56.93,
+      "peak_vram_gb": 6.79,
+      "std": 49.5,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed42_alien.png"
+    },
+    {
+      "seed": 43,
+      "time_s": 56.81,
+      "peak_vram_gb": 6.79,
+      "std": 55.04,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed43_alien.png"
+    },
+    {
+      "seed": 44,
+      "time_s": 57.36,
+      "peak_vram_gb": 6.79,
+      "std": 48.03,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed44_alien.png"
+    },
+    {
+      "seed": 45,
+      "time_s": 57.38,
+      "peak_vram_gb": 6.79,
+      "std": 51.1,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed45_alien.png"
+    },
+    {
+      "seed": 46,
+      "time_s": 57.72,
+      "peak_vram_gb": 6.79,
+      "std": 52.76,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed46_alien.png"
+    },
+    {
+      "seed": 47,
+      "time_s": 58.24,
+      "peak_vram_gb": 6.79,
+      "std": 50.77,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed47_alien.png"
+    },
+    {
+      "seed": 48,
+      "time_s": 57.99,
+      "peak_vram_gb": 6.79,
+      "std": 49.75,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed48_alien.png"
+    },
+    {
+      "seed": 49,
+      "time_s": 57.99,
+      "peak_vram_gb": 6.79,
+      "std": 47.13,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed49_alien.png"
+    },
+    {
+      "seed": 50,
+      "time_s": 58.07,
+      "peak_vram_gb": 6.79,
+      "std": 56.4,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed50_alien.png"
+    },
+    {
+      "seed": 51,
+      "time_s": 58.03,
+      "peak_vram_gb": 6.79,
+      "std": 49.21,
+      "png": "/home/ubuntu/flux1_alien_l4_nf4/seed51_alien.png"
+    }
+  ]
+}
