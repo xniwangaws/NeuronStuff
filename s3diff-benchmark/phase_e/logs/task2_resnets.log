@@ -1,0 +1,30 @@
+[load] model to(neuron) done in 11.8s
+[compile] mode=pad_compile_resnets  wrapped=19 module forward(s)
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 599.949s
+[run 1 COLD] 600.06s
+[psnr] run1 vs CPU ref: 35.727 dB  
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.987s
+[run 2 warm#1] 9.02s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 9.123s
+[run 3 warm#2] 9.15s
+
+============================================================
+RESULT mode=pad_compile_resnets dtype=bf16
+============================================================
+  cold: 600.06s
+  warm1: 9.02s
+  warm2: 9.15s
+  psnr_final(vs_cpu_ref) : 35.727 dB 
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.

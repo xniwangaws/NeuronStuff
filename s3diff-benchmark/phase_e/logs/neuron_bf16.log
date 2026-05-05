@@ -1,0 +1,34 @@
+[config] device=neuron
+[load] S3Diff...
+[config] dtype=bf16 (torch.bfloat16)
+[check] stray tensors (wrong device): 0
+[patch] VAEHook re-wrapped with to_gpu=False
+[load] S3Diff init=0.9s  to(neuron)=8.1s  total=9.0s
+[load] DEResNet...
+[input] shape (1, 3, 256, 256) device neuron:0
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 73.064s
+[run 1] 73.16s
+[saved] /tmp/neuron_bf16_sr.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.922s
+[run 2] 8.95s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.573s
+[run 3] 8.60s
+
+=== RESULT (neuron) ===
+load_time_s: 8.96
+first_inference_s: 73.16
+second_inference_s: 8.95
+sr_image: /tmp/neuron_bf16_sr.png
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.

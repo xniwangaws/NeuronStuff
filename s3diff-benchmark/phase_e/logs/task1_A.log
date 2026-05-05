@@ -1,0 +1,36 @@
+[config] device=neuron
+[load] S3Diff...
+[config] dtype=bf16 (torch.bfloat16)
+[check] stray tensors (wrong device): 0
+[patch] VAEHook re-wrapped with to_gpu=False
+[load] S3Diff init=1.0s  to(neuron)=8.9s  total=9.9s
+[load] DEResNet...
+[input] shape (1, 3, 256, 256) device neuron:0
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+WARNING:torch_neuronx.python_ops.dtype_autocast:Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 180.167s
+[run 1] 180.29s
+[saved] /tmp/task1_A.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 12.088s
+[run 2] 12.12s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 11.816s
+[run 3] 11.85s
+
+=== RESULT (neuron) ===
+load_time_s: 9.89
+first_inference_s: 180.29
+second_inference_s: 12.12
+sr_image: /tmp/task1_A.png
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=83886080.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=83886080.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=10485760.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=10485760.00.

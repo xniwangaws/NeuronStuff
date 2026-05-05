@@ -1,0 +1,73 @@
+[load] model to(neuron) done in 12.7s
+
+===== STAGE: stage0 baseline (no compile) =====
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 35.983s
+  [COLD] 36.12s
+  [saved] /tmp/phase_e2/stage0.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 13.870s
+  [warm#1] 13.92s
+
+[compile] wrapping VAE encoder original_forward...
+
+===== STAGE: stage1 +compile VAE encoder =====
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 2622.676s
+  [COLD] 2622.73s
+  [saved] /tmp/phase_e2/stage1.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 12.408s
+  [warm#1] 12.46s
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 12.235s
+  [warm#2] 12.29s
+
+[compile] wrapping VAE decoder original_forward...
+
+===== STAGE: stage2 +compile VAE enc + dec =====
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 8.076s
+  [COLD] 8.13s
+  [FAIL run 0] RuntimeError: Compilation error occurred on Neuron for operation=torch_compile;
+error message="COMPILATION FAILED: 2026-05-04T13:13:30Z [INTERNAL_ERROR] [NCC_IXTP002] Number of instructions (11453000) is over the threshold (10000000). Tiling could potentially do a better job. - Please open a support ticket at htt
+
+[compile] wrapping UNet.forward ...
+
+===== STAGE: stage3 +compile UNet =====
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+ERROR:root:No implementation could handle operation _to_copy. Falling back on CPU. Args: [arg0: Tensor(shape=torch.Size([1, 4, 96, 96]), dtype=torch.float64, device=neuron:0, dispatch keys: DispatchKeySet(PrivateUse1, ADInplaceOrView, AutogradPrivateUse1, AutocastPrivateUse1))]. Kwargs: [dtype=dtype=torch.float32]. Details: PriorityImpl: Compilation error occurred on Neuron for operation=torch_compile;
+error message="COMPILATION FAILED: 2026-05-04T13:16:18Z up_blocks.2|CrossAttnUpBlock2D>up_blocks.2.attentions.1|Transformer2DModel>up_blocks.2.attentions.1.proj_in|Linear>up_blocks.2.attentions.1.proj_in.lora_A.default|Linear_dot.600 [INTERNAL_ERROR] [NCC_IRPX901] RelaxPredicates assertion error: inst should be valid after relaxing predicates - Please open a support ticket at https://github.com/aws-neuron/aws-neuron-sdk/issues/new. You may also be able to obtain more information using the 'XLA_IR_DEBUG' and 'XLA_HLO_DEBUG' environment variables."
+python stack trace=
+
+  [FAIL run 0] RuntimeError: CPU fallback disabled because TORCH_NEURONX_FALLBACK_ONLY_FOR_UNIMPLEMENTED_OPS=1. Operation _to_copy failed to execute on Neuron (last implementation: PriorityImpl). Details: PriorityImpl: Compilation error occurred on Neuron for operation=torch_compile;
+error message="COMPILATION FAILED: 2026-05-0
+
+========================================================================
+SUMMARY — cat_LQ_256 → 1024×1024 on Neuron eager (Phase E2)
+========================================================================
+  stage0 baseline            cold=  36.12s  warm_min=  13.92s  all=['36.12', '13.92']
+  stage1 +compile VAE enc    cold=2622.73s  warm_min=  12.29s  all=['2622.73', '12.46', '12.29']
+  stage2 +compile VAE dec    cold=   8.13s  warm_min=  FAIL    all=['8.13', 'nan']
+  stage3 +compile UNet       cold=  FAIL    warm_min=  FAIL    all=['nan']
+
+[load_to_neuron] 12.65s
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.

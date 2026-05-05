@@ -1,0 +1,28 @@
+[config] device=neuron
+[load] S3Diff...
+[check] stray tensors (wrong device): 0
+[patch] VAEHook re-wrapped with to_gpu=False
+[load] S3Diff init=0.9s  to(neuron)=9.6s  total=10.6s
+[load] DEResNet...
+[input] shape (1, 3, 256, 256) device neuron:0
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+WARNING:torch_neuronx.python_ops.dtype_autocast:Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 405.930s
+[run 1] 406.06s
+[saved] /tmp/neuron_sr.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 14.661s
+[run 2] 14.71s
+
+=== RESULT (neuron) ===
+load_time_s: 10.56
+first_inference_s: 406.06
+second_inference_s: 14.71
+sr_image: /tmp/neuron_sr.png
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
