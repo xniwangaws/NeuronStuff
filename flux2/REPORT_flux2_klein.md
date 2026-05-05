@@ -1,6 +1,5 @@
 # FLUX.2-klein-base-9B 多设备 benchmark 报告
 
-> 客户:OPPO(徐红艳 → 陈维琼 → 孙锐 → 刘俊毅)
 > Prompt:`"A cat holding a sign that says hello world"`,guidance 4.0,50 step,batch=1,seeds 42–51(共 10 个)
 
 ## 1. 设备与价格(AWS on-demand,2026-05)
