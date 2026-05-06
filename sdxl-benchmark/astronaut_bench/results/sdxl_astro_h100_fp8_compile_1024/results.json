@@ -1,0 +1,97 @@
+{
+  "device": "h100 res=1024 fp8+compile(reduce-overhead)",
+  "model": "SDXL-base-1.0",
+  "prompt": "An astronaut riding a green horse",
+  "steps": 50,
+  "guidance": 7.5,
+  "resolution": "1024x1024",
+  "compile_mode": "reduce-overhead",
+  "fullgraph": false,
+  "load_s": 2.6,
+  "peak_vram_gb": 6.88,
+  "mean_s": 1.84,
+  "n_ok": 10,
+  "n_total": 10,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 1.84,
+      "peak_vram_gb": 6.88,
+      "std": 75.74,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed42_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 43,
+      "time_s": 1.84,
+      "peak_vram_gb": 6.88,
+      "std": 68.1,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed43_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 44,
+      "time_s": 1.84,
+      "peak_vram_gb": 6.88,
+      "std": 61.64,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed44_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 45,
+      "time_s": 1.84,
+      "peak_vram_gb": 6.88,
+      "std": 66.11,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed45_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 46,
+      "time_s": 1.84,
+      "peak_vram_gb": 6.88,
+      "std": 62.52,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed46_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 47,
+      "time_s": 1.84,
+      "peak_vram_gb": 6.88,
+      "std": 61.47,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed47_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 48,
+      "time_s": 1.83,
+      "peak_vram_gb": 6.88,
+      "std": 60.41,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed48_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 49,
+      "time_s": 1.83,
+      "peak_vram_gb": 6.88,
+      "std": 71.89,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed49_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 50,
+      "time_s": 1.84,
+      "peak_vram_gb": 6.88,
+      "std": 56.25,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed50_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 51,
+      "time_s": 1.84,
+      "peak_vram_gb": 6.88,
+      "std": 53.72,
+      "png": "/home/ubuntu/sdxl_astro_h100_fp8_compile_1024/seed51_astro.png",
+      "status": "ok"
+    }
+  ]
+}

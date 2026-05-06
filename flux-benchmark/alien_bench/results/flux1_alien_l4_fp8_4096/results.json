@@ -1,0 +1,14 @@
+{
+  "device": "L4 g6.4xlarge FP8 (wangkanai, seq-offload) 4096x4096",
+  "model": "FLUX.1-dev",
+  "prompt": "A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest",
+  "steps": 28,
+  "guidance": 3.5,
+  "resolution": "4096x4096",
+  "status": "BLOCKED_OOM",
+  "note": "L4 22GB VRAM cannot hold the FP8 ckpt (upcast to bf16 ~16GB) + activations at 4K (needs ~8GB additional per step). Sequential CPU offload does not help because the activation tensors themselves exceed remaining VRAM. seed 42 OOM at step 0/28 during first attention.",
+  "error": "CUDA out of memory. Tried to allocate 8.00 GiB. GPU 0 has a total capacity of 22.03 GiB of which 5.74 GiB is free.",
+  "n_ok": 0,
+  "n_total": 3,
+  "seeds_attempted": [42, 43, 44]
+}

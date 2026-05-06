@@ -36,7 +36,9 @@
 | H100 p5.4xlarge | FP8(torchao) | 2048² | **37.52** | 29.9 GB | 10/10 | **$0.04509** |
 | H100 p5.4xlarge | FP8(torchao) | 4096² | **328.70** | 37.67 GB | 10/10 | **$0.39492** |
 | L4 g6.4xlarge | FP8(wangkanai, seq-offload) | 2048² | **339.38** | 2.42 GB | 10/10 | **$0.12471** |
-| Neuron trn2.3xl | BF16 | 2K/4K | 编译可行但本轮未完成(transformer 2K 编译 539s 后被 terminate),留待下轮 | — | — | — |
+| Neuron trn2.3xl | BF16 TP=4 | 2048² | **BLOCKED** | — | 0/10 | **NCC_EVRF007**: VAE decoder NEFF 5,234,444 指令 > 5M 硬限 (2026-05-07 加测) |
+| Neuron trn2.3xl | BF16 TP=4 | 4096² | **BLOCKED** | — | — | 同理,未尝试 |
+| L4 g6.4xlarge | FP8 wangkanai | 4096² | **BLOCKED OOM** | — | 0/3 | L4 22GB VRAM 吃不下 12B bf16 upcast (~16GB) + 4K activation (~8GB) |
 
 **注**:FLUX.1-dev 官方 spec 为 1024²,`max_area=4MP`。2K / 4K 属 super-resolution force run,输出质量受 spec 限制(`std` 偏低、细节下降),仅作硬件极限参考。
 

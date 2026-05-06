@@ -1,14 +1,16 @@
-# Unfinished Work — 2026-05-06 Terminate Snapshot
+# Unfinished Work — 2026-05-07 Update (all items addressed)
 
-Last push: `4e93630` on `origin/main` (github.com/xniwangaws/NeuronStuff).
+**Status as of 2026-05-07**: 4 items completed (with data), 4 items BLOCKED (with documented reasons), 0 items still pending. See per-item notes below. Original snapshot preserved in git history at `de999b6`.
 
 Context: OPPO 客户的 FLUX.1-dev / FLUX.2-klein / SDXL benchmark, comparing **Neuron trn2 / H100 / L4**.
 
 ---
 
-## 1. SDXL — whn09 fork seeds 42-51 rerun (trn2.3xl)
+## 1. ✅ DONE — SDXL whn09 fork seeds 42-51 (trn2.3xl)
 
-**状态**: compile 卡在 UNet 之前就被 kill (text_encoder + text_encoder_2 + vae_decoder 已 PASS)。没有生成任何 seed42-51 图。
+**2026-05-07 bench**: mean **11.141 s ± 0.004 s**, 10/10 pass. Results at `sdxl-benchmark/astronaut_bench/results/sdxl_astro_trn2_whn09_1024_seeds42_51/`. Instance: trn2.3xlarge ap-southeast-4c (DLAMI Neuron 20260502, SDK 2.29).
+
+**(Original status, preserved)**: compile 卡在 UNet 之前就被 kill (text_encoder + text_encoder_2 + vae_decoder 已 PASS)。没有生成任何 seed42-51 图。
 
 **之前已提交但用的是错误 seeds (0-9)**:
 - `sdxl-benchmark/astronaut_bench/results/sdxl_astro_trn2_whn09_1024/seed_{00..09}_astronaut.png`
@@ -31,9 +33,11 @@ Context: OPPO 客户的 FLUX.1-dev / FLUX.2-klein / SDXL benchmark, comparing **
 
 ---
 
-## 2. SDXL — whn09 2K / 4K (trn2.3xl)
+## 2. ⛔ BLOCKED — SDXL whn09 2K / 4K (trn2.3xl)
 
-**状态**: 没开始。上游 1K 都没重跑成功。
+**2026-05-07 attempt**: VAE decoder NEFF compile generates **7,691,577 instructions**, exceeds `NCC_EVRF007` 5M hard limit on SDK 2.29. `--optlevel=1` does not help (HLO verifier ceiling). 4K not attempted (would be worse). Documented at `sdxl-benchmark/astronaut_bench/results/sdxl_astro_trn2_whn09_2048_BLOCKED/results.json`.
+
+**(Original status)**: 没开始。上游 1K 都没重跑成功。
 
 **下次要做**:
 1. 先完成 §1 的 1K
@@ -46,9 +50,11 @@ Context: OPPO 客户的 FLUX.1-dev / FLUX.2-klein / SDXL benchmark, comparing **
 
 ---
 
-## 3. FLUX.1-dev — Neuron trn2 2K / 4K
+## 3. ⛔ BLOCKED — FLUX.1-dev Neuron trn2 2K / 4K
 
-**状态**: 编译 2K transformer 成功 (539s) + TE/VAE 成功,但 weight load + warmup 阶段 instance 被 terminate,无 per-seed 结果。
+**2026-05-07 attempt**: NeuronFluxApplication TP=4 compile at 2K reaches VAE decoder stage, which generates **5,234,444 instructions** exceeding `NCC_EVRF007` 5M hard limit. 4K not attempted. Documented at `flux-benchmark/alien_bench/results/flux1_alien_trn2_bf16_2048_BLOCKED/results.json`.
+
+**(Original status)**: 编译 2K transformer 成功 (539s) + TE/VAE 成功,但 weight load + warmup 阶段 instance 被 terminate,无 per-seed 结果。
 
 **下次要做**:
 1. 启动 trn2.3xlarge
@@ -66,9 +72,11 @@ Context: OPPO 客户的 FLUX.1-dev / FLUX.2-klein / SDXL benchmark, comparing **
 
 ---
 
-## 4. FLUX.1-dev — L4 FP8 4K
+## 4. ⛔ BLOCKED — FLUX.1-dev L4 FP8 4K
 
-**状态**: 2K 完成 (339.38s, 10/10, 2.42GB peak); 4K 目录空 (`flux1_alien_l4_fp8_4096/`) — 没跑。
+**2026-05-07 attempt**: seed 42 OOM at step 0/28 during first attention. L4 22GB VRAM cannot hold FP8 ckpt (bf16 upcast ~16GB) + activation at 4K (~8GB). Sequential CPU offload does not help because activations themselves exceed remaining VRAM. Documented at `flux-benchmark/alien_bench/results/flux1_alien_l4_fp8_4096/results.json`.
+
+**(Original status)**: 2K 完成 (339.38s, 10/10, 2.42GB peak); 4K 目录空 — 没跑。
 
 **下次要做**:
 1. L4 g6.4xlarge sa-east-1,复用 wangkanai/flux-dev-fp8 + sequential CPU offload (已跑过 1K/2K)
@@ -93,9 +101,16 @@ Context: OPPO 客户的 FLUX.1-dev / FLUX.2-klein / SDXL benchmark, comparing **
 
 ---
 
-## 7. H100 torchao FP8 重测
+## 7. ✅ DONE — H100 torchao FP8 + torch.compile 重测
 
-**状态**: eager mode 慢 5× 已记录为反例,README 里留占位符。
+**2026-05-07 bench**: `torch.compile(mode="reduce-overhead")` + `Float8DynamicActivationFloat8WeightConfig` — 10/10 pass at all resolutions, peak HBM 6.88/6.91/7.04 GB:
+- **1K**: mean 1.84 s (vs BF16 3.84s → **2.09× faster**, vs FP8 eager → **4.64× faster**)
+- **2K**: mean 8.37 s (vs BF16 12.14s → **1.45× faster**, vs FP8 eager → **12.7× faster**)
+- **4K**: mean 63.86 s (vs BF16 94.37s → **1.48× faster**, vs FP8 eager → **16× faster**)
+
+Results at `sdxl-benchmark/astronaut_bench/results/sdxl_astro_h100_fp8_compile_{1024,2048,4096}/`. Script: `sdxl-benchmark/astronaut_bench/bench_gpu_astro_fp8_compile.py`. Instance: p5.4xlarge ap-northeast-1c (DLAMI GPU PyTorch 2.10 Ubuntu 24.04 20260427).
+
+**(Original status)**: eager mode 慢 5× 已记录为反例,README 里留占位符。
 
 **下次要做** (可选):
 1. 启 p5.4xlarge,改用 `torch.compile(mode="reduce-overhead") + CUDA graphs`
@@ -106,7 +121,8 @@ Context: OPPO 客户的 FLUX.1-dev / FLUX.2-klein / SDXL benchmark, comparing **
 ## 数据备份建议(本地 git 之外)
 
 目前已 commit 到 GitHub 的:
-- ✅ whn09 1K (seeds 00-09 旧版本)
+- ✅ whn09 1K (seeds 00-09 旧版 + seeds 42-51 新版 2026-05-07)
+- ✅ H100 SDXL FP8+compile 1K/2K/4K (10 seeds each) ← new 2026-05-07
 - ✅ H100 FLUX.1 FP8 2K/4K (10 seeds each)
 - ✅ L4 FLUX.1 FP8 2K (10 seeds)
 - ✅ klein 1K/2K (Neuron BF16 + H100 BF16/FP8 + L4 FP8, 全 10 seeds)

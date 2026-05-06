@@ -1,0 +1,11 @@
+{
+  "task": "Item 2 — SDXL whn09 fork 2K on trn2.3xlarge (SDK 2.29)",
+  "instance": "trn2.3xlarge ap-southeast-4c",
+  "dlami": "Deep Learning AMI Neuron PyTorch 2.9 Ubuntu 24.04 20260502 (ami-07240db66d6961eea)",
+  "resolution": "2048x2048",
+  "status": "BLOCKED",
+  "reason": "NCC_EVRF007: VAE decoder NEFF compile generates 7,691,577 instructions, exceeds 5,000,000 hard limit. --optlevel=1 does not help on HLO verifier ceiling.",
+  "note": "Matches prior SDK 2.29 trn2 SDXL 2K attempt (README section 3). 4K would be worse and is not attempted.",
+  "compile_flags": ["--model-type=unet-inference", "--lnc=2"],
+  "error": "neuronx-cc exit status 70 (NCC_EVRF007 instruction count ceiling)"
+}

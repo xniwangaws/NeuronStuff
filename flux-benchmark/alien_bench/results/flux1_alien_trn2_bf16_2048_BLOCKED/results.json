@@ -1,0 +1,10 @@
+{
+  "task": "Item 3 — FLUX.1-dev Neuron 2K on trn2.3xlarge (SDK 2.29, NeuronFluxApplication TP=4 LNC=2)",
+  "instance": "trn2.3xlarge ap-southeast-4c",
+  "dlami": "Deep Learning AMI Neuron PyTorch 2.9 Ubuntu 24.04 20260502 (ami-07240db66d6961eea)",
+  "resolution": "2048x2048",
+  "status": "BLOCKED",
+  "reason": "NCC_EVRF007: VAE decoder NEFF generates 5,234,444 instructions, exceeds 5,000,000 hard limit.",
+  "compile_flags": ["--model-type=unet-inference", "-O1", "--auto-cast=none"],
+  "error": "neuronx-cc exit status 70 (NCC_EVRF007 instruction count ceiling)"
+}
