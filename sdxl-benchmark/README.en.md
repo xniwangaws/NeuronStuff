@@ -21,7 +21,6 @@ _[中文版: README.zh.md](README.zh.md)_
 | **H100 p5.4xlarge** | **BF16 (baseline)** | **3.84** | 8.98 GB | 10/10 | **$0.00462** | **1.00×** | **1.00×** |
 | **H100 p5.4xlarge** | **FP8 + torch.compile(reduce-overhead)** | **1.84** | 6.88 GB | 10/10 | **$0.00221** | **2.09× faster** | **0.48× (52% cheaper)** |
 | **Neuron trn2.3xlarge (SDK 2.29)** | **BF16 + NKI flash-attn + CFG=7.5** *(DP=2, 2/4 cores = 1/2 Trainium2 chip, seeds 42-51)* | **11.14** | — | 10/10 | **$0.00346** | **0.34× (2.90× slower)** | **0.75× (25% cheaper)** |
-| **Neuron trn2.3xlarge (SDK 2.29, batch=2 BF16 CFG=7.5)** | **BF16 batch=2 + NKI flash-attn + CFG=7.5** | **13.262** | — | **10/10** | **$0.00823** | **0.29× (3.45× slower)** | **1.78× more expensive** |
 | L4 g6.4xlarge | BF16 | 19.75 | 5.21 GB | 10/10 | $0.00726 | 1.02× | 0.30× (3.33× cheaper) |
 | **L4 g6.4xlarge** | **FP8 + torch.compile(reduce-overhead)** | **12.68** | 6.87 GB | 10/10 | **$0.00466** | **0.30× (3.29× slower)** | **1.01× (parity)** |
 
@@ -31,7 +30,6 @@ _[中文版: README.zh.md](README.zh.md)_
 - **H100 BF16** is the baseline at 3.84 s / 1K.
 - **H100 FP8 + torch.compile**: 1.84 s / $0.00221 — 2.09× faster than BF16, 52% cheaper. **Fastest and cheapest overall.**
 - **Neuron trn2.3xl (SDK 2.29) DP=2 path**: 11.14 s, 10/10 pass. Since only 2/4 logical cores (= 1/2 Trainium2) are used, billing at half the chip price ($1.1175/hr) yields $/image = **$0.00346**, **25% cheaper than H100 BF16**. Extending to 4 cores is expected to double throughput.
-- **Neuron trn2.3xl (SDK 2.29) batch=2 CFG=7.5 workaround**: 13.262 s / $0.00823 (full-chip billing). 1.78× more expensive than H100 BF16 but restores full CFG=7.5 prompt adherence.
 - **L4 FP8 + torch.compile**: 12.68 s / $0.00466 — 1.56× faster than L4 BF16, 36% cheaper per image, at parity with H100 BF16.
 - **L4 BF16**: 19.75 s / $0.00726 at 1K. Simpler deployment path.
 
@@ -67,9 +65,9 @@ _[中文版: README.zh.md](README.zh.md)_
 
 ### 5.1 1024² seed 42
 
-| H100 BF16 | **Neuron BF16 CFG=7.5 (batch=2)** | **Neuron BF16 CFG=7.5 (DP=2 NKI)** | L4 BF16 |
-|:---:|:---:|:---:|:---:|
-| ![](astronaut_bench/results/sdxl_astro_h100_1024/seed42_astro.png) | ![](astronaut_bench/results/sdxl_astro_trn2_1024_cfg/seed42.png) | ![](astronaut_bench/results/sdxl_astro_trn2_whn09_1024_seeds42_51/seed42.png) | ![](astronaut_bench/results/sdxl_astro_l4_1024/seed42_astro.png) |
+| H100 BF16 | **Neuron BF16 CFG=7.5 (DP=2 NKI)** | L4 BF16 |
+|:---:|:---:|:---:|
+| ![](astronaut_bench/results/sdxl_astro_h100_1024/seed42_astro.png) | ![](astronaut_bench/results/sdxl_astro_trn2_whn09_1024_seeds42_51/seed42.png) | ![](astronaut_bench/results/sdxl_astro_l4_1024/seed42_astro.png) |
 
 ### 5.2 2048² seed 42
 
@@ -99,7 +97,6 @@ _[中文版: README.zh.md](README.zh.md)_
 | L4 2K BF16 (10 seeds) | `astronaut_bench/results/sdxl_astro_l4_2048/seed{42..51}_astro.png` |
 | L4 4K BF16 (1 seed) | `astronaut_bench/results/sdxl_astro_l4_4096/seed42_astro.png` |
 | **L4 1K FP8+torch.compile (10 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_1024/seed{42..51}_astro.png` |
-| **Neuron trn2 1K BF16 CFG=7.5 batch=2 (10 seeds)** | `astronaut_bench/results/sdxl_astro_trn2_1024_cfg/seed{42..51}.png` |
 | **Neuron trn2 1K BF16 CFG=7.5 DP=2 NKI (10 seeds)** | `astronaut_bench/results/sdxl_astro_trn2_whn09_1024_seeds42_51/seed{42..51}.png` |
 | Neuron trn2 2K / 4K | compile blocked (see §3 / §4) |
 
@@ -111,8 +108,7 @@ Each directory includes a `results.json` with `mean_s`, `peak_vram_gb`, per-seed
 - SDK: **2.29** / neuronx-cc / torch-neuronx
 - venv: `/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/`
 - Compile: all 5 NEFFs (UNet / CLIP-L / CLIP-G / VAE decoder / post_quant_conv) compile in ~30 min with PR #149 style flags (`--model-type=unet-inference -O1`).
-- Run (CFG=7.5 batch=2 workaround): **BF16 + batch=2 UNet NEFF + CFG=7.5 + single `jit.load`**, 10/10 pass, 13.262 s. UNet recompile uses `--model-type=unet-inference --auto-cast matmult --auto-cast-type bf16`; sample shape `[2, 4, 128, 128]`; timestep stays 0-dim scalar; `encoder_hidden_states [2, 77, 2048]`; `text_embeds [2, 1280]`; `time_ids [2, 6]`. Text encoders / VAE decoder / post_quant_conv reuse the 1K batch=1 NEFFs (CFG does not affect those components).
-- The AWS official notebook combination (FP32 + DataParallel[0,1] + batch=2 CFG) exceeds per-NC HBM on trn2.3xlarge at LNC=2 (`NRT_RESOURCE`); SDK 2.29 `DataParallel` scatter has a bug on scalar timestep input. The two workarounds above are the current bypasses.
+- Run: **DP=2 (2/4 logical cores) + NKI flash-attn + CFG=7.5**, single `jit.load`, 10/10 pass, 11.14 s. `--model-type=unet-inference --lnc=2`, uses NKI `attention_isa_kernel` flash-attn in place of SDPA. SDK 2.29 `DataParallel` scatter has a bug on scalar timestep inputs; the DP=2 + NKI path is the current workaround.
 - 2K / 4K cannot compile on SDK 2.29: see §3 / §4.
 
 **H100 p5.4xlarge**: DLAMI PyTorch / CUDA 13 / torch 2.10+cu130 / diffusers 0.38 / torchao 0.17.
@@ -185,6 +181,5 @@ python benchmark_neuron.py \
 3. **L4 is viable at all resolutions**: BF16 1K $0.00726 / 2K $0.0350 / 4K $0.228. **FP8 + torch.compile (added 2026-05-07): 1K 12.68 s / $0.00466 — 1.56× faster than L4 BF16, 36% cheaper per image, at parity with H100 BF16**. 24 GB VRAM is enough for SDXL at full precision, no offloading required.
 4. **Neuron**:
    - **trn2.3xlarge (SDK 2.29) DP=2 path** (2/4 logical cores = 1/2 chip): 11.14 s / 10/10 / **$0.00346 per image (25% cheaper than H100 BF16)**.
-   - **trn2.3xlarge (SDK 2.29) batch=2 CFG=7.5 workaround** (full chip): 13.262 s / 10/10 / $0.00823 per image. 1.51× faster than the older batch=1 workaround and restores full CFG=7.5 prompt adherence (seed 42 green horse returns). Key fixes: (i) recompile UNet at batch=2 (accommodates CFG's automatic uncond/cond duplicate), (ii) force `TextEncoderOutputWrapper` to return `text_embeds=None` for CLIP-L so diffusers 0.38 uses CLIP-G's 1280-d pooled (fixes the `[1,768] expected [1,1280]` regression), (iii) keep a single `torch.jit.load` (sidesteps the SDK 2.29 `DataParallel` scatter bug), (iv) skip FP32 auto-cast, use `--auto-cast matmult --auto-cast-type bf16`.
    - **trn2.3xlarge 2K / 4K compile blocked**: 2K VAE decoder generates 7.7M instructions / 4K UNet generates 9.8M instructions, both exceed the `NCC_EVRF007` 5M hard limit; `--optlevel=1` does not help. In addition, on 2K the UNet `walrus_driver` backend eats >124 GB RAM, exceeding the 128 GB host RAM on trn2.3xlarge.
 5. **Next steps**: (a) ✅ H100 FP8 retested with `torch.compile(mode="reduce-overhead") + CUDA graphs` — see 1K/2K/4K results above; (b) Neuron trn2 2K/4K still blocked on `NCC_EVRF007` (2K VAE 7.69M > 5M, confirmed still present on SDK 2.29). Possible follow-ups: UNet tensor-parallel splitting, or compile on a high-host-RAM instance (r7i) and migrate the NEFFs.
