@@ -1,0 +1,111 @@
+{
+  "run": "klein-9b-fp8 (guidance-distilled) @ L4 BFL-flux2 + fp8-shim",
+  "prompt": "A cat holding a sign that says hello world",
+  "res": "1024x1024",
+  "num_steps": 50,
+  "guidance": 4.0,
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "n_total": 10,
+  "n_pass": 10,
+  "mean_s_all": 77.25024961519998,
+  "mean_s_pass": 77.25024961519998,
+  "peak_gb_max": 13.124078750610352,
+  "stage_times": {
+    "text_encoder_load_s": 4.858805427999869,
+    "ae_load_s": 0.24199944099973436,
+    "fp8_transformer_load_s": 1.5472164259999772
+  },
+  "runs": [
+    {
+      "seed": 42,
+      "elapsed_s": 74.9737887819997,
+      "peak_gb": 13.124053001403809,
+      "std": 65.06672772022424,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed42_cat.png"
+    },
+    {
+      "seed": 43,
+      "elapsed_s": 75.96611789899998,
+      "peak_gb": 13.124055862426758,
+      "std": 61.67679722358639,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed43_cat.png"
+    },
+    {
+      "seed": 44,
+      "elapsed_s": 77.67369300500013,
+      "peak_gb": 13.124058723449707,
+      "std": 54.755854041086636,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed44_cat.png"
+    },
+    {
+      "seed": 45,
+      "elapsed_s": 77.86286595799993,
+      "peak_gb": 13.124061584472656,
+      "std": 52.76400895612683,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed45_cat.png"
+    },
+    {
+      "seed": 46,
+      "elapsed_s": 77.7683581880001,
+      "peak_gb": 13.124064445495605,
+      "std": 53.6553006103155,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed46_cat.png"
+    },
+    {
+      "seed": 47,
+      "elapsed_s": 77.7268589309997,
+      "peak_gb": 13.124067306518555,
+      "std": 55.91421394561363,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed47_cat.png"
+    },
+    {
+      "seed": 48,
+      "elapsed_s": 77.63322727900004,
+      "peak_gb": 13.124070167541504,
+      "std": 71.94105627168437,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed48_cat.png"
+    },
+    {
+      "seed": 49,
+      "elapsed_s": 77.61182546600003,
+      "peak_gb": 13.124073028564453,
+      "std": 49.38514103564982,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed49_cat.png"
+    },
+    {
+      "seed": 50,
+      "elapsed_s": 77.72435083600021,
+      "peak_gb": 13.124075889587402,
+      "std": 53.68376992262848,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed50_cat.png"
+    },
+    {
+      "seed": 51,
+      "elapsed_s": 77.56140980800001,
+      "peak_gb": 13.124078750610352,
+      "std": 45.27275304942294,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_1024/seed51_cat.png"
+    }
+  ]
+}

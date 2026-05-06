@@ -1,0 +1,30 @@
+{
+  "run": "klein-9b-fp8 (guidance-distilled) @ L4 BFL-flux2 + fp8-shim",
+  "prompt": "A cat holding a sign that says hello world",
+  "res": "2048x2048",
+  "num_steps": 50,
+  "guidance": 4.0,
+  "seeds": [
+    42
+  ],
+  "n_total": 1,
+  "n_pass": 1,
+  "mean_s_all": 384.97664807399997,
+  "mean_s_pass": 384.97664807399997,
+  "peak_gb_max": 17.478744983673096,
+  "stage_times": {
+    "text_encoder_load_s": 4.837137149999762,
+    "ae_load_s": 0.24504637600057322,
+    "fp8_transformer_load_s": 1.537746144999801
+  },
+  "runs": [
+    {
+      "seed": 42,
+      "elapsed_s": 384.97664807399997,
+      "peak_gb": 17.478744983673096,
+      "std": 80.78929703655041,
+      "pass": true,
+      "file": "/home/ubuntu/klein_fp8_l4_2048/seed42_cat.png"
+    }
+  ]
+}
