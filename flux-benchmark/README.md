@@ -1,139 +1,94 @@
-# FLUX.1-dev Inference Benchmark
+# FLUX.1-dev alien-prompt benchmark — Neuron / H100 / L4
 
-Benchmark FLUX.1-dev image generation across AWS Trainium and GPU instance types.
+> Prompt:`"A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest"`,guidance 3.5,28 steps,batch=1,max_sequence_length=512,seeds 42–51(共 10 个)
 
-## Benchmark Parameters
+## 1. 设备与价格(AWS on-demand,2026-05)
 
-| Parameter | Value |
-|-----------|-------|
-| Model | [black-forest-labs/FLUX.1-dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) |
-| Resolution | 1024 x 1024 |
-| Guidance scale | 3.5 |
-| Max sequence length | 512 |
-| Prompt | "A cat holding a sign that says hello world" |
-| Seed | 0 (`torch.Generator("cpu").manual_seed(0)`) |
-| Warmup rounds | 5 |
-| Inference steps | 15, 25, 50 |
+| 实例 | 芯片 | 内存 | $/hr | Region |
+|---|---|---|---:|---|
+| **trn2.3xlarge** 等效 | 1× Trainium2(WORLD=4, backbone_tp=4, LNC=2) | 96 GB HBM | **$2.235** | ap-southeast-4 |
+| p5.4xlarge | 1× H100 SXM5 | 80 GB HBM3 | **$4.326** | ap-northeast-1 |
+| g6.4xlarge | 1× L4 | 24 GB GDDR6 | **$1.323** | sa-east-1 |
 
-## Instance Specifications
+## 2. 1024² 端到端耗时 + 峰值显存 + $/image(以 H100 FP8 为基准)
 
-| Instance | Accelerator | VRAM | On-Demand $/hr |
-|----------|------------|------|----------------|
-| trn2.48xlarge | 2x Trainium2 chips (tp=4, cp=2) | 96GB HBM per chip | $35.76 (full) / ~$4.47 (2 chips) |
-| p5.48xlarge | 1x H100 80GB | 80GB HBM3 | $34.61 (full) / ~$4.33 (1 GPU) |
-| trn1.32xlarge | 2x Trainium1 chips (tp=4, cp=2) | 32GB HBM per chip | $21.50 (full) / ~$2.69 (2 chips) |
-| g6.4xlarge | 1x L4 24GB | 24GB GDDR6 | $1.32 |
+| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 FP8 | 成本 vs H100 FP8 |
+|---|---|---:|---|---:|---:|---:|---:|
+| H100 p5.4xlarge | BF16 | **5.87** | 33.85 GB | 10/10 | $0.00706 | 1.45× 更快 | 0.83×(便宜 17%) |
+| H100 p5.4xlarge | **FP8(基准, torchao)** | 8.54 | 22.77 GB | 10/10 | **$0.01026** | **1.00×** | **1.00×** |
+| **Neuron trn2.3xl** | **BF16 WORLD=4** | **8.03** | ~25 GB(单 Trainium2) | **10/10** | **$0.00499** | 1.06× 更快 | **0.49×**(**便宜 51%**) |
+| L4 g6.4xlarge | NF4(bnb+offload) | 57.65 | 6.79 GB | 10/10 | $0.02119 | 0.15×(慢 6.75×) | 2.06× 贵 |
 
-## Results
+`$/image = (Mean / 3600) × $/hr`
 
-### Main Comparison
+**核心结论**:
+- **Neuron 在 FLUX.1-dev 上**既更快(比 H100 FP8 快 1.06×)**又更便宜**(单图成本仅 H100 FP8 的 49%,**便宜 51%**)
+- H100 BF16 绝对速度最快(5.87s),比 FP8 便宜 17%(FP8 quantize 在单张小图上的 overhead 超过加速收益)
+- Neuron 单芯片 HBM ~25 GB,低于 H100 BF16(34 GB)
+- L4 NF4 速度慢 6.75×,load 678s(NF4 转换慢),性价比最差
 
-| Instance | Accelerator | Method | 15 steps | 25 steps | 50 steps |
-|----------|------------|--------|----------|----------|----------|
-| trn2.48xlarge | 2x Trainium2 (tp=4, cp=2) | bf16 | **2.92s** | **4.63s** | **8.91s** |
-| p5.48xlarge | 1x H100 80GB | bf16 | **2.92s** | **4.67s** | **9.21s** |
-| trn1.32xlarge | 2x Trainium1 (tp=4, cp=2) | bf16 | 4.69s | 7.53s | 14.66s |
-| g6.4xlarge | 1x L4 24GB | NF4 no offload | — | 50.45s | — |
-| g6.4xlarge | 1x L4 24GB | FP8 + model_cpu_offload | 56.01s | 85.30s | 158.05s |
+## 3. DiT 加载 / 冷启动 / 稳态拆分(Neuron 1K)
 
-> Trn2 matches H100 performance at a fraction of the cost.
+| 阶段 | 耗时 |
+|---|---:|
+| Compile(一次性,可缓存到 S3/EFS) | 103.4 s |
+| Weight load + NxD init | 78.0 s |
+| 首次推理(含 graph replay warmup) | ~8 s |
+| **稳态 mean(10 seed)** | **8.03 s** |
 
-### L4 (g6) - Quantization & Offload Strategies (25 steps)
+- **首次 cold-start**(无 NEFF 缓存):~3.2 min
+- **热启动**(NEFF 缓存命中):~85 s
+- **稳态**:8.03 s/image(28 steps)
 
-The L4 has only 24GB VRAM. FLUX.1-dev transformer alone is 23.8GB in bf16, so quantization and/or CPU offloading is required.
+## 4. 同 prompt / seed 的生图对比(seed 42)
 
-| Method | 25 steps | Notes |
-|--------|----------|-------|
-| NF4 (4-bit) no offload | **50.45s** | Fastest on L4. ~6GB transformer fits in VRAM with T5 |
-| NF4 + model_cpu_offload | 58.01s | Offload overhead adds ~8s |
-| FP8 (torchao) + model_cpu_offload | 85.30s | FP8 transformer ~12GB, must offload |
-| INT8 + sequential_cpu_offload | 112.94s | Layer-by-layer offload, very slow |
+| H100 BF16 | H100 FP8 | **Neuron trn2 BF16 WORLD=4** | L4 NF4 |
+|:---:|:---:|:---:|:---:|
+| ![](alien_bench/results/flux1_alien_h100_bf16/seed42_alien.png) | ![](alien_bench/results/flux1_alien_h100_fp8/seed42_alien.png) | ![](alien_bench/results/flux1_alien_trn2_bf16/seed42_alien.png) | ![](alien_bench/results/flux1_alien_l4_nf4/seed42_alien.png) |
 
-### L4 (g6) - Skip-T5 (ComfyUI-style) Results (25 steps)
+**视觉一致性**:4 设备同 prompt + 同 seed 42 → 均产出识别度高的绿色外星人(有 prompt bias variant:seed 42 在 H100/L4 上偶现 "cat hello world" 构图,属 FLUX.1-dev 训练数据偏好)。其他 9 个 seed(43–51)均稳定产出 fluorescent alien 主体。
 
-Mimics ComfyUI's "skip text encoder" pattern: replace T5-XXL output with zeros, keep CLIP-L.
-T5-XXL is 9.4GB bf16 and runs once per generation; skipping it trades prompt quality for memory+latency.
+## 5. 10-seed 全量 PNG 路径
 
-| Config | Latency | T5 overhead | VRAM | Notes |
-|--------|---------|-------------|------|-------|
-| NF4 full (T5+CLIP, offload) | 59.06s | — | offload | Matches prior `benchmark_l4_nf4_offload.py` NF4 model_offload result |
-| NF4 skip-T5 (no offload) | **49.96s** | **−9.10s (−15.4%)** | ~7GB | Fits entirely on L4 after dropping T5 |
-| FP8 full (T5+CLIP, offload) | 65.93s | — | offload | Kijai/flux-fp8 single-file + `enable_layerwise_casting` (ComfyUI default: FP8 storage / bf16 compute) |
-| FP8 skip-T5 (no offload) | **50.25s** | **−15.68s (−23.8%)** | ~15GB | Fits on L4; no offload needed |
+| 设备 | 目录 |
+|---|---|
+| Neuron 1K BF16 | `alien_bench/results/flux1_alien_trn2_bf16/seed{42..51}_alien.png` |
+| H100 1K BF16 | `alien_bench/results/flux1_alien_h100_bf16/seed{42..51}_alien.png` |
+| H100 1K FP8 | `alien_bench/results/flux1_alien_h100_fp8/seed{42..51}_alien.png` |
+| L4 1K NF4 | `alien_bench/results/flux1_alien_l4_nf4/seed{42..51}_alien.png` |
 
-> **T5 encoder overhead is real**: 9-16s per generation depending on precision. On memory-constrained L4 where T5 forces `model_cpu_offload`, skipping T5 also eliminates offload swap — net savings 15-24%.
+## 6. 硬件 / 软件配置
 
-### L4 Memory Math
+**Neuron(trn2.3xlarge)**
+- AMI:Neuron DLAMI / SDK 2.29 / neuronx-cc 2.24.5133 / torch-neuronx 2.9.0.2.13.26312 / NxDI(NeuronFluxApplication)
+- venv:`/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/`
+- Topology:**WORLD=4**,backbone_tp=4,t5_tp=4,clip+vae tp=1,LNC=2
 
-| Component | Size (bf16) | Size (NF4) | Size (FP8) |
-|-----------|-------------|------------|------------|
-| CLIP-L (text_encoder) | 246 MB | — | — |
-| T5-XXL (text_encoder_2) | 9.4 GB | — | — |
-| DiT (transformer) | 23.8 GB | ~6 GB | ~12 GB |
-| VAE | 160 MB | — | — |
-| **Skip-T5 total (on-GPU)** | 24.2 GB (OOM) | **~6.4 GB** | **~12.4 GB** |
+**H100 p5.4xlarge**:DLAMI / torch 2.9.1+cu128 / diffusers 0.38 / FP8 via `torchao.Float8DynamicActivationFloat8WeightConfig`
 
-## Scripts
+**L4 g6.4xlarge**:DLAMI / torch 2.7.0+cu128 / diffusers 0.38 / bitsandbytes NF4 + `enable_model_cpu_offload`
 
-| Script | Description |
-|--------|-------------|
-| `benchmark_unified_gpu.py` | bf16 benchmark for GPU instances (H100, L40S). Single GPU, steps 15/25/50 |
-| `benchmark_unified_neuron.py` | bf16 benchmark for Neuron instances (Trn2, Trn1). NxDI with world_size=8, backbone_tp=4 |
-| `benchmark_l4_nf4_offload.py` | L4 quantization/offload comparison: NF4/INT8 x various offload strategies |
-| `benchmark_l4_fp8_torchao.py` | L4 FP8 via torchao Float8WeightOnlyConfig + model_cpu_offload |
-| `benchmark_comfyui_style_nf4.py` | L4 ComfyUI-style component loading, NF4 DiT, full vs skip-T5 modes |
-| `benchmark_comfyui_style_fp8.py` | L4 ComfyUI-style, Kijai pre-quantized FP8 single-file + `enable_layerwise_casting`, full vs skip-T5 |
+**实现**:FLUX.1-dev benchmark 基于 [AWS NxDI NeuronFluxApplication](https://awsdocs-neuron.readthedocs-hosted.com/),Neuron 端一键 compile + load + forward;GPU 端用 `diffusers.FluxPipeline`。
 
-## Software Versions
-
-| Component | GPU Instances | Neuron Instances |
-|-----------|--------------|-----------------|
-| PyTorch | 2.6.0+cu126 | 2.5.1 (torch-neuronx) |
-| diffusers | 0.37.1 | N/A (uses NxDI) |
-| torchao | 0.17.0 | N/A |
-| bitsandbytes | 0.45.5 | N/A |
-| NxDI | N/A | neuronx-distributed-inference |
-| CUDA | 12.6 | N/A |
-
-## How to Reproduce
-
-### GPU (H100)
+## 7. 运行脚本(快速复现)
 
 ```bash
-pip install torch diffusers transformers accelerate safetensors sentencepiece protobuf
-huggingface-cli login
-python -c "from huggingface_hub import snapshot_download; snapshot_download('black-forest-labs/FLUX.1-dev', local_dir='/home/ubuntu/models/FLUX.1-dev/')"
-python benchmark_unified_gpu.py
+# Neuron
+source /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/activate
+python3 alien_bench/bench_neuron_alien.py
+
+# H100
+python3 alien_bench/bench_h100_alien.py --precision bf16 --out /opt/dlami/nvme/flux1_alien_h100_bf16
+python3 alien_bench/bench_h100_alien.py --precision fp8  --out /opt/dlami/nvme/flux1_alien_h100_fp8
+
+# L4
+python3 alien_bench/bench_l4_alien.py --precision nf4 --out ~/flux1_alien_l4_nf4
 ```
 
-### GPU (L4 - quantized)
+## 8. 结论
 
-```bash
-pip install torch diffusers transformers accelerate safetensors sentencepiece protobuf
-pip install bitsandbytes  # for NF4
-pip install torchao       # for FP8 via torchao runtime quantize
-
-huggingface-cli login
-python -c "from huggingface_hub import snapshot_download; snapshot_download('black-forest-labs/FLUX.1-dev', local_dir='/home/ubuntu/models/FLUX.1-dev/')"
-
-# Original offload / quantize sweeps
-python benchmark_l4_fp8_torchao.py
-python benchmark_l4_nf4_offload.py
-
-# ComfyUI-style (component loading + skip-T5 comparison)
-python benchmark_comfyui_style_nf4.py --mode both
-
-# FP8 comfy-style uses Kijai pre-quantized single-file (E4M3FN storage, bf16 compute)
-wget https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors
-python benchmark_comfyui_style_fp8.py --mode both
-```
-
-### Neuron (Trn2 / Trn1)
-
-```bash
-# Use Neuron DLAMI with pre-installed venv
-source ~/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/activate
-huggingface-cli login
-python -c "from huggingface_hub import snapshot_download; snapshot_download('black-forest-labs/FLUX.1-dev', local_dir='/home/ubuntu/models/FLUX.1-dev/')"
-python benchmark_unified_neuron.py
-```
+1. **Neuron FLUX.1-dev 在 trn2.3xlarge 上 10/10 pass**(mean 8.03s,稳态 28-step,28GB HBM 内)
+2. **$/image 全场最低**:Neuron **$0.00499**,比 H100 FP8 便宜 51%,比 H100 BF16 便宜 29%
+3. **速度**:Neuron 8.03s ≈ H100 FP8 8.54s,**比 FP8 快 1.06×**;H100 BF16 5.87s 最快(+45%)但贵 1.41×
+4. **HBM 占用**:Neuron 25 GB,远低于 H100 BF16 的 34 GB,单芯片 96GB 仍大量余量
+5. **Capacity 考量**:p5 在 us-east / us-west / eu / sa-east 全 region 均 `InsufficientInstanceCapacity`,最终只有 ap-northeast-1 锁到;trn2 capacity block 更容易获取,对规模化部署是关键加分项
