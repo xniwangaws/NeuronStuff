@@ -1,0 +1,88 @@
+{
+  "device": "H100 p5.4xlarge (FP8 torchao)",
+  "model": "FLUX.1-dev",
+  "prompt": "A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest",
+  "steps": 28,
+  "guidance": 3.5,
+  "resolution": "4096x4096",
+  "load_s": 257.4,
+  "peak_vram_gb": 37.67,
+  "mean_s": 328.7,
+  "n_ok": 10,
+  "n_total": 10,
+  "t5_fp8": false,
+  "vae_tiling": true,
+  "note": "super-resolution: model spec is 1K-only (max_area=4MP). Forcing higher res for bench.",
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 328.64,
+      "peak_vram_gb": 37.67,
+      "std": 15.6,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed42_alien.png"
+    },
+    {
+      "seed": 43,
+      "time_s": 328.96,
+      "peak_vram_gb": 37.67,
+      "std": 14.76,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed43_alien.png"
+    },
+    {
+      "seed": 44,
+      "time_s": 328.84,
+      "peak_vram_gb": 37.67,
+      "std": 10.13,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed44_alien.png"
+    },
+    {
+      "seed": 45,
+      "time_s": 328.77,
+      "peak_vram_gb": 37.67,
+      "std": 19.6,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed45_alien.png"
+    },
+    {
+      "seed": 46,
+      "time_s": 328.91,
+      "peak_vram_gb": 37.67,
+      "std": 12.94,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed46_alien.png"
+    },
+    {
+      "seed": 47,
+      "time_s": 328.53,
+      "peak_vram_gb": 37.67,
+      "std": 13.09,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed47_alien.png"
+    },
+    {
+      "seed": 48,
+      "time_s": 328.76,
+      "peak_vram_gb": 37.67,
+      "std": 12.98,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed48_alien.png"
+    },
+    {
+      "seed": 49,
+      "time_s": 328.47,
+      "peak_vram_gb": 37.67,
+      "std": 14.27,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed49_alien.png"
+    },
+    {
+      "seed": 50,
+      "time_s": 328.65,
+      "peak_vram_gb": 37.67,
+      "std": 18.76,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed50_alien.png"
+    },
+    {
+      "seed": 51,
+      "time_s": 328.42,
+      "peak_vram_gb": 37.67,
+      "std": 15.22,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_4096/seed51_alien.png"
+    }
+  ]
+}

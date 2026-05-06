@@ -9,7 +9,7 @@
 | **Neuron trn2.3xl BF16 TP=4** | **42.90s** | **$0.02664** | **191.44s** | **$0.1189** | N/A | 10/10 |
 | H100 BF16 | 24.10s | $0.02896 | 107.05s | $0.1286 | GRAY | 10/10 |
 | H100 FP8 (torchao) | 21.18s | $0.02545 | 106.20s | $0.1276 | GRAY | 10/10 |
-| L4 FP8 (BFL official + torchao shim) | 77.25s | $0.02839 | 385s (1-seed) | $0.1416 | OOM | 10/1 |
+| L4 FP8 (BFL official + torchao shim) | 77.25s | $0.02839 | 388.66s | $0.1428 | OOM | 10/10 |
 
 ## Key findings
 

@@ -1,0 +1,49 @@
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:100: DeprecationWarning: torch_neuronx.nki_jit is deprecated, use nki.jit instead.
+  component, error = import_nki(config)
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+[fix_seed42 02:59:54] Compile (should be cached)...
+INFO:application:Transformer already compiled at /home/ubuntu/klein_fix_compile/transformer, skipping.
+[fix_seed42 02:59:54] Compile step took 0.0s
+[fix_seed42 02:59:54] Load...
+INFO:Neuron:Sharding weights on load...
+INFO:Neuron:Sharding weights for ranks: 0...3
+[2026-05-06 02:59:54.325: I neuronx_distributed/parallel_layers/parallel_state.py:638] > initializing tensor model parallel with size 4
+[2026-05-06 02:59:54.325: I neuronx_distributed/parallel_layers/parallel_state.py:639] > initializing pipeline model parallel with size 1
+[2026-05-06 02:59:54.325: I neuronx_distributed/parallel_layers/parallel_state.py:640] > initializing context model parallel with size 1
+[2026-05-06 02:59:54.325: I neuronx_distributed/parallel_layers/parallel_state.py:641] > initializing data parallel with size 1
+[2026-05-06 02:59:54.325: I neuronx_distributed/parallel_layers/parallel_state.py:642] > initializing world size to 4
+[2026-05-06 02:59:54.325: I neuronx_distributed/parallel_layers/parallel_state.py:387] [rank_0_pp-1_tp-1_dp-1_cp-1] Chosen Logic for replica groups ret_logic=<PG_Group_Logic.LOGIC1: (<function ascending_ring_PG_group at 0x7b72b17cb4c0>, 'Ascending Ring PG Group')>
+[2026-05-06 02:59:54.326: I neuronx_distributed/parallel_layers/parallel_state.py:666] [rank_0_pp-1_tp-1_dp-1_cp-1] tp_groups: replica_groups.tp_groups=[[0, 1, 2, 3]]
+[2026-05-06 02:59:54.326: I neuronx_distributed/parallel_layers/parallel_state.py:667] [rank_0_pp-1_tp-1_dp-1_cp-1] dp_groups: replica_groups.dp_groups=[[0], [1], [2], [3]]
+[2026-05-06 02:59:54.326: I neuronx_distributed/parallel_layers/parallel_state.py:668] [rank_0_pp-1_tp-1_dp-1_cp-1] pp_groups: replica_groups.pp_groups=[[0], [1], [2], [3]]
+[2026-05-06 02:59:54.326: I neuronx_distributed/parallel_layers/parallel_state.py:669] [rank_0_pp-1_tp-1_dp-1_cp-1] cp_groups: replica_groups.cp_groups=[[0], [1], [2], [3]]
+[2026-05-06 02:59:54.326: I neuronx_distributed/parallel_layers/parallel_state.py:670] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_model_groups: replica_groups.ep_model_groups=[[0], [1], [2], [3]]
+[2026-05-06 02:59:54.326: I neuronx_distributed/parallel_layers/parallel_state.py:671] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_data_groups: replica_groups.ep_data_groups=[[0], [1], [2], [3]]
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/trace/trace.py:642: UserWarning: Removing redundant keys from checkpoint: []
+  warnings.warn(f"Removing redundant keys from checkpoint: {keys_to_delete}")
+INFO:Neuron:Done Sharding weights in 1.5232248419779353
+INFO:Neuron:Finished weights loading in 18.081838180980412 seconds
+INFO:Neuron:Warming up the model.
+2026-May-06 03:00:13.0141 505808:505836 [3] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):219 CCOM WARN NET/OFI Failed to initialize rdma protocol
+2026-May-06 03:00:13.0144 505808:505836 [3] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):354 CCOM WARN NET/OFI aws-ofi-nccl initialization failed
+2026-May-06 03:00:13.0146 505808:505836 [3] ncclResult_t nccl_net_ofi_init_no_atexit_fini_v6(ncclDebugLogger_t):183 CCOM WARN NET/OFI Initializing plugin failed
+2026-May-06 03:00:13.0150 505808:505836 [3] net_plugin.cc:97 CCOM WARN OFI plugin initNet() failed is EFA enabled?
+INFO:Neuron:Warmup completed in 0.5565042495727539 seconds.
+INFO:application:Loading Flux2KleinPipeline...
+Loading pipeline components...:   0%|          | 0/5 [00:00<?, ?it/s]
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s][ALoading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 210.40it/s]
+
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s][ALoading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 228.85it/s]
+Loading pipeline components...:  80%|████████  | 4/5 [00:00<00:00, 11.58it/s]Loading pipeline components...: 100%|██████████| 5/5 [00:00<00:00, 14.44it/s]
+INFO:application:Pipeline loaded successfully.
+[fix_seed42 03:00:14] Load took 20.0s
+[fix_seed42 03:00:14] Gen (seed 42, 50 steps, 1024x1024, gs=4.0)...
+  0%|          | 0/50 [00:00<?, ?it/s]  2%|▏         | 1/50 [00:00<00:27,  1.81it/s]  4%|▍         | 2/50 [00:01<00:25,  1.85it/s]  6%|▌         | 3/50 [00:01<00:25,  1.85it/s]  8%|▊         | 4/50 [00:02<00:24,  1.85it/s] 10%|█         | 5/50 [00:02<00:24,  1.85it/s] 12%|█▏        | 6/50 [00:03<00:23,  1.84it/s] 14%|█▍        | 7/50 [00:03<00:23,  1.84it/s] 16%|█▌        | 8/50 [00:04<00:22,  1.84it/s] 18%|█▊        | 9/50 [00:04<00:22,  1.84it/s] 20%|██        | 10/50 [00:05<00:21,  1.84it/s] 22%|██▏       | 11/50 [00:05<00:21,  1.84it/s] 24%|██▍       | 12/50 [00:06<00:20,  1.84it/s] 26%|██▌       | 13/50 [00:07<00:20,  1.85it/s] 28%|██▊       | 14/50 [00:07<00:19,  1.85it/s] 30%|███       | 15/50 [00:08<00:18,  1.84it/s] 32%|███▏      | 16/50 [00:08<00:18,  1.84it/s] 34%|███▍      | 17/50 [00:09<00:17,  1.85it/s] 36%|███▌      | 18/50 [00:09<00:17,  1.85it/s] 38%|███▊      | 19/50 [00:10<00:16,  1.85it/s] 40%|████      | 20/50 [00:10<00:16,  1.85it/s] 42%|████▏     | 21/50 [00:11<00:15,  1.85it/s] 44%|████▍     | 22/50 [00:11<00:15,  1.84it/s] 46%|████▌     | 23/50 [00:12<00:14,  1.84it/s] 48%|████▊     | 24/50 [00:13<00:14,  1.84it/s] 50%|█████     | 25/50 [00:13<00:13,  1.85it/s] 52%|█████▏    | 26/50 [00:14<00:12,  1.86it/s] 54%|█████▍    | 27/50 [00:14<00:12,  1.86it/s] 56%|█████▌    | 28/50 [00:15<00:11,  1.85it/s] 58%|█████▊    | 29/50 [00:15<00:11,  1.85it/s] 60%|██████    | 30/50 [00:16<00:10,  1.85it/s] 62%|██████▏   | 31/50 [00:16<00:10,  1.85it/s] 64%|██████▍   | 32/50 [00:17<00:09,  1.84it/s] 66%|██████▌   | 33/50 [00:17<00:09,  1.84it/s] 68%|██████▊   | 34/50 [00:18<00:08,  1.85it/s] 70%|███████   | 35/50 [00:18<00:08,  1.84it/s] 72%|███████▏  | 36/50 [00:19<00:07,  1.85it/s] 74%|███████▍  | 37/50 [00:20<00:07,  1.85it/s] 76%|███████▌  | 38/50 [00:20<00:06,  1.85it/s] 78%|███████▊  | 39/50 [00:21<00:05,  1.85it/s] 80%|████████  | 40/50 [00:21<00:05,  1.85it/s] 82%|████████▏ | 41/50 [00:22<00:04,  1.85it/s] 84%|████████▍ | 42/50 [00:22<00:04,  1.85it/s] 86%|████████▌ | 43/50 [00:23<00:03,  1.85it/s] 88%|████████▊ | 44/50 [00:23<00:03,  1.85it/s] 90%|█████████ | 45/50 [00:24<00:02,  1.84it/s] 92%|█████████▏| 46/50 [00:24<00:02,  1.85it/s] 94%|█████████▍| 47/50 [00:25<00:01,  1.84it/s] 96%|█████████▌| 48/50 [00:26<00:01,  1.84it/s] 98%|█████████▊| 49/50 [00:26<00:00,  1.84it/s]100%|██████████| 50/50 [00:27<00:00,  1.84it/s]100%|██████████| 50/50 [00:27<00:00,  1.85it/s]
+[fix_seed42 03:00:57] Gen took 43.1s
+[fix_seed42 03:00:57] Saved: /home/ubuntu/klein_fix_seed42.png
+[fix_seed42 03:00:57] Stats: mean=113.68 std=80.28 min=0.0 max=255.0

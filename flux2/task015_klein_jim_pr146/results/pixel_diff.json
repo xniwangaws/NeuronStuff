@@ -1,0 +1,23 @@
+{
+  "1k_neuron_vs_h100bf16": {
+    "label": "Neuron vs H100 BF16",
+    "n": 10,
+    "mse_mean": 0.1751722924411297,
+    "psnr_mean": 7.6180348590115345,
+    "ssim_mean": 0.24774163216352463
+  },
+  "1k_h100fp8_vs_h100bf16": {
+    "label": "H100 FP8 vs H100 BF16",
+    "n": 10,
+    "mse_mean": 0.06636547595262528,
+    "psnr_mean": 12.683911073431721,
+    "ssim_mean": 0.6679455518722535
+  },
+  "2k_neuron_vs_h100bf16": {
+    "label": "Neuron 2K vs H100 2K BF16",
+    "n": 10,
+    "mse_mean": 0.17058125436306,
+    "psnr_mean": 7.769945785522833,
+    "ssim_mean": 0.17017366215586663
+  }
+}

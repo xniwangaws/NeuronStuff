@@ -29,6 +29,17 @@
 - L4 NF4 速度慢 6.75×,load 678s(NF4 转换慢),性价比最差
 - L4 FP8(wangkanai/flux-dev-fp8)速度更慢(123 s,慢 14.4×):权重在 ckpt 内为 F8_E4M3,但 diffusers 加载时 upcast 到 bf16,12 B ≈ 24 GB 超出 L4 22 GB 显存,被迫走 sequential CPU offload → PCIe 成为瓶颈。峰值显存压到 2.39 GB 但单图成本 $0.04528(4.41× 贵于 H100 FP8);相比 L4 NF4 的 57 s,FP8 "干净"但在 22 GB L4 上吃亏于 offload 开销。
 
+## 2b. 2048² / 4096² super-resolution(model spec `max_area=4MP`,已 force run)
+
+| 设备 | 精度 | Res | Mean (s) | Peak VRAM | Pass | **$/image** |
+|---|---|---|---:|---:|---:|---:|
+| H100 p5.4xlarge | FP8(torchao) | 2048² | **37.52** | 29.9 GB | 10/10 | **$0.04509** |
+| H100 p5.4xlarge | FP8(torchao) | 4096² | **328.70** | 37.67 GB | 10/10 | **$0.39492** |
+| L4 g6.4xlarge | FP8(wangkanai, seq-offload) | 2048² | **339.38** | 2.42 GB | 10/10 | **$0.12471** |
+| Neuron trn2.3xl | BF16 | 2K/4K | 编译可行但本轮未完成(transformer 2K 编译 539s 后被 terminate),留待下轮 | — | — | — |
+
+**注**:FLUX.1-dev 官方 spec 为 1024²,`max_area=4MP`。2K / 4K 属 super-resolution force run,输出质量受 spec 限制(`std` 偏低、细节下降),仅作硬件极限参考。
+
 ## 3. DiT 加载 / 冷启动 / 稳态拆分(Neuron 1K)
 
 | 阶段 | 耗时 |
