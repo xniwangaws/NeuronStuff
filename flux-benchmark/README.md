@@ -1,5 +1,8 @@
 # FLUX.1-dev alien-prompt benchmark — Neuron / H100 / L4
 
+_[English version: README.en.md](README.en.md)_
+
+
 > Prompt:`"A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest"`,guidance 3.5,28 steps,batch=1,max_sequence_length=512,seeds 42–51(共 10 个)
 
 ## 1. 设备与价格(AWS on-demand,2026-05)
