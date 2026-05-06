@@ -1,0 +1,95 @@
+{
+  "device": "h100 res=4096 fp8",
+  "model": "SDXL-base-1.0",
+  "prompt": "An astronaut riding a green horse",
+  "steps": 50,
+  "guidance": 7.5,
+  "resolution": "4096x4096",
+  "load_s": 3.2,
+  "peak_vram_gb": 11.63,
+  "mean_s": 113.49,
+  "n_ok": 10,
+  "n_total": 10,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 113.48,
+      "peak_vram_gb": 11.63,
+      "std": 53.03,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed42_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 43,
+      "time_s": 113.49,
+      "peak_vram_gb": 11.63,
+      "std": 57.0,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed43_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 44,
+      "time_s": 113.44,
+      "peak_vram_gb": 11.63,
+      "std": 55.87,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed44_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 45,
+      "time_s": 113.51,
+      "peak_vram_gb": 11.63,
+      "std": 53.1,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed45_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 46,
+      "time_s": 113.59,
+      "peak_vram_gb": 11.63,
+      "std": 52.14,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed46_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 47,
+      "time_s": 113.49,
+      "peak_vram_gb": 11.63,
+      "std": 56.27,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed47_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 48,
+      "time_s": 113.47,
+      "peak_vram_gb": 11.63,
+      "std": 60.87,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed48_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 49,
+      "time_s": 113.46,
+      "peak_vram_gb": 11.63,
+      "std": 45.08,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed49_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 50,
+      "time_s": 113.45,
+      "peak_vram_gb": 11.63,
+      "std": 53.65,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed50_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 51,
+      "time_s": 113.53,
+      "peak_vram_gb": 11.63,
+      "std": 52.25,
+      "png": "/opt/dlami/nvme/sdxl_astro_h100_fp8_4096/seed51_astro.png",
+      "status": "ok"
+    }
+  ]
+}

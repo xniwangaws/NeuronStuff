@@ -26,16 +26,14 @@ device_ids = [int(x) for x in args.unet_cores.split(",")]
 print(f"[load] SDXL Neuron res={RES}")
 t0 = time.time()
 pipe = DiffusionPipeline.from_pretrained(args.model, torch_dtype=torch.bfloat16)
+# Only swap UNet + VAE for Neuron NEFFs; keep CPU text encoders (CLIP-L/G tiny, not worth Neuron).
+# This bypasses the pool-embed shape mismatch from TextEncoderOutputWrapper.
 pipe.unet = NeuronUNet(UNetWrap(pipe.unet))
 pipe.unet.unetwrap = torch_neuronx.DataParallel(
     torch.jit.load(os.path.join(args.compile_dir, "unet/model.pt")),
     device_ids, set_dynamic_batching=False)
 pipe.vae.decoder = torch.jit.load(os.path.join(args.compile_dir, "vae_decoder/model.pt"))
 pipe.vae.post_quant_conv = torch.jit.load(os.path.join(args.compile_dir, "vae_post_quant_conv/model.pt"))
-pipe.text_encoder = TextEncoderOutputWrapper(
-    torch.jit.load(os.path.join(args.compile_dir, "text_encoder/model.pt")), pipe.text_encoder)
-pipe.text_encoder_2 = TextEncoderOutputWrapper(
-    torch.jit.load(os.path.join(args.compile_dir, "text_encoder_2/model.pt")), pipe.text_encoder_2)
 load_s = time.time() - t0
 print(f"[load] {load_s:.1f}s")
 
