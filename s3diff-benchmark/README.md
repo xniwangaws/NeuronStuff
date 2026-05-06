@@ -5,7 +5,12 @@
 - 1K: 输入 256×256 → 输出 1024×1024
 - 2K: 输入 512×512 → 输出 2048×2048
 - 4K: 输入 1024×1024 → 输出 4096×4096
+- **8K: 输入 2048×2048 → 输出 8192×8192** (新增, Trn2 使用 `torch_neuronx.trace` 方案)
 **精度**: BF16
+
+> **关于 8K**: 在 8K 分辨率下，原生 Trial 6 `torch.compile(backend="neuron")` 方案触发 NRT OOM (需要 ~14.6 GB 单次分配, 单核 HBM 不足);
+> L4 (24GB VRAM) 在 UNet attention 阶段 OOM (需要 13.64 GiB);
+> 所以 Trn2 8K 切换到 [AWS Neuron PR #149](https://github.com/aws-neuron/neuronx-distributed-inference/pull/149) (Jim Burtoft) 的 `torch_neuronx.trace()` + 固定 512 像素 tile 方案 — 这是 Trn2 上唯一能跑 8K 的路径。
 
 ---
 
@@ -21,12 +26,17 @@
 | **trn2.3xlarge** | **1× Trainium2** | **1K** (256→1024) | **~90** (首次) | **13.4** | **32.94** | **6.31** | ~20 |
 | trn2.3xlarge | 1× Trainium2 | 2K (512→2048) | ~33 | 13.4 | 93.15 | 60.18 | ~22 |
 | trn2.3xlarge | 1× Trainium2 | 4K (1024→4096) | ~-88 (warm > cold ∗) | 13.4 | 343.26 | 431.97 | ~24 |
+| **trn2.3xlarge †** | **1× Trainium2** | **8K (2048→8192)** | **1357** (PR 149 trace) | — | — (warmup 合并) | **235.08** | ~24 |
 | p5.4xlarge | 1× H100 80GB | 1K | — (无预编译) | 4.80 | 9.64 | 1.26 | 9.0 |
 | p5.4xlarge | 1× H100 80GB | 2K | — | 4.02 | 24.67 | 24.26 | 15.7 |
 | p5.4xlarge | 1× H100 80GB | 4K | — | 4.03 | 109.71 | 107.54 | 42.2 |
+| **p5.4xlarge** | **1× H100 80GB** | **8K (2048→8192)** | — | **2.62** | **469.23** | **429.02** | **32.46** |
 | g6.4xlarge | 1× L4 24GB | 1K | — | 4.52 | 6.41 | 2.34 | 7.9 |
 | g6.4xlarge | 1× L4 24GB | 2K | — | 4.07 | 29.11 | 28.45 | 15.2 |
 | g6.4xlarge | 1× L4 24GB | 4K | — | 4.08 | 132.42 | 130.63 | 16.5 |
+| g6.4xlarge | 1× L4 24GB | 8K (2048→8192) | — | — | — | **OOM** | >24 (需求 >13.64) |
+
+> **† 8K 方案切换**: Trn2 在 8K 改用 [PR #149](https://github.com/aws-neuron/neuronx-distributed-inference/pull/149) 的 `torch_neuronx.trace()` + 固定 pixel 512 tile + Gaussian blend (原生 Trial 6 OOM). 编译一次 5 个 NEFF (DEResNet + Text Enc + VAE Enc + UNet + VAE Dec), 所有 tile 共用. 实测 Trn2 8K warm **比 H100 快 1.83×** (235s vs 429s).
 
 说明:
 - **编译耗时** (Trn2): `torch.compile(backend="neuron")` 产生的 NEFF 首次 JIT 编译. H100/L4 不需要 (eager CUDA).
@@ -37,12 +47,12 @@
 
 ### 1.1 按需价格 & 每张图成本
 
-| 实例 | 按需价 $/hr | 1K $/图 | 2K $/图 | 4K $/图 |
-|---|---|---|---|---|
-| trn2.3xlarge (Trainium2, 整机) | $2.235 (capacity block) | $0.00381 | $0.0374 | $0.1882 |
-| **trn2.3xlarge (1 logical core, 按 1/4 核算)** | **$0.559** (capacity block ÷ 4) | **$0.00095** | **$0.00936** | **$0.04707** |
-| p5.4xlarge (H100) | $4.326 (capacity block) | $0.00151 | $0.0292 | $0.1293 |
-| **g6.4xlarge (L4)** | **$1.323** (on-demand) | **$0.00086** | **$0.0105** | **$0.0480** |
+| 实例 | 按需价 $/hr | 1K $/图 | 2K $/图 | 4K $/图 | **8K $/图** |
+|---|---|---|---|---|---|
+| trn2.3xlarge (Trainium2, 整机) | $2.235 (capacity block) | $0.00381 | $0.0374 | $0.1882 | **$0.1460** |
+| **trn2.3xlarge (1 logical core, 按 1/4 核算)** | **$0.559** (capacity block ÷ 4) | **$0.00095** | **$0.00936** | **$0.04707** | **$0.03651** |
+| p5.4xlarge (H100) | $4.326 (capacity block) | $0.00151 | $0.0292 | $0.1293 | **$0.5155** |
+| **g6.4xlarge (L4)** | **$1.323** (on-demand) | **$0.00086** | **$0.0105** | **$0.0480** | **OOM** |
 
 > 计算公式: `$/图 = $/hr × warm_s / 3600`
 > **trn2 / p5 为 AWS capacity block 价格** (按时段预留). L4 为标准 on-demand 价格.
@@ -51,16 +61,17 @@
 
 ### 1.2 成本效率对比 (L4 = 100% 基准)
 
-| 实例 | 1K 成本效率 | 2K 成本效率 | 4K 成本效率 |
-|---|---|---|---|
-| **g6.4xlarge (L4)** | **100%** | **100%** | **100%** |
-| p5.4xlarge (H100) | 57% | 36% | 37% |
-| trn2.3xlarge (整机) | 23% | 28% | 26% |
-| **trn2.3xlarge (1/4 核算)** | **90%** | **112%** | **102%** |
+| 实例 | 1K 成本效率 | 2K 成本效率 | 4K 成本效率 | 8K 成本效率 |
+|---|---|---|---|---|
+| **g6.4xlarge (L4)** | **100%** | **100%** | **100%** | — (OOM) |
+| p5.4xlarge (H100) | 57% | 36% | 37% | **ref (100%)** |
+| trn2.3xlarge (整机) | 23% | 28% | 26% | **353%** |
+| **trn2.3xlarge (1/4 核算)** | **90%** | **112%** | **102%** | **1412%** |
 
-> 效率 = L4 每张图成本 / 对应实例每张图成本. 值越高越省钱.
+> 效率 = L4 每张图成本 / 对应实例每张图成本. 值越高越省钱. 1K-4K 以 L4 为基准; **8K 以 H100 为基准** (L4 OOM).
 > 整机核算下, L4 性价比最高, Trn2 约为 L4 的 1/4 性价比.
 > **按 1/4 核算** (4 路并发), **Trn2 在 2K/4K 上反超 L4**: 2K 为 L4 的 1.12×, 4K 为 L4 的 1.02×; 1K 接近打平 (90%).
+> **8K 结论**: L4 无法运行; **Trn2 整机比 H100 便宜 3.53×, Trn2 1/4 核算便宜 14×** (每张 8K 图像).
 
 ---
 
@@ -99,6 +110,18 @@
 
 ![Trn2 Bus 4K](customer_report/images/trial6_bus_4k.png)
 
+### 3.5 Trn2 PR 149 8K 输出 (8192×8192, 输入 2048→8K)
+
+> 原图 88 MB, 已降采样到 2048 供 README 预览. 完整 8K 见 `customer_report/images/pr149_bus_8k.png`.
+
+![Trn2 PR 149 Bus 8K preview](customer_report/images/trn2_bus_8k_2k_preview.png)
+
+### 3.6 H100 8K 输出 (参考对比, 输入 2048→8K)
+
+![H100 Bus 8K preview](customer_report/images/h100_bus_8k_2k_preview.png)
+
+> 两张 8K 输出肉眼几乎无差别. 完整 8K 分别在 `pr149_bus_8k.png` (Trn2, 88 MB) 和 `h100_bus_8k.png` (H100, 96 MB).
+
 ---
 
 ## 4. 硬件 / 软件配置
@@ -134,9 +157,12 @@
 | Seed | 123 (固定, 可跨栈对比) |
 | 正向 prompt | "A high-resolution, 8K, ultra-realistic image with sharp focus, vibrant colors, and natural lighting." |
 | 负向 prompt | "oil painting, cartoon, blur, dirty, messy, low quality, deformation, low resolution, oversmooth" |
-| Tile (Trn2) | latent_tiled_size=96, overlap=32, vae_encoder_tiled_size=1024, vae_decoder_tiled_size=224 |
-| 编译方式 (Trn2) | `torch.compile(backend="neuron", dynamic=False, fullgraph=False)`, 作用于 16 个 `Transformer2DModel`, 其他模块 eager |
-| 编译 flags | `--auto-cast=matmult -O1` |
+| Tile (Trn2 1K-4K Trial 6) | latent_tiled_size=96, overlap=32, vae_encoder_tiled_size=1024, vae_decoder_tiled_size=224 |
+| Tile (Trn2 8K PR 149) | fixed pixel tile=512, overlap=128, Gaussian blending (所有 stage 共用) |
+| 编译方式 (Trn2 1K-4K) | `torch.compile(backend="neuron", dynamic=False, fullgraph=False)`, 作用于 16 个 `Transformer2DModel`, 其他模块 eager |
+| 编译方式 (Trn2 8K) | `torch_neuronx.trace()` 对 5 个组件分别编译 (DEResNet / Text Enc / VAE Enc / UNet / VAE Dec) |
+| 编译 flags (1K-4K) | `--auto-cast=matmult -O1` |
+| 编译 flags (8K, LoRA 组件) | `--model-type=unet-inference -O1` (matmult 下 LoRA einsum 会 NaN) |
 
 ---
 
@@ -157,6 +183,17 @@ python src/scripts/phase_bisect_hires.py --scope t2d \
 python src/scripts/phase_bisect_hires.py --scope t2d \
     --lq_image <path_to_LQ_1024.png> --lq_size 1024 \
     --output_image /tmp/out_4k.png --num_inferences 2
+
+# 8K (PR 149 torch_neuronx.trace 方案, SDK 2.29 标准 venv)
+# 代码来源: https://github.com/aws-neuron/neuronx-distributed-inference/pull/149
+# 文件: contrib/models/S3Diff/src/{modeling_s3diff.py, generate_s3diff.py}
+source /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/activate
+python generate_s3diff.py \
+    --input_image <path_to_LQ_2048.png> \
+    --output_image /tmp/out_8k.png \
+    --compile_dir /tmp/s3diff_pr149_compiled \
+    --num_images 3 --warmup_rounds 1 \
+    --tile_size 512 --tile_overlap 128
 ```
 
 更多详情见 `src/README.md`.

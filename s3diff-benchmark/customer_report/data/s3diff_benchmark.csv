@@ -8,3 +8,6 @@ p5.4xlarge,1x H100 80GB,4K,1024x1024,4096x4096,bf16,4.03,109.71,107.54,10,refere
 g6.4xlarge,1x L4 24GB,1K,256x256,1024x1024,bf16,4.52,6.41,2.34,10,45.15 vs CPU fp32,7.9,1.323,0.00086,""
 g6.4xlarge,1x L4 24GB,2K,512x512,2048x2048,bf16,4.07,29.11,28.45,10,~45 vs CPU,15.2,1.323,0.01046,""
 g6.4xlarge,1x L4 24GB,4K,1024x1024,4096x4096,bf16,4.08,132.42,130.63,10,~45 vs CPU,16.5,1.323,0.04802,""
+trn2.3xlarge,1x Trainium2,8K,2048x2048,8192x8192,bf16,—,1357.10,235.08,3,—,~24,2.235,0.14604,"PR 149 torch_neuronx.trace fixed 512 tile; Trial 6 OOMed at 8K"
+p5.4xlarge,1x H100 80GB,8K,2048x2048,8192x8192,bf16,2.62,469.23,429.02,3,reference,32.46,4.326,0.51547,"Native diffusers S3Diff tile (latent 96)"
+g6.4xlarge,1x L4 24GB,8K,2048x2048,8192x8192,bf16,—,—,—,0,—,>24 OOM,1.323,—,"OOM at attention requiring 13.64 GiB; 24GB VRAM insufficient"
