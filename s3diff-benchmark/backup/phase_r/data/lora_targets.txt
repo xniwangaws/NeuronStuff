@@ -1,0 +1,4 @@
+target_modules_unet = ['to_k', 'to_q', 'to_v', 'to_out.0', 'conv', 'conv1', 'conv2', 'conv_shortcut', 'conv_out', 'proj_in', 'proj_out', 'ff.net.2', 'ff.net.0.proj']
+target_modules_vae  = '^encoder\\..*(conv1|conv2|conv_in|conv_shortcut|conv|conv_out|to_k|to_q|to_v|to_out\\.0)$'
+lora_rank_unet = 32
+lora_rank_vae  = 16

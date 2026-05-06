@@ -127,20 +127,22 @@
 
 ```bash
 # 1K
-python customer_report/scripts/phase_bisect_hires.py --scope t2d \
+python src/scripts/phase_bisect_hires.py --scope t2d \
     --lq_image <path_to_LQ_256.png> --lq_size 256 \
     --output_image /tmp/out_1k.png --num_inferences 3
 
 # 2K
-python customer_report/scripts/phase_bisect_hires.py --scope t2d \
+python src/scripts/phase_bisect_hires.py --scope t2d \
     --lq_image <path_to_LQ_512.png> --lq_size 512 \
     --output_image /tmp/out_2k.png --num_inferences 3
 
 # 4K
-python customer_report/scripts/phase_bisect_hires.py --scope t2d \
+python src/scripts/phase_bisect_hires.py --scope t2d \
     --lq_image <path_to_LQ_1024.png> --lq_size 1024 \
     --output_image /tmp/out_4k.png --num_inferences 2
 ```
+
+更多详情见 `src/README.md`.
 
 ---
 
@@ -149,12 +151,20 @@ python customer_report/scripts/phase_bisect_hires.py --scope t2d \
 | 路径 | 内容 |
 |---|---|
 | `README.md` | 本报告 (客户交付) |
-| `customer_report/data/s3diff_benchmark.csv` | 原始测试数据 (每次 run 明细) |
-| `customer_report/images/` | 生图样例: cat 1K/2K/4K + bus 1K + GPU 对比 + CPU 参考 |
-| `customer_report/scripts/` | 可复现运行脚本 |
+| `src/` | ⭐ **生产代码** (Trial 6, 可复现 1K/2K/4K) |
+| `src/modules/` | DeModLoRA / Attention / Transformer 等 nn.Module |
+| `src/scripts/` | 运行脚本 (`phase_bisect_hires.py` 等) |
+| `src/tests/` | 单元测试 + block-level 正确性测试 |
+| `src/data/` | LoRA targets / UNet 结构 dump |
+| `src/README.md` | 代码使用 + 算法说明 |
+| `customer_report/` | 客户交付材料 |
+| `customer_report/data/s3diff_benchmark.csv` | 原始测试数据 |
+| `customer_report/images/` | bus 1K/2K/4K + GPU 对比 + CPU 参考 |
 | `customer_report/logs/` | 每次测试原始 stdout |
-| `docs/archive/` | 旧 README 备份 (`README_original.md`, `README_zh_original.md`) |
-| `phase3/` | 早期 trace mode 方案 (24.9s, PSNR 24.55, 带 seam artifact) |
-| `phase_e/` | Eager mode 实验 (8.6s) |
-| `phase_r/` | DeModLoRA 算法优化 + selective compile bisect (6.14s, Trial 6 winner) |
-| `phase_b/` | Trace-ready full custom UNet (基础设施, 供未来 trace API 使用) |
+| `docs/archive/` | 旧 README 备份 |
+| `backup/phase3/` | 早期 trace mode 方案 (24.9s, PSNR 24.55, 带 seam artifact) |
+| `backup/phase_e/` | Eager mode 实验 (8.6s, 被 Trial 6 取代) |
+| `backup/phase_r/` | DeModLoRA 算法优化 + bisect 完整历史 (有用代码已提取到 `src/`) |
+| `backup/phase_b/` | Trace-ready full custom UNet (未使用, 留给未来 trace API) |
+| `backup/scripts_old/` | Phase 3 原始 trace 脚本 (`neuron_e2e.py` 等) |
+| `backup/results_old/` | Phase 3 原始 benchmark json |
