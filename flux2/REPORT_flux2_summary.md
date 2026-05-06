@@ -10,14 +10,13 @@
 | H100 BF16 | 24.10s | $0.02896 | 107.05s | $0.1286 | GRAY | 10/10 |
 | H100 FP8 (torchao) | 21.18s | $0.02545 | 106.20s | $0.1276 | GRAY | 10/10 |
 | L4 FP8 (BFL official + torchao shim) | 77.25s | $0.02839 | 385s (1-seed) | $0.1416 | OOM | 10/1 |
-| L4 NF4 (bnb+offload) | ~211s | $0.0777 | ~918s (3-seed) | $0.3376 | OOM | 10/3 |
 
 ## Key findings
 
 - **Neuron $/img 最低**:比 H100 BF16 便宜 8% (1K) / 7% (2K)。trn2.3xl $2.235/hr vs p5.4xl $4.326/hr
 - **修复 PR #146 timestep bug**:`modeling_flux2_klein.py` line 247 `half_dim-1` → `half_dim`(FLUX.2 用 `downscale_freq_shift=0`)。DiT step-0 cos 0.9635→0.999936,R 33.1→0.989
 - **HBM**:Neuron 24/40 GB (1K/2K),H100 BF16 37/45 GB,低 35%
-- **L4 FP8**(BFL 官方 `FLUX.2-klein-9b-fp8` + 手写 torchao FP8 shim):1K 77s / 13GB VRAM,比 L4 NF4 快 2.7×
+- **L4 FP8**(BFL 官方 `FLUX.2-klein-9b-fp8` + 手写 torchao FP8 shim):1K 77s / 13GB VRAM
 - **Capacity**:p5 全 region `InsufficientInstanceCapacity`,trn2 更容易锁
 
 ## Problems
