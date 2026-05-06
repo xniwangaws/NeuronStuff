@@ -60,29 +60,25 @@
 
 ---
 
-## 3. 生图示例
+## 3. 生图示例 — 公交车
 
-### 3.1 猫图 (256 → 1024, 4× 超分)
+测试图来源: `https://ultralytics.com/images/bus.jpg`
 
-| 输入 256×256 LQ | Trn2 1024×1024 | H100 1024×1024 |
-|---|---|---|
-| ![LQ](customer_report/images/input_cat_LQ_256.png) | ![Trn2](customer_report/images/trial6_1k.png) | ![H100](customer_report/images/h100_1k.png) |
+### 3.1 输入 256×256 LQ
 
-### 3.2 猫图 2K (512 → 2048)
+![Bus LQ 256](customer_report/images/input_bus_LQ_256.png)
 
-![Trn2 2K](customer_report/images/trial6_2k.png)
+### 3.2 Trn2 1K 输出 (1024×1024, 4× 超分)
 
-### 3.3 猫图 4K (1024 → 4096)
+![Trn2 Bus 1K](customer_report/images/trial6_bus_1k.png)
 
-![Trn2 4K](customer_report/images/trial6_4k.png)
+### 3.3 Trn2 2K 输出 (2048×2048, 输入 512→2K)
 
-### 3.4 公交车 (256 → 1024)
+![Trn2 Bus 2K](customer_report/images/trial6_bus_2k.png)
 
-来源: `https://ultralytics.com/images/bus.jpg`
+### 3.4 Trn2 4K 输出 (4096×4096, 输入 1024→4K)
 
-| 输入 256×256 LQ | Trn2 1024×1024 |
-|---|---|
-| ![Bus LQ](customer_report/images/input_bus_LQ_256.png) | ![Trn2 Bus](customer_report/images/trial6_bus_1k.png) |
+![Trn2 Bus 4K](customer_report/images/trial6_bus_4k.png)
 
 ---
 
