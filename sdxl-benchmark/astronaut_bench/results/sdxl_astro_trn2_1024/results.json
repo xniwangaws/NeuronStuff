@@ -1,0 +1,66 @@
+{
+  "device": "Neuron trn2.3xlarge (LNC=2, 4 logical cores, BF16 no-CFG batch=1)",
+  "model": "SDXL-base-1.0 BF16",
+  "prompt": "An astronaut riding a green horse",
+  "steps": 50,
+  "guidance": 1.0,
+  "resolution": "1024x1024",
+  "note": "FP32 NEFF (AWS notebook verbatim) fails to load on trn2.3xlarge due to per-NC HBM budget; this is a BF16 workaround with batch=1 / no DataParallel / guidance=1.0 (no CFG). Prompt adherence degraded (horse not green).",
+  "mean_s": 19.997,
+  "median_s": 19.996,
+  "min_s": 19.994,
+  "max_s": 20.001,
+  "n_ok": 10,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 19.999,
+      "png": "seed42.png"
+    },
+    {
+      "seed": 43,
+      "time_s": 19.998,
+      "png": "seed43.png"
+    },
+    {
+      "seed": 44,
+      "time_s": 19.997,
+      "png": "seed44.png"
+    },
+    {
+      "seed": 45,
+      "time_s": 19.995,
+      "png": "seed45.png"
+    },
+    {
+      "seed": 46,
+      "time_s": 20.001,
+      "png": "seed46.png"
+    },
+    {
+      "seed": 47,
+      "time_s": 19.996,
+      "png": "seed47.png"
+    },
+    {
+      "seed": 48,
+      "time_s": 19.996,
+      "png": "seed48.png"
+    },
+    {
+      "seed": 49,
+      "time_s": 19.996,
+      "png": "seed49.png"
+    },
+    {
+      "seed": 50,
+      "time_s": 19.994,
+      "png": "seed50.png"
+    },
+    {
+      "seed": 51,
+      "time_s": 19.994,
+      "png": "seed51.png"
+    }
+  ]
+}
