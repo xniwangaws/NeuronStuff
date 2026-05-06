@@ -1,0 +1,69 @@
+{
+  "neuron_dir": "/Users/xniwang/NeuronStuff/flux2/task015_klein_jim_pr146/results/klein_fixed_1k_50step",
+  "h100_dir": "/Users/xniwang/NeuronStuff/flux2/task015_klein_jim_pr146/results/h100_1024_bf16",
+  "per_seed": [
+    {
+      "seed": 42,
+      "psnr_db": 8.646874209982954,
+      "ssim_global": 0.38341628395100885,
+      "ssim_skimage": 0.3469798308498076
+    },
+    {
+      "seed": 43,
+      "psnr_db": 6.798553480732562,
+      "ssim_global": 0.08636234954763505,
+      "ssim_skimage": 0.2490123654507904
+    },
+    {
+      "seed": 44,
+      "psnr_db": 7.847768075988657,
+      "ssim_global": 0.060683494611183636,
+      "ssim_skimage": 0.39709072888905067
+    },
+    {
+      "seed": 45,
+      "psnr_db": 7.655085484713869,
+      "ssim_global": 0.10831750772728879,
+      "ssim_skimage": 0.4430908162606058
+    },
+    {
+      "seed": 46,
+      "psnr_db": 7.894479378185815,
+      "ssim_global": 0.3139171974107559,
+      "ssim_skimage": 0.3524358889002432
+    },
+    {
+      "seed": 47,
+      "psnr_db": 5.576180011032086,
+      "ssim_global": -0.3214928189043499,
+      "ssim_skimage": 0.2602054730262526
+    },
+    {
+      "seed": 48,
+      "psnr_db": 8.61339434712123,
+      "ssim_global": 0.1050722185359674,
+      "ssim_skimage": 0.3681491300217408
+    },
+    {
+      "seed": 49,
+      "psnr_db": 9.864816756325792,
+      "ssim_global": 0.3682287299308411,
+      "ssim_skimage": 0.45637286634690377
+    },
+    {
+      "seed": 50,
+      "psnr_db": 6.901172612790816,
+      "ssim_global": 0.28627402724419926,
+      "ssim_skimage": 0.35543482304378515
+    },
+    {
+      "seed": 51,
+      "psnr_db": 9.254492046336912,
+      "ssim_global": 0.06965649191393679,
+      "ssim_skimage": 0.455502867368635
+    }
+  ],
+  "mean_psnr_db": 7.905281640321069,
+  "mean_ssim_global": 0.14604354819684667,
+  "mean_ssim_skimage": 0.36842747901578143
+}

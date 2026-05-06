@@ -1,0 +1,97 @@
+{
+  "num_seeds": 10,
+  "mean_s": 191.4393622159958,
+  "std_s": 1.0249448498285882,
+  "min_s": 189.32815313339233,
+  "max_s": 192.77869486808777,
+  "passes": 10,
+  "steps": 50,
+  "tp": 4,
+  "height": 2048,
+  "width": 2048,
+  "guidance_scale": 4.0,
+  "prompt": "A cat holding a sign that says hello world",
+  "fix": "modeling_flux2_klein.py line 247 \u2014 half_dim divisor (was half_dim-1)",
+  "results": [
+    {
+      "seed": 42,
+      "time_s": 192.77869486808777,
+      "std": 74.06650098957208,
+      "mean": 169.197629849116,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed42_cat.png"
+    },
+    {
+      "seed": 43,
+      "time_s": 191.5148103237152,
+      "std": 89.92405930689078,
+      "mean": 126.76011554400127,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed43_cat.png"
+    },
+    {
+      "seed": 44,
+      "time_s": 191.78774881362915,
+      "std": 58.8237865725427,
+      "mean": 178.38980921109518,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed44_cat.png"
+    },
+    {
+      "seed": 45,
+      "time_s": 190.8089189529419,
+      "std": 67.37479253337024,
+      "mean": 159.08462913831076,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed45_cat.png"
+    },
+    {
+      "seed": 46,
+      "time_s": 192.44272446632385,
+      "std": 81.32283091646939,
+      "mean": 131.88431088129678,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed46_cat.png"
+    },
+    {
+      "seed": 47,
+      "time_s": 191.62325167655945,
+      "std": 73.61364562323176,
+      "mean": 146.01751414934793,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed47_cat.png"
+    },
+    {
+      "seed": 48,
+      "time_s": 189.32815313339233,
+      "std": 55.79257557070427,
+      "mean": 148.34806116422018,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed48_cat.png"
+    },
+    {
+      "seed": 49,
+      "time_s": 190.8755795955658,
+      "std": 83.27132609784591,
+      "mean": 195.88602542877197,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed49_cat.png"
+    },
+    {
+      "seed": 50,
+      "time_s": 192.69115114212036,
+      "std": 90.28377486582922,
+      "mean": 139.92890604337057,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed50_cat.png"
+    },
+    {
+      "seed": 51,
+      "time_s": 190.54258918762207,
+      "std": 95.57264829208584,
+      "mean": 63.003746032714844,
+      "verdict": "IMAGE",
+      "png": "/home/ubuntu/klein_fix_2k_50step/seed51_cat.png"
+    }
+  ]
+}

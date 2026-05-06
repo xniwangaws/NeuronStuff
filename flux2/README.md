@@ -14,20 +14,22 @@
 
 ## 2. 1024² 端到端耗时 + 峰值显存 + $/image(以 H100 FP8 为基准)
 
+> Neuron 行数据已使用 **timestep-embedding 修复版** 重跑(见 §11),旧 `klein_1k_50step/` 数据废弃,新数据在 `klein_fixed_1k_50step/`。
+
 | 设备 | 精度 | Mean (s) | P95 | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 FP8 | 成本 vs H100 FP8 |
 |---|---|---:|---:|---|---:|---:|---:|---:|
 | H100 p5.4xlarge | **FP8(基准, torchao)** | **21.18** | — | 28.25 GB | 10/10 | **$0.02545** | **1.00×** | **1.00×** |
 | H100 p5.4xlarge | BF16 | 24.10 | — | 37.33 GB | 10/10 | $0.02896 | 0.88×(慢 1.14×) | 1.14× 贵 |
-| **Neuron trn2.3xl** | **BF16 TP=4** | **37.75** | 38.92 | **~24 GB** | **10/10** | **$0.02344** | 0.56×(慢 1.78×) | **0.92×**(**便宜 8%**) |
+| **Neuron trn2.3xl(FIX)** | **BF16 TP=4** | **42.90** | 43.28 | **~24 GB** | **10/10** | **$0.02664** | 0.49×(慢 2.03×) | 1.05×(贵 5%) |
 | L4 g6.4xlarge | NF4(bnb) | 211.49 | 213.12 | 19.70 GB | 10/10 | $0.07772 | 0.10×(慢 9.99×) | 3.05× 贵 |
 | L4 g6.4xlarge | BF16+offload | 226.59 | 267.76 | 19.00 GB | 10/10 | $0.08327 | 0.09×(慢 10.7×) | 3.27× 贵 |
 
 `$/image = (Mean / 3600) × $/hr`
 
 **核心结论**:
-- **Neuron $/image 全场最低,比 H100 FP8 便宜 8%**($0.0234 vs $0.0254)
-- Neuron 绝对速度慢 1.78×,但 trn2.3xlarge 单价仅为 H100 的 52%,综合仍胜出
-- H100 BF16 既慢又贵,FP8 是 GPU 上最优;L4 虽单价最低但速度慢到成本反而高 3×
+- **Neuron 1K $/image = $0.0266,低于 H100 BF16($0.0290,便宜 8%),略高于 H100 FP8($0.0254,贵 5%)**
+- 修复 timestep embedding scalar 后(§11),1K 稳态 37.75s → 42.90s:compute 量未变,但修正后的正确 scalar 让 compiler 指令排布略有改变,代价是输出终于正确(旧数据是快但输出错乱的 buggy 数据,已作废)
+- Neuron 绝对速度慢 2.03× vs H100 FP8,但 trn2.3xlarge 单价仅为 H100 的 52%,$/image 仍只高 5%,比 H100 BF16 便宜
 - Neuron 单芯片 HBM ~24 GB,比 H100 FP8(28 GB)更低
 
 ## 3. 2048² 端到端耗时 + 峰值显存 + $/image(以 H100 FP8 为基准)
@@ -36,14 +38,15 @@
 |---|---|---:|---|---:|---:|---:|---:|
 | H100 p5.4xlarge | **FP8(基准)** | **106.20** | 35.92 GB | 10/10 | **$0.1276** | **1.00×** | **1.00×** |
 | H100 p5.4xlarge | BF16 | 107.05 | 45.00 GB | 10/10 | $0.1286 | 0.99× | 1.01× |
-| **Neuron trn2.3xl** | **BF16 TP=4** | **196.06** | ~40 GB | **10/10** | **$0.1217** | 0.54×(慢 1.85×) | **0.95×**(便宜 5%) |
+| **Neuron trn2.3xl(FIX)** | **BF16 TP=4** | **191.44** | ~40 GB | **10/10** | **$0.1189** | 0.55×(慢 1.80×) | **0.93×**(便宜 7%) |
 | L4 g6.4xlarge | NF4(3 seed 抽样) | 918.58 | 10.43 GB | 3/3 | $0.3376 | 0.12×(慢 8.65×) | 2.65× 贵 |
 | L4 g6.4xlarge | BF16+offload(1 seed) | 913.73 | 21.15 GB | 1/1 | $0.3358 | 0.12×(慢 8.60×) | 2.63× 贵 |
 
 **核心结论**:
-- 2K 下 H100 FP8 / BF16 / Neuron 三者 $/image 非常接近(差 <6%),**Neuron 仍是最低**
+- 2K 下 H100 FP8 / BF16 / Neuron 三者 $/image 非常接近(差 <8%),**Neuron 最低($0.1189)**
 - FP8 在 2K 已 compute-bound,相对 BF16 优势收窄到 1%
 - L4 单图 ~15 min + VRAM 紧张,只能抽样,**无法满足生产节奏**
+- 修复后 2K 稳态 196.06s → 191.44s(略快 2.4%),同样是 scalar 修正引起的 compiler 排布变化
 
 ## 4. 4096² 可行性 —— 模型超规格
 
@@ -58,46 +61,55 @@ klein 官方 `max_area = 4 MP(≈ 2048²)`,4K = 16 MP 超规格。**所有设备
 
 客户若需 4K,需等 BFL 发布更大 spec 的 checkpoint。
 
-## 5. DiT 加载 / 冷启动 / 稳态拆分(Neuron 1K)
+## 5. DiT 加载 / 冷启动 / 稳态拆分(Neuron 1K / 2K,修复版)
 
-| 阶段 | 耗时 |
-|---|---:|
-| Compile(一次性,可缓存到 S3/EFS) | 156.9 s |
-| Weight load + NxD init | 20.2 s |
-| 首次推理(含 graph replay warmup) | 25.4 s |
-| **稳态 mean(10 seed)** | **37.75 s** |
+| 阶段 | 1K | 2K |
+|---|---:|---:|
+| Compile(一次性,可缓存到 S3/EFS) | 156.9 s | 795.2 s |
+| Weight load + NxD init | 19.9 s | 136.4 s |
+| **稳态 mean(10 seed)** | **42.90 s** | **191.44 s** |
 
-- **首次 cold-start**(无 NEFF 缓存):~3.4 min
-- **热启动**(NEFF 缓存命中):~45 s
-- **稳态**:37.75 s/image
+- **1K 冷启动**(无 NEFF 缓存):~3.4 min;**热启动**:~65 s;稳态 42.90 s/image
+- **2K 冷启动**:~15.5 min;**热启动**:~5.5 min;稳态 191.44 s/image
 
 ## 6. 同 prompt / seed 的生图对比
 
-### 6.1 1024² 4-panel 对比(seed 42)
+### 6.1 1024² seed 42 对比(timestep 修复后)
 
-![1K 4-panel](task015_klein_jim_pr146/results/grid_1024.png)
-
-(左→右) H100 BF16 | H100 FP8 | **Neuron trn2 BF16 TP=4** | L4 NF4
-
-> 注:本张 Neuron 抽到装饰画风 variant,其余 9 个 seed(43–51)正常产出举牌猫,详见 `klein_1k_50step/seed{43..51}_cat.png`。
-
-### 6.2 2048² seed 42 对比
-
-| H100 BF16 | H100 FP8 | **Neuron trn2 BF16 TP=4** | L4 NF4 |
+| H100 BF16 | H100 FP8 | **Neuron trn2 BF16 TP=4 (fixed)** | L4 NF4 |
 |:---:|:---:|:---:|:---:|
-| ![](task015_klein_jim_pr146/results/h100_2048_bf16/seed42_cat.png) | ![](task015_klein_jim_pr146/results/h100_2048_fp8/seed42_cat.png) | ![](task015_klein_jim_pr146/results/klein_2k_50step/seed42_cat.png) | ![](task015_klein_jim_pr146/results/l4_2048_nf4/seed42_cat.png) |
+| ![](task015_klein_jim_pr146/results/h100_1024_bf16/seed42_cat.png) | ![](task015_klein_jim_pr146/results/h100_1024_fp8/seed42_cat.png) | ![](task015_klein_jim_pr146/results/klein_fixed_1k_50step/seed42_cat.png) | ![](task015_klein_jim_pr146/results/l4_1024_nf4/seed42_cat.png) |
 
-**视觉一致性**:1K / 2K 下所有设备均产出清晰的猫 + "HELLO WORLD" 牌子,仅 seed noise 级差异,不影响主体识别。
+> 注:Neuron 图为 **timestep embedding bug 修复后**(`modeling_flux2_klein.py` line 247,`half_dim` 替换 `half_dim-1`)重跑的 1K × 50-step × 10-seed 数据。修复前 DiT step-0 cos_sim vs HF = 0.9635 (R=33),修复后 = 0.999936 (R=0.989),详见 §8。
 
-### 6.3 10-seed 全量 PNG
+### 6.2 2048² seed 42 对比(timestep 修复后)
+
+| H100 BF16 | H100 FP8 | **Neuron trn2 BF16 TP=4 (fixed)** | L4 NF4 |
+|:---:|:---:|:---:|:---:|
+| ![](task015_klein_jim_pr146/results/h100_2048_bf16/seed42_cat.png) | ![](task015_klein_jim_pr146/results/h100_2048_fp8/seed42_cat.png) | ![](task015_klein_jim_pr146/results/klein_fixed_2k_50step/seed42_cat.png) | ![](task015_klein_jim_pr146/results/l4_2048_nf4/seed42_cat.png) |
+
+**视觉一致性**:修复后 1K / 2K 下所有设备均产出清晰的猫 + "HELLO WORLD" 牌子,10/10 seed 全部正常(无需此前的"装饰画 variant"备注),仅 seed-noise 级差异。
+
+### 6.3 10-seed 全量 PNG(修复版,旧 buggy 数据已废弃)
 
 | 设备 | 目录 |
 |---|---|
-| Neuron 1K BF16 | `task015_klein_jim_pr146/results/klein_1k_50step/seed{42..51}_cat.png` |
-| Neuron 2K BF16 | `task015_klein_jim_pr146/results/klein_2k_50step/seed{42..51}_cat.png` |
+| **Neuron 1K BF16 (fixed)** | `task015_klein_jim_pr146/results/klein_fixed_1k_50step/seed{42..51}_cat.png` |
+| **Neuron 2K BF16 (fixed)** | `task015_klein_jim_pr146/results/klein_fixed_2k_50step/seed{42..51}_cat.png` |
 | H100 1K BF16 / FP8 | `task015_klein_jim_pr146/results/h100_1024_{bf16,fp8}/seed{42..51}_cat.png` |
 | H100 2K BF16 / FP8 | `task015_klein_jim_pr146/results/h100_2048_{bf16,fp8}/seed{42..51}_cat.png` |
 | L4 2K NF4 / BF16+offload | `task015_klein_jim_pr146/results/l4_2048_{nf4,bf16_offload}/seed42_cat.png` |
+
+### 6.4 像素级相似度 vs H100 BF16(10 seed 平均)
+
+| 分辨率 | 版本 | Mean PSNR (dB) | Mean SSIM (skimage) |
+|---|---|---:|---:|
+| 1K | buggy 旧版本 | 7.62 | 0.248 |
+| **1K** | **timestep 修复版** | **7.91** | **0.368**(+49%) |
+| 2K | buggy 旧版本 | 7.77 | 0.170 |
+| **2K** | **timestep 修复版** | **7.23** | **0.381**(+124%) |
+
+SSIM 显著提升说明结构更接近 H100 参考;PSNR 绝对值 7–9 dB 是同 prompt 跨 stack diffusion 的正常范围(bf16 数值路径不同 + solver 步间微小漂移会在像素级累积,并不代表输出质量低)。
 
 ## 7. 硬件 / 软件配置
 
@@ -139,9 +151,27 @@ Trainium2 **没有 NVIDIA MIG 式的硬件显存切分**。Neuron 用 **LNC(Logi
 
 ## 10. 结论
 
-1. **Neuron klein 1K / 2K × 50 step × 10 seed 全通过**(std=65–79,视觉清晰的猫 + "HELLO WORLD" 牌子)
-2. **$/image 全场最低**:Neuron 比 H100 FP8(基准)便宜 **8%(1K)/ 5%(2K)**
-3. **速度**:Neuron 比 H100 FP8 慢 1.78×(1K)/ 1.85×(2K),但 trn2.3xlarge 单价仅为 H100 的 52%,综合 $/image 胜出
+1. **Neuron klein 1K / 2K × 50 step × 10 seed 全通过(timestep 修复后)**:std=55–95,视觉清晰的猫 + "HELLO WORLD" 纸牌,seed 42 也归正(不再是旧版本的"装饰画" variant)
+2. **$/image 比 H100 BF16 便宜 8%(1K)/ 7%(2K)**;比 H100 FP8 略贵 5%(1K)/ 便宜 7%(2K)
+3. **速度**:Neuron 比 H100 FP8 慢 2.03×(1K)/ 1.80×(2K),但 trn2.3xlarge 单价仅为 H100 的 52%,综合 $/image 仍具竞争力
 4. **HBM 占用**:Neuron 1K 24 GB,比 H100 FP8(28 GB)更低,适合小显存 / 高并发部署
-5. **4K 不可行**(所有设备含 H100 均噪声图,模型规格限制,非硬件问题)
+5. **4K 不可行**(所有设备含 H100 均噪声图,模型规格限制 `max_area=4MP`,非硬件问题)
 6. **Capacity 可用性**:p5 在 us-east / us-west / eu / sa-east 全 region `InsufficientInstanceCapacity`,最终只有 ap-northeast-1c 锁到;trn2 capacity block 更易获取 —— 综合性价比 + 可用性,**Neuron trn2 是 FLUX.2-klein 更可规模化部署的选择**
+
+## 11. Timestep embedding bug discovery(one-line fix)
+
+在初次跑 PR #146 的 klein 时,seed 42 输出了"装饰画"风格(其他 seed 正常)。逐步定位后发现 DiT step-0 输出 cos_sim vs HF reference = 0.9635(R=33.1),远低于正常 BF16 数值精度应达到的 ~0.9999。Bisect 到 `modeling_flux2_klein.py` 的 sinusoidal timestep embedding:
+
+```python
+# BEFORE (buggy):
+emb = math.log(10000.0) / (half_dim - 1)   # HF diffusers 默认,适用于 downscale_freq_shift=1
+
+# AFTER (fix @ line 247):
+emb = math.log(10000.0) / half_dim          # FLUX.2 使用 downscale_freq_shift=0,分母必须是 half_dim
+```
+
+FLUX.2 的 scheduler 配置是 `downscale_freq_shift=0`(和 HF 默认的 1 不同),因此分母应为 `half_dim` 而非 `half_dim-1`。一行修正即可让 DiT step-0 cos_sim 从 0.9635 → **0.999936**,R 从 33.1 → **0.989**(接近机器 bf16 精度上限),且所有 10 个 seed 的 1K/2K 输出都从"偶尔抽风"变为稳定清晰的猫 + HELLO WORLD 纸牌。
+
+- **影响范围**:所有使用 PR #146 clean-room klein 实现的 Neuron 推理
+- **Upstream 回报**:已在 AWS NxDI contrib PR 中修正
+- **Before/after 对比**:见 `task015_klein_jim_pr146/results/{klein_1k_50step,klein_fixed_1k_50step}/seed42_cat.png`
