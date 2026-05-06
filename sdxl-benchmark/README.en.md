@@ -20,19 +20,20 @@ _[中文版: README.zh.md](README.zh.md)_
 |---|---|---:|---|---:|---:|---:|---:|
 | **H100 p5.4xlarge** | **BF16 (baseline)** | **3.84** | 8.98 GB | 10/10 | **$0.00462** | **1.00×** | **1.00×** |
 | **H100 p5.4xlarge** | **FP8 + torch.compile(reduce-overhead)** | **1.84** | 6.88 GB | 10/10 | **$0.00221** | **2.09× faster** | **0.48× (52% cheaper)** |
-| Neuron **trn2.48xlarge (SDK 2.27)** | BF16 **tp=1** *(reference, single Trainium2)* | **5.74** | — | — | **$0.00356** | **1.49× faster** | **0.77× (23% cheaper)** |
 | **Neuron trn2.3xlarge (SDK 2.29)** | **BF16 + NKI flash-attn + CFG=7.5** *(DP=2, 2/4 cores = 1/2 Trainium2 chip, seeds 42-51)* | **11.14** | — | 10/10 | **$0.00346** | **0.34× (2.90× slower)** | **0.75× (25% cheaper)** |
 | **Neuron trn2.3xlarge (SDK 2.29, batch=2 BF16 CFG=7.5)** | **BF16 batch=2 + NKI flash-attn + CFG=7.5** | **13.262** | — | **10/10** | **$0.00823** | **0.29× (3.45× slower)** | **1.78× more expensive** |
 | L4 g6.4xlarge | BF16 | 19.75 | 5.21 GB | 10/10 | $0.00726 | 1.02× | 0.30× (3.33× cheaper) |
+| **L4 g6.4xlarge** | **FP8 + torch.compile(reduce-overhead)** | **12.68** | 6.87 GB | 10/10 | **$0.00466** | **0.30× (3.29× slower)** | **1.01× (parity)** |
 
 `$/image = (Mean / 3600) × $/hr`
 
 **Key takeaways:**
 - **H100 BF16** is the baseline at 3.84 s / 1K.
-- **Neuron trn2.3xl (SDK 2.27) tp=1 reference**: 5.74 s / $0.00356 — **23% cheaper than H100 BF16** (AWS official, no SDK 2.29 regression).
-- **Neuron trn2.3xl (SDK 2.29) DP=2**: 11.14 s, 10/10 pass. Since only 2/4 logical cores (= 1/2 Trainium2) are used, billing at half the chip price ($1.1175/hr) yields $/image = **$0.00346**, **25% cheaper than H100 BF16**. Extending to 4 cores is expected to double throughput and close the gap to SDK 2.27 tp=1.
+- **H100 FP8 + torch.compile**: 1.84 s / $0.00221 — 2.09× faster than BF16, 52% cheaper. **Fastest and cheapest overall.**
+- **Neuron trn2.3xl (SDK 2.29) DP=2 path**: 11.14 s, 10/10 pass. Since only 2/4 logical cores (= 1/2 Trainium2) are used, billing at half the chip price ($1.1175/hr) yields $/image = **$0.00346**, **25% cheaper than H100 BF16**. Extending to 4 cores is expected to double throughput.
 - **Neuron trn2.3xl (SDK 2.29) batch=2 CFG=7.5 workaround**: 13.262 s / $0.00823 (full-chip billing). 1.78× more expensive than H100 BF16 but restores full CFG=7.5 prompt adherence.
-- **L4 BF16**: 19.75 s / $0.00726 at 1K. Recommended L4 production path.
+- **L4 FP8 + torch.compile**: 12.68 s / $0.00466 — 1.56× faster than L4 BF16, 36% cheaper per image, at parity with H100 BF16.
+- **L4 BF16**: 19.75 s / $0.00726 at 1K. Simpler deployment path.
 
 ## 3. 2048² latency + peak memory + $/image (H100 BF16 baseline)
 
@@ -97,6 +98,7 @@ _[中文版: README.zh.md](README.zh.md)_
 | L4 1K BF16 (10 seeds) | `astronaut_bench/results/sdxl_astro_l4_1024/seed{42..51}_astro.png` |
 | L4 2K BF16 (10 seeds) | `astronaut_bench/results/sdxl_astro_l4_2048/seed{42..51}_astro.png` |
 | L4 4K BF16 (1 seed) | `astronaut_bench/results/sdxl_astro_l4_4096/seed42_astro.png` |
+| **L4 1K FP8+torch.compile (10 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_1024/seed{42..51}_astro.png` |
 | **Neuron trn2 1K BF16 CFG=7.5 batch=2 (10 seeds)** | `astronaut_bench/results/sdxl_astro_trn2_1024_cfg/seed{42..51}.png` |
 | **Neuron trn2 1K BF16 CFG=7.5 DP=2 NKI (10 seeds)** | `astronaut_bench/results/sdxl_astro_trn2_whn09_1024_seeds42_51/seed{42..51}.png` |
 | Neuron trn2 2K / 4K | compile blocked (see §3 / §4) |
@@ -104,10 +106,6 @@ _[中文版: README.zh.md](README.zh.md)_
 Each directory includes a `results.json` with `mean_s`, `peak_vram_gb`, per-seed `std`, etc.
 
 ## 7. Hardware / software config
-
-**Neuron — trn2.48xlarge (SDK 2.27) reference**
-- AWS official benchmark: SDXL-base-1.0 @ 1024², tp=1 (single Trainium2 chip), **5.74 s / image**.
-- Under SDK 2.27 the DataParallel + FP32 NEFF combination works as intended; none of the SDK 2.29 `NRT_RESOURCE` / DataParallel-scatter regressions apply.
 
 **Neuron — trn2.3xlarge (SDK 2.29) this round**
 - SDK: **2.29** / neuronx-cc / torch-neuronx
@@ -122,7 +120,9 @@ Each directory includes a `results.json` with `mean_s`, `peak_vram_gb`, per-seed
 - FP8 (eager, legacy path): torchao dynamic-activation quantization; without `torch.compile`, runs 5× slower than BF16, **not production-ready**.
 - **FP8 + torch.compile (new baseline, 2026-05-07)**: `Float8DynamicActivationFloat8WeightConfig` + `torch.compile(mode="reduce-overhead")`; latest DLAMI PyTorch 2.10 / CUDA 13 / torchao 0.17 / diffusers 0.38. 1K 1.84 s / 2K 8.37 s / 4K 63.86 s, 10/10 pass, peak HBM 6.88 / 6.91 / 7.04 GB.
 
-**L4 g6.4xlarge**: DLAMI / torch 2.9.1+cu128 / diffusers 0.38 / bitsandbytes 0.45 (NF4 toolchain available but this round tests BF16).
+**L4 g6.4xlarge**: DLAMI / torch 2.9.1+cu128 / diffusers 0.38 / bitsandbytes 0.45.
+- BF16 main path.
+- **FP8 + torch.compile (added 2026-05-07)**: `Float8DynamicActivationFloat8WeightConfig` + `torch.compile(mode="reduce-overhead")`, latest DLAMI PyTorch 2.10 / torchao 0.17 / diffusers 0.38. 1K 12.68 s, 10/10 pass, peak HBM 6.87 GB. L4 Ada FP8 tensor cores give a solid 1.56× speedup over BF16.
 
 **SDXL params**: guidance 7.5 (default), 50 steps, batch=1, PNDMScheduler default.
 
@@ -182,9 +182,8 @@ python benchmark_neuron.py \
    - 2K: **8.37 s / $0.01005** — **1.45×** faster than BF16, **12.7×** faster than eager FP8.
    - 4K: **63.86 s / $0.07673** — **1.48×** faster than BF16, **16×** faster than eager FP8.
    - 10/10 seeds pass at all resolutions; peak HBM 6.88 / 6.91 / 7.04 GB. **Now the recommended H100 SDXL production path.** Eager FP8 artifacts (`sdxl_astro_h100_fp8_*`) are kept as a negative-example archive.
-3. **L4 is viable at all resolutions**: BF16 1K $0.00726 / 2K $0.0350 / 4K $0.228. 24 GB VRAM is enough for SDXL at full precision, no offloading required.
+3. **L4 is viable at all resolutions**: BF16 1K $0.00726 / 2K $0.0350 / 4K $0.228. **FP8 + torch.compile (added 2026-05-07): 1K 12.68 s / $0.00466 — 1.56× faster than L4 BF16, 36% cheaper per image, at parity with H100 BF16**. 24 GB VRAM is enough for SDXL at full precision, no offloading required.
 4. **Neuron**:
-   - **trn2.48xlarge (SDK 2.27) tp=1 reference**: 5.74 s / $0.00356 per image — **23% cheaper than H100 BF16** (AWS official reference).
    - **trn2.3xlarge (SDK 2.29) DP=2 path** (2/4 logical cores = 1/2 chip): 11.14 s / 10/10 / **$0.00346 per image (25% cheaper than H100 BF16)**.
    - **trn2.3xlarge (SDK 2.29) batch=2 CFG=7.5 workaround** (full chip): 13.262 s / 10/10 / $0.00823 per image. 1.51× faster than the older batch=1 workaround and restores full CFG=7.5 prompt adherence (seed 42 green horse returns). Key fixes: (i) recompile UNet at batch=2 (accommodates CFG's automatic uncond/cond duplicate), (ii) force `TextEncoderOutputWrapper` to return `text_embeds=None` for CLIP-L so diffusers 0.38 uses CLIP-G's 1280-d pooled (fixes the `[1,768] expected [1,1280]` regression), (iii) keep a single `torch.jit.load` (sidesteps the SDK 2.29 `DataParallel` scatter bug), (iv) skip FP32 auto-cast, use `--auto-cast matmult --auto-cast-type bf16`.
    - **trn2.3xlarge 2K / 4K compile blocked**: 2K VAE decoder generates 7.7M instructions / 4K UNet generates 9.8M instructions, both exceed the `NCC_EVRF007` 5M hard limit; `--optlevel=1` does not help. In addition, on 2K the UNet `walrus_driver` backend eats >124 GB RAM, exceeding the 128 GB host RAM on trn2.3xlarge.

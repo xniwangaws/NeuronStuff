@@ -20,19 +20,20 @@ _[English version: README.en.md](README.en.md)_
 |---|---|---:|---|---:|---:|---:|---:|
 | **H100 p5.4xlarge** | **BF16(基准)** | **3.84** | 8.98 GB | 10/10 | **$0.00462** | **1.00×** | **1.00×** |
 | **H100 p5.4xlarge** | **FP8+torch.compile(reduce-overhead)** | **1.84** | 6.88 GB | 10/10 | **$0.00221** | **2.09× faster** | **0.48×**(便宜 52%） |
-| Neuron **trn2.48xlarge (SDK 2.27)** | BF16 **tp=1** *(参考,单 Trainium2 chip)* | **5.74** | — | — | **$0.00356** | **1.49× 更快** | **0.77×**(便宜 23%) |
 | **Neuron trn2.3xlarge (SDK 2.29)** | **BF16 + NKI flash-attn + CFG=7.5** *(DP=2, 2/4 cores = 1/2 Trainium2 芯片, seeds 42-51)* | **11.14** | — | 10/10 | **$0.00346** | **0.34×(慢 2.90×)** | **0.75×**(便宜 25%） |
 | **Neuron trn2.3xlarge (SDK 2.29,batch=2 BF16 CFG=7.5)** | **BF16 batch=2 + NKI flash-attn + CFG=7.5** | **13.262** | — | **10/10** | **$0.00823** | **0.29×(慢 3.45×)** | **1.78× 贵** |
 | L4 g6.4xlarge | BF16 | 19.75 | 5.21 GB | 10/10 | $0.00726 | 1.02× | 0.30×(便宜 3.33×) |
+| **L4 g6.4xlarge** | **FP8+torch.compile(reduce-overhead)** | **12.68** | 6.87 GB | 10/10 | **$0.00466** | **0.30×(慢 3.29×)** | **1.01×**(持平) |
 
 `$/image = (Mean / 3600) × $/hr`
 
 **核心结论**:
 - **H100 BF16**: 1K 3.84s 为基准
-- **Neuron trn2.3xl (SDK 2.27) tp=1 参考**: 5.74s / $0.00356 — 比 H100 BF16 便宜 23% (AWS 官方,无 SDK 2.29 regression)
-- **Neuron trn2.3xl (SDK 2.29) DP=2**: 11.14s 10/10,**只用 2/4 logical cores = 1/2 Trainium2 芯片**,按 1/2 芯片价 ($1.1175/hr) 计 $/image = **$0.00346**,**比 H100 BF16 便宜 25%** (扩展到 4 cores 预计再快 2× 追上 SDK 2.27 tp=1)
+- **H100 FP8+torch.compile**: 1.84s / $0.00221 — 比 BF16 快 2.09×,便宜 52%,**最快最省**
+- **Neuron trn2.3xl (SDK 2.29) DP=2 path**: 11.14s 10/10,**只用 2/4 logical cores = 1/2 Trainium2 芯片**,按 1/2 芯片价 ($1.1175/hr) 计 $/image = **$0.00346**,**比 H100 BF16 便宜 25%** (扩展到 4 cores 预计再快 2×)
 - **Neuron trn2.3xl (SDK 2.29) batch=2 CFG=7.5 workaround**: 13.262s / $0.00823(全芯片计价),比 H100 BF16 贵 1.78× 但恢复 CFG=7.5 完整质量
-- L4 BF16: 19.75s / $0.00726 (1K), 生产用 BF16 路径
+- **L4 FP8+compile**: 12.68s / $0.00466,比 L4 BF16 快 1.56×,$/image 降 36%,和 H100 BF16 持平
+- L4 BF16: 19.75s / $0.00726
 
 ## 3. 2048² 端到端耗时 + 峰值显存 + $/image(以 H100 BF16 为基准)
 
@@ -94,16 +95,13 @@ _[English version: README.en.md](README.en.md)_
 | L4 1K BF16(10 seeds) | `astronaut_bench/results/sdxl_astro_l4_1024/seed{42..51}_astro.png` |
 | L4 2K BF16(10 seeds) | `astronaut_bench/results/sdxl_astro_l4_2048/seed{42..51}_astro.png` |
 | L4 4K BF16(1 seed 抽样) | `astronaut_bench/results/sdxl_astro_l4_4096/seed42_astro.png` |
+| **L4 1K FP8+torch.compile(10 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_1024/seed{42..51}_astro.png` |
 | **Neuron trn2 1K BF16 CFG=7.5 batch=2 (10 seeds)** | `astronaut_bench/results/sdxl_astro_trn2_1024_cfg/seed{42..51}.png` |
 | Neuron trn2 2K / 4K | 编译不可行(见 §3 / §4) |
 
 每个目录含 `results.json`(mean_s / peak_vram_gb / per-seed std 等)。
 
 ## 7. 硬件 / 软件配置
-
-**Neuron — trn2.48xlarge (SDK 2.27) 参考**
-- AWS 官方数据:SDXL-base-1.0 @ 1024², tp=1(单 Trainium2 chip),**5.74 s / image**
-- SDK 2.27 下 DataParallel 与 FP32 NEFF 组合正常工作,无本轮 SDK 2.29 的 NRT_RESOURCE / DataParallel scatter regression
 
 **Neuron — trn2.3xlarge (SDK 2.29) 本轮**
 - SDK:**2.29** / neuronx-cc / torch-neuronx
@@ -118,7 +116,9 @@ _[English version: README.en.md](README.en.md)_
 - FP8(eager,旧路径):torchao 动态激活量化,eager 模式无 `torch.compile` 时比 BF16 慢 5×,**不可用于生产**
 - **FP8+torch.compile (新基准,2026-05-07 加测)**:`Float8DynamicActivationFloat8WeightConfig` + `torch.compile(mode="reduce-overhead")`,latest DLAMI PyTorch 2.10 / CUDA 13 / torchao 0.17 / diffusers 0.38。1K 1.84s / 2K 8.37s / 4K 63.86s 10/10 pass,peak HBM 6.88/6.91/7.04 GB
 
-**L4 g6.4xlarge**:DLAMI / torch 2.9.1+cu128 / diffusers 0.38.0 / bitsandbytes 0.45(NF4 工具链可选,本次 SDXL 主测 BF16)
+**L4 g6.4xlarge**:DLAMI / torch 2.9.1+cu128 / diffusers 0.38.0 / bitsandbytes 0.45
+- BF16 主测路径
+- **FP8+torch.compile (新加 2026-05-07)**:`Float8DynamicActivationFloat8WeightConfig` + `torch.compile(mode="reduce-overhead")`,latest DLAMI PyTorch 2.10 / torchao 0.17 / diffusers 0.38。1K 12.68s 10/10,peak 6.87 GB。L4 Ada FP8 tensor cores 效果好,1.56× 加速
 
 **SDXL 参数**:guidance 7.5(默认),50 step,batch=1,PNDMScheduler 默认。
 
@@ -177,9 +177,8 @@ python benchmark_neuron.py \
    - 2K: **8.37 s / $0.01005** — 比 BF16 快 **1.45×**, 比 FP8 eager 快 **12.7×**
    - 4K: **63.86 s / $0.07673** — 比 BF16 快 **1.48×**, 比 FP8 eager 快 **16×**
    - 10/10 seeds 全通过;peak HBM 6.88/6.91/7.04 GB。**已成为 H100 SDXL 生产路径首选**。eager FP8 数据 (`sdxl_astro_h100_fp8_*`) 保留作为反例
-3. **L4 全分辨率可用**:BF16 1K $0.00726 / 2K $0.0350 / 4K $0.228。24 GB VRAM 够 SDXL full precision,无需 offload。
+3. **L4 全分辨率可用**:BF16 1K $0.00726 / 2K $0.0350 / 4K $0.228。**FP8+torch.compile (2026-05-07 新加):1K 12.68s / $0.00466 — 比 BF16 快 1.56×,$/image 降 36%,和 H100 BF16 持平**。24 GB VRAM 够 SDXL full precision,无需 offload。
 4. **Neuron**:
-   - **trn2.48xlarge (SDK 2.27) tp=1 参考**:5.74 s / $0.00356 per image — 比 H100 BF16 便宜 23%(AWS 官方 reference)
    - **trn2.3xlarge (SDK 2.29) DP=2 path** (2/4 logical cores = 1/2 芯片): 11.14 s / 10/10 / **$0.00346 per image (比 H100 BF16 便宜 25%)**
    - **trn2.3xlarge (SDK 2.29) batch=2 CFG=7.5 workaround** (全芯片): 13.262 s / 10/10 / $0.00823 per image
    - **trn2.3xlarge (SDK 2.29) batch=2 CFG=7.5**:mean 13.262 s / 10/10 pass / $0.00823 per image,比之前 batch=1 workaround 快 1.51× 且恢复 CFG=7.5 完整 prompt 遵循(seed 42 绿马出现)。关键修复:(i) UNet NEFF 重编为 batch=2(容纳 CFG 自动复制 uncond/cond),(ii) CLIP-L `TextEncoderOutputWrapper` 返回 `text_embeds=None` 强制 diffusers 0.38 使用 CLIP-G 的 1280-d pooled(修复 `[1,768] expected [1,1280]` 回归),(iii) 保持单 `torch.jit.load`(避开 SDK 2.29 `DataParallel` scatter bug),(iv) 跳过 FP32 auto-cast,用 `--auto-cast matmult --auto-cast-type bf16`
