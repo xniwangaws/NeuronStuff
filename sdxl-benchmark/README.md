@@ -20,7 +20,8 @@
 | **H100 p5.4xlarge** | **FP16 variant** | **3.83** | 11.52 GB | 10/10 | **$0.00460** | **1.00×** | **1.00×** |
 | H100 p5.4xlarge | FP8(torchao eager) | *不推荐生产使用(见 §9)* | — | — | — | — | — |
 | Neuron **trn2.48xlarge (SDK 2.27)** | BF16 **tp=1** *(参考,单 Trainium2 chip)* | **5.74** | — | — | **$0.00356** | **1.49× 更快** | **0.77×**(便宜 23%) |
-| Neuron trn2.3xlarge (SDK 2.29) | BF16 TP=4 *(guidance=1.0,no-CFG workaround)* | 19.997 | ~24 GB | 10/10 | $0.01241 | 0.19×(慢 5.21×) | 2.69× 贵 |
+| Neuron **trn2.3xlarge (whn09 fork, SDK 2.29)** | BF16 **DataParallel[0,1] + NKI flash-attn** *(CFG=7.5,50 step)* | **11.151** | — | 10/10 | **$0.00692** | **0.34×(慢 2.90×)** | **1.50× 贵** |
+| Neuron trn2.3xlarge (SDK 2.29,AWS notebook 原版) | BF16 TP=4 *(guidance=1.0,no-CFG workaround)* | 19.997 | ~24 GB | 10/10 | $0.01241 | 0.19×(慢 5.21×) | 2.69× 贵 |
 | L4 g6.4xlarge | BF16 | 19.75 | 5.21 GB | 10/10 | $0.00726 | 1.02× | 0.30×(便宜 3.33×) |
 | **L4 g6.4xlarge** | **FP16 variant** | **22.78** | 5.21 GB | 10/10 | **$0.00837** | **0.17×** | **0.30×**(便宜 3.33×) |
 
@@ -30,6 +31,7 @@
 - **H100 FP16 variant ≡ BF16**:3.83 s vs 3.84 s(仅 noise 级差异),与用户参考脚本(3.94 s @ 50 step)一致。用 diffusers 官方 `variant="fp16"` 路径可加载 ~4.8 GB checkpoint(而非 9.6 GB FP32→BF16 cast)省一半 HF 下载 / 磁盘,无性能损失
 - **Neuron trn2.48xlarge (SDK 2.27) tp=1 参考**:**5.74 s / image** — 单 Trainium2 芯片下 $0.00356,**比 H100 BF16 便宜 23%**(AWS 官方 reference 数据,SDK 2.27 无本轮 SDK 2.29 的 regression)
 - Neuron trn2.3xlarge (SDK 2.29) 1K workaround:mean 19.997 s,10/10 pass,$0.01241 / image(BF16 batch=1 + `guidance_scale=1.0`,SDK 2.29 DataParallel regression + FP32 HBM 超预算所致;如修复可追上 SDK 2.27 5.74s)
+- **Neuron trn2.3xlarge (SDK 2.29) whn09 fork**:mean **11.151 s ± 0.011 s**,10/10 pass,$0.00692 / image(BF16 + CFG=7.5 + 50 step + DataParallel[0,1] + NKI `attention_isa_kernel` flash-attn 替换 SDPA;`--model-type=unet-inference --lnc=2`);**比上述 workaround 快 1.79×,比 H100 BF16 贵 1.50× 但恢复 CFG=7.5 完整质量**;仍比 trn2.48xl SDK 2.27 tp=1 参考(5.74s)慢 1.94×,主要差距是 whn09 只用 2 cores (LNC=2,DataParallel[0,1]),可进一步扩展到更多核
 - L4 FP16 比 L4 BF16 略慢(22.78 vs 19.75 s, +15%);L4 生产建议仍用 BF16
 - H100 BF16 基准下 L4 BF16 $/image 贵 1.57×,FP16 贵 1.81×;Neuron trn2.3xl SDK 2.29 workaround 贵 2.69×,但 SDK 2.27 路径便宜 23%
 
