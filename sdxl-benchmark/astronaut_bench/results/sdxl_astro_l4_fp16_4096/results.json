@@ -1,0 +1,39 @@
+{
+  "device": "l4 res=4096 fp16",
+  "model": "SDXL-base-1.0",
+  "prompt": "An astronaut riding a green horse",
+  "steps": 50,
+  "guidance": 7.5,
+  "resolution": "4096x4096",
+  "load_s": 6.4,
+  "peak_vram_gb": 9.91,
+  "mean_s": 686.39,
+  "n_ok": 3,
+  "n_total": 3,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 687.68,
+      "peak_vram_gb": 9.91,
+      "std": 56.93,
+      "png": "/home/ubuntu/sdxl_astro_l4_fp16_4096/seed42_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 43,
+      "time_s": 686.81,
+      "peak_vram_gb": 9.91,
+      "std": 62.32,
+      "png": "/home/ubuntu/sdxl_astro_l4_fp16_4096/seed43_astro.png",
+      "status": "ok"
+    },
+    {
+      "seed": 44,
+      "time_s": 684.67,
+      "peak_vram_gb": 9.91,
+      "std": 60.81,
+      "png": "/home/ubuntu/sdxl_astro_l4_fp16_4096/seed44_astro.png",
+      "status": "ok"
+    }
+  ]
+}
