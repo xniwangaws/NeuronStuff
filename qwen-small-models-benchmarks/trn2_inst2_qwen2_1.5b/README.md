@@ -69,10 +69,22 @@ Performance comparison of the best Qwen2-1.5B configuration at each context leng
 
 ### Key Observations
 
-- **32K context achieves 69% of H100** — the best relative efficiency across all context lengths
-- **4K context has the lowest TTFT** (0.98s) — 3.5x faster than H100 (3.41s)
-- **TTFT is consistently lower on Trn2** than H100 across all context lengths
-- Trn2 uses a single NeuronCore (TP=1) for most configs, maximizing per-device throughput
+- **Throughput**: 32K at 69% of H100 is the best relative efficiency; 4K/8K/16K/64K range 50-63%
+- **Trn2 uses a single NeuronCore (TP=1) for most configs**, maximizing per-device throughput
+
+### ⚠️ TTFT Comparison Note (fair high C)
+
+The `TTFT H100` column above reports Mean TTFT at the peak-throughput concurrency (c=64 / c=128 / c=256). For most rows these values include queueing delay because peak-throughput concurrency exceeds the H100 80GB KV capacity at long contexts. To compare TTFT fairly, use the lowest H100 concurrency that reaches ≥90% of peak throughput ("fair high C"):
+
+| Ctx | H100 fair C | H100 TTFT | Trn2 TTFT | Comparison |
+|-----|-------------|-----------|-----------|------------|
+| 4K  | c=128 | 1.78s | 0.98s | Trn2 1.8× faster |
+| 8K  | c=128 | 2.45s | 3.18s | H100 1.3× faster (parity) |
+| 16K | c=128 | 5.43s | 2.49s | Trn2 2.2× faster |
+| 32K | c=16  | 1.40s | 3.38s | H100 2.4× faster |
+| 64K | c=16  | 3.93s | 8.05s | H100 2.0× faster |
+
+**Summary**: Trn2 leads at 4K/16K, parity at 8K, H100 leads at 32K/64K. The previous claim "TTFT is consistently lower on Trn2" was based on H100 queue-saturated TTFT (c=256) and does not hold under fair high C comparison. Throughput ratios are unaffected.
 
 ## Configuration Naming Convention
 
