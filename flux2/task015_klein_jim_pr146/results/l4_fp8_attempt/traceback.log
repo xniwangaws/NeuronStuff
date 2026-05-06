@@ -1,0 +1,21 @@
+/opt/pytorch/lib/python3.12/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+/opt/pytorch/lib/python3.12/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+Loading FP8 transformer from single-file...
+Traceback (most recent call last):
+  File "/home/ubuntu/bench_klein_fp8_l4.py", line 14, in <module>
+    transformer = Flux2Transformer2DModel.from_single_file(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/pytorch/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/pytorch/lib/python3.12/site-packages/diffusers/loaders/single_file_model.py", line 467, in from_single_file
+    diffusers_format_checkpoint = checkpoint_mapping_fn(
+                                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/pytorch/lib/python3.12/site-packages/diffusers/loaders/single_file_utils.py", line 3933, in convert_flux2_transformer_checkpoint_to_diffusers
+    handler_fn_inplace(key, converted_state_dict)
+  File "/opt/pytorch/lib/python3.12/site-packages/diffusers/loaders/single_file_utils.py", line 3881, in convert_flux2_double_stream_blocks
+    to_q_weight, to_k_weight, to_v_weight = torch.chunk(fused_qkv_weight, 3, dim=0)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: chunk expects at least a 1-dimensional tensor
