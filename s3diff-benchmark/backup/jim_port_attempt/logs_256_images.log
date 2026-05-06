@@ -1,0 +1,54 @@
+=== Jim's S3Diff port ===
+torch_neuronx: 2.9.0.2.13.26312+8e870898
+torch: 2.9.1+cu128
+Resolution: 256x256 -> 1024x1024, padded=1024x1024, latent=128x128
+Compile dir: /home/ubuntu/s3diff_jim/compile_256
+Mode: images
+
+[1/5] Downloading weights...
+Fetching 22 files:   0%|          | 0/22 [00:00<?, ?it/s]Fetching 22 files: 100%|██████████| 22/22 [00:00<00:00, 286567.35it/s]
+  S3Diff weights: /home/ubuntu/.cache/huggingface/hub/models--zhangap--S3Diff/snapshots/41b5e9b6258829d379de50322fb843a97cacba27/s3diff.pkl
+  SD-Turbo: /home/ubuntu/.cache/huggingface/hub/models--stabilityai--sd-turbo/snapshots/b261bac6fd2cf515557d5d0707481eafa0485ec2
+  Download: 0.1s
+  DEResNet weights: /tmp/s3diff_repo/assets/mm-realsr/de_net.pth
+
+[2/5] Loading SD-Turbo + S3Diff LoRA weights...
+  LoRA ranks: unet=32, vae=16
+  VAE LoRA layers: 31
+  UNet LoRA layers: 257
+  Model build: 0.8s
+
+[3/5] Compiling 5 components...
+  [DEResNet] Compiling...
+..
+Compiler status PASS
+    Compiled in 21.2s
+  [Text Encoder] Compiling...
+......
+Compiler status PASS
+    Compiled in 109.4s
+  [VAE Encoder] Compiling...
+........................................[INTERNAL_ERROR] [NCC_IBIR182] Instruction reads un-initialized memory locations: instruction name: I-11463-0, source:(Load: I-11463-0), tensorizer(output tensor: bfloat16<128 x 1024> $11463[i2_0_1_5579_1_6537_0, c1_7388_1_17512, c2_7389_17512], id: 11463), memory locations : custom_call.1_set 
+instruction name: I-11558-0, source:(Load: I-11558-0), tensorizer(output tensor: bfloat16<128 x 1024> $11558[i2_0_1_5587_1_6569_0, c1_7551_1_17517, c2_7552_17517], id: 11558), memory locations : custom_call.3_set 
+ - Please open a support ticket at https://github.com/aws-neuron/aws-neuron-sdk/issues/new. You may also be able to obtain more information using the 'XLA_IR_DEBUG' and 'XLA_HLO_DEBUG' environment variables.
+
+2026-05-05T13:37:20Z Non-signal exit. Backend exited with code 1 and stderr: [INTERNAL_ERROR] [NCC_IBIR182] Instruction reads un-initialized memory locations: instruction name: I-11463-0, source:(Load: I-11463-0), tensorizer(output tensor: bfloat16<128 x 1024> $11463[i2_0_1_5579_1_6537_0, c1_7388_1_17512, c2_7389_17512], id: 11463), memory locations : custom_call.1_set 
+instruction name: I-11558-0, source:(Load: I-11558-0), tensorizer(output tensor: bfloat16<128 x 1024> $11558[i2_0_1_5587_1_6569_0, c1_7551_1_17517, c2_7552_17517], id: 11558), memory locations : custom_call.3_set 
+ - Please open a support ticket at https://github.com/aws-neuron/aws-neuron-sdk/issues/new. You may also be able to obtain more information using the 'XLA_IR_DEBUG' and 'XLA_HLO_DEBUG' environment variables.
+
+Traceback (most recent call last):
+  File "/home/ubuntu/s3diff_jim/run_jim_s3diff.py", line 352, in <module>
+    vae_enc_neuron = torch_neuronx.trace(vae_enc_wrapper,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/torch_neuronx/xla_impl/trace.py", line 603, in trace
+    neff_filename, metaneff, flattener, packer, weights = _trace(
+                                                          ^^^^^^^
+  File "/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/torch_neuronx/xla_impl/trace.py", line 683, in _trace
+    neff_artifacts = generate_neff(
+                     ^^^^^^^^^^^^^^
+  File "/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/torch_neuronx/xla_impl/trace.py", line 518, in generate_neff
+    neff_filename = hlo_compile(
+                    ^^^^^^^^^^^^
+  File "/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/torch_neuronx/xla_impl/trace.py", line 341, in hlo_compile
+    raise RuntimeError(f"neuronx-cc failed with {status}")
+RuntimeError: neuronx-cc failed with 70

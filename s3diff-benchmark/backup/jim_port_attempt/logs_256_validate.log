@@ -1,0 +1,47 @@
+=== Jim's S3Diff port ===
+torch_neuronx: 2.9.0.2.13.26312+8e870898
+torch: 2.9.1+cu128
+Resolution: 256x256 -> 1024x1024, padded=1024x1024, latent=128x128
+Compile dir: /home/ubuntu/s3diff_jim/compile_256
+Mode: images
+
+[1/5] Downloading weights...
+Fetching 22 files:   0%|          | 0/22 [00:00<?, ?it/s]Fetching 22 files: 100%|██████████| 22/22 [00:00<00:00, 242828.13it/s]
+  S3Diff weights: /home/ubuntu/.cache/huggingface/hub/models--zhangap--S3Diff/snapshots/41b5e9b6258829d379de50322fb843a97cacba27/s3diff.pkl
+  SD-Turbo: /home/ubuntu/.cache/huggingface/hub/models--stabilityai--sd-turbo/snapshots/b261bac6fd2cf515557d5d0707481eafa0485ec2
+  Download: 0.1s
+  DEResNet weights: /tmp/s3diff_repo/assets/mm-realsr/de_net.pth
+
+[2/5] Loading SD-Turbo + S3Diff LoRA weights...
+  LoRA ranks: unet=32, vae=16
+  VAE LoRA layers: 31
+  UNet LoRA layers: 257
+  Model build: 1.0s
+
+[3/5] Compiling 5 components...
+  [DEResNet] Loading cached...
+  [Text Encoder] Loading cached...
+  [VAE Encoder] Loading cached...
+  [UNet] Loading cached...
+  [VAE Decoder] Loading cached...
+
+Compile times: {}
+Total new compile time: 0.0s
+
+[4/5] Running inference (images mode)...
+  Found 5 LQ images
+  Warming up with bird_LQ_256.png...
+  [bird] input=(256, 256)
+    warm=3.567s (best of 3: [3.567, 3.571, 3.574])
+  [bus] input=(256, 256)
+    warm=3.575s (best of 3: [3.575, 3.577, 3.58])
+  [butterfly] input=(256, 256)
+    warm=3.581s (best of 3: [3.582, 3.582, 3.581])
+  [cat] input=(256, 256)
+    warm=3.576s (best of 3: [3.576, 3.577, 3.578])
+  [woman] input=(256, 256)
+    warm=3.582s (best of 3: [3.582, 3.582, 3.583])
+
+=== 5-image mean warm: 3.576s ===
+
+[5/5] Done.

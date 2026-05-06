@@ -1,0 +1,30 @@
+[bisect] scope=ff out=/tmp/bisect_trial_3.png
+[load] S3Diff...
+[R] replaced UNet LoRA: 257, VAE LoRA: 31
+[load] total 12.5s
+[bisect] found 16 Transformer2DModel instances
+[bisect] scope=ff wrapped_count=16
+  - down_blocks.0.attentions.0.transformer_blocks[0].ff
+  - down_blocks.0.attentions.1.transformer_blocks[0].ff
+  - down_blocks.1.attentions.0.transformer_blocks[0].ff
+  ... (13 more)
+Neuron backend does not support int64. Automatically casting to int32. Consider using int32 directly for better performance until native int64 support is added.
+WARNING:torch_neuronx.python_ops.dtype_autocast:Neuron backend does not support float64. Automatically casting to float32. Consider using float32 directly for better performance until native float64 support is added.
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 42.595s
+[run 1 COLD] 42.70s
+[saved] /tmp/bisect_trial_3.png
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled Latent]: the input size is 1024x1024, need to tiled
+[Tiled VAE]: the input size is tiny and unnecessary to tile.
+[Tiled VAE]: Done in 7.754s
+[run 2 warm#1] 7.78s
+[PSNR] vs /tmp/phase_r_cat.png: 45.28 dB (mse=1.927)
+
+=== BISECT scope=ff ===
+  run 1: 42.70s
+  run 2: 7.78s
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.
+[WARN] [attention_cte] attention_cte kernel is not tested for batch size x seqlen_q x seqlen_k above 43486543872.00, got bs_seqlen_qk_product=424673280.00.

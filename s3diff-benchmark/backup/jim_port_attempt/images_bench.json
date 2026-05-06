@@ -1,0 +1,78 @@
+{
+  "lr": 256,
+  "hr": 1024,
+  "mean_warm_s": 3.5759490013122557,
+  "results": [
+    {
+      "name": "bird",
+      "warm_s": 3.5668749809265137,
+      "all_s": [
+        3.5668749809265137,
+        3.57094407081604,
+        3.573504686355591
+      ],
+      "out_path": "/home/ubuntu/s3diff_jim/outputs/256/bird_jim_neuron_256.png",
+      "output_size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "bus",
+      "warm_s": 3.574981927871704,
+      "all_s": [
+        3.574981927871704,
+        3.5768582820892334,
+        3.5797176361083984
+      ],
+      "out_path": "/home/ubuntu/s3diff_jim/outputs/256/bus_jim_neuron_256.png",
+      "output_size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "butterfly",
+      "warm_s": 3.580667734146118,
+      "all_s": [
+        3.5822391510009766,
+        3.582340955734253,
+        3.580667734146118
+      ],
+      "out_path": "/home/ubuntu/s3diff_jim/outputs/256/butterfly_jim_neuron_256.png",
+      "output_size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "cat",
+      "warm_s": 3.5756030082702637,
+      "all_s": [
+        3.5756030082702637,
+        3.57745361328125,
+        3.5783674716949463
+      ],
+      "out_path": "/home/ubuntu/s3diff_jim/outputs/256/cat_jim_neuron_256.png",
+      "output_size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "woman",
+      "warm_s": 3.5816173553466797,
+      "all_s": [
+        3.5819594860076904,
+        3.5816173553466797,
+        3.582637310028076
+      ],
+      "out_path": "/home/ubuntu/s3diff_jim/outputs/256/woman_jim_neuron_256.png",
+      "output_size": [
+        1024,
+        1024
+      ]
+    }
+  ],
+  "compile_times": {}
+}

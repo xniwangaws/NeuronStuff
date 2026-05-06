@@ -1,0 +1,598 @@
+Fetching 22 files:   0%|          | 0/22 [00:00<?, ?it/s]Fetching 22 files: 100%|██████████| 22/22 [00:00<00:00, 243468.83it/s]
+UNet LoRA layers: 257
+
+--- Trying UNet recompile flags=['--model-type=unet-inference', '-O1'] ---
+..................../opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:458:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:465:33: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for vectorization_factor in TiledRange(num_full_128_tiles_per_I_tile, VECTORIZATION_FACTOR):
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:284:16: warning: 'neuronxcc.private_nkl.transpose.max_f_size' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  MAX_F_SIZE = max_f_size(dtype)
+               ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:289:15: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    return I, next_multiple(min(J, MAX_F_SIZE), 128)
+              ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:291:12: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    return next_multiple(min(I, MAX_F_SIZE), 128), J
+           ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:302:19: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    I_tile_size = next_multiple(I_tile_size, 128)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:303:19: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    J_tile_size = next_multiple(J_tile_size, 128)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:681:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:688:33: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for vectorization_factor in TiledRange(num_full_128_tiles_per_J_tile, VECTORIZATION_FACTOR):
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:751:3: warning: 'neuronxcc.private_nkl.transpose.check_input_transpose' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  check_input_transpose(in_tensor, in_shape, permutation)
+  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:757:33: warning: 'neuronxcc.private_nkl.transpose_utils.permutation_reduction' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  reduced_perm, reduced_shape = permutation_reduction(in_shape, permutation)
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:758:10: warning: 'neuronxcc.private_nkl.transpose_utils.permutes_last_two_dims' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert permutes_last_two_dims(reduced_perm), f"must permutate last two dims, got {reduced_perm}"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:763:11: warning: 'neuronxcc.private_nkl.transpose._str_to_dtype' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    dtype=_str_to_dtype(out_dtype),
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:764:12: warning: 'neuronxcc.private_nkl.transpose_utils._get_hbm_buffer' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    buffer=_get_hbm_buffer(),
+           ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:767:3: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_impl' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  _pe_transpose_impl(in_tensor, out_tensor, num_shards, shard_id)
+  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:373:25: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  flattened_B_dim = int(n_elts(in_shape[:-2])) if in_shape[:-2] else 1
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:378:30: warning: 'neuronxcc.private_nkl.transpose._pe_optimal_tile_sizes' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_tile_size, J_tile_size = _pe_optimal_tile_sizes(I, J, in_tensor.dtype)
+                             ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:381:17: warning: 'neuronxcc.private_nkl.utils.kernel_helpers.div_ceil' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  b_per_shard = div_ceil(flattened_B_dim, num_shards)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:384:19: warning: 'neuronxcc.private_nkl.transpose._to_compute_dtype' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  compute_dtype = _to_compute_dtype(in_tensor.dtype)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:398:19: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for I_tile in TiledRange(I, I_tile_size):
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:399:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for J_tile in TiledRange(J, J_tile_size):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:400:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:405:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:411:9: warning: 'neuronxcc.private_nkl.transpose._pe_load_tile' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _pe_load_tile(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:422:11: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_tile_I_vectorized' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+          _pe_transpose_tile_I_vectorized(
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:430:11: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_tile_J_vectorized' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+          _pe_transpose_tile_J_vectorized(
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:438:9: warning: 'neuronxcc.private_nkl.transpose._pe_store_tile' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _pe_store_tile(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:527:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:529:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:538:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  for J_128_tile in TiledRange(J_tile.size, nl.tile_size.pmax):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:539:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for I_512_tile in TiledRange(I_tile.size, nl.tile_size.psum_fmax):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:551:25: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for I_128_tile in TiledRange(I_512_tile, nl.tile_size.pmax):
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:569:7: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      _copy_with_engine(
+      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:586:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:588:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:596:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  for I_128_tile in TiledRange(I_tile.size, nl.tile_size.pmax):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:597:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for J_512_tile in TiledRange(J_tile.size, nl.tile_size.psum_fmax):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:609:25: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for J_128_tile in TiledRange(J_512_tile, nl.tile_size.pmax):
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:628:9: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _copy_with_engine(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:652:9: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _copy_with_engine(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:38:10: warning: 'neuronxcc.private_nkl.transpose_utils.is_valid_permutation' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert is_valid_permutation(permutation), "input permutation is invalid"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:41:10: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert n_elts(in_shape) == n_elts(in_tensor.shape), "tensor shape is invalid"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:41:30: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert n_elts(in_shape) == n_elts(in_tensor.shape), "tensor shape is invalid"
+                             ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:32:20: warning: 'neuronxcc.private_nkl.utils.StackAllocator.sizeinbytes' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  return (98304 // sizeinbytes(dtype)) // 2
+                   ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:886:29: warning: 'neuronxcc.private_nkl.utils.kernel_helpers.get_program_sharding_info' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  _, num_shards, shard_id = get_program_sharding_info()
+                            ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:887:9: warning: 'neuronxcc.private_nkl.transpose._pe_transpose' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  out = _pe_transpose(in_tensor, in_shape, permutation, out_dtype, num_shards, shard_id)
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose_utils.py:71:10: warning: 'neuronxcc.private_nkl.transpose_utils.is_valid_permutation' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  if not is_valid_permutation(permutation):
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/utils/tiled_range.py:66:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRangeIterator' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  if isinstance(size, TiledRangeIterator):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/utils/tiled_range.py:84:22: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRangeIterator' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    iterators.append(TiledRangeIterator(current_tile_size, i, base_offset + relative_offset))
+                     ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:458:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:465:33: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for vectorization_factor in TiledRange(num_full_128_tiles_per_I_tile, VECTORIZATION_FACTOR):
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:284:16: warning: 'neuronxcc.private_nkl.transpose.max_f_size' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  MAX_F_SIZE = max_f_size(dtype)
+               ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:289:15: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    return I, next_multiple(min(J, MAX_F_SIZE), 128)
+              ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:291:12: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    return next_multiple(min(I, MAX_F_SIZE), 128), J
+           ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:302:19: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    I_tile_size = next_multiple(I_tile_size, 128)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:303:19: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    J_tile_size = next_multiple(J_tile_size, 128)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:681:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:688:33: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for vectorization_factor in TiledRange(num_full_128_tiles_per_J_tile, VECTORIZATION_FACTOR):
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:751:3: warning: 'neuronxcc.private_nkl.transpose.check_input_transpose' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  check_input_transpose(in_tensor, in_shape, permutation)
+  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:757:33: warning: 'neuronxcc.private_nkl.transpose_utils.permutation_reduction' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  reduced_perm, reduced_shape = permutation_reduction(in_shape, permutation)
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:758:10: warning: 'neuronxcc.private_nkl.transpose_utils.permutes_last_two_dims' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert permutes_last_two_dims(reduced_perm), f"must permutate last two dims, got {reduced_perm}"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:763:11: warning: 'neuronxcc.private_nkl.transpose._str_to_dtype' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    dtype=_str_to_dtype(out_dtype),
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:764:12: warning: 'neuronxcc.private_nkl.transpose_utils._get_hbm_buffer' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    buffer=_get_hbm_buffer(),
+           ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:767:3: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_impl' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  _pe_transpose_impl(in_tensor, out_tensor, num_shards, shard_id)
+  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:373:25: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  flattened_B_dim = int(n_elts(in_shape[:-2])) if in_shape[:-2] else 1
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:378:30: warning: 'neuronxcc.private_nkl.transpose._pe_optimal_tile_sizes' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_tile_size, J_tile_size = _pe_optimal_tile_sizes(I, J, in_tensor.dtype)
+                             ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:381:17: warning: 'neuronxcc.private_nkl.utils.kernel_helpers.div_ceil' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  b_per_shard = div_ceil(flattened_B_dim, num_shards)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:384:19: warning: 'neuronxcc.private_nkl.transpose._to_compute_dtype' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  compute_dtype = _to_compute_dtype(in_tensor.dtype)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:398:19: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for I_tile in TiledRange(I, I_tile_size):
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:399:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for J_tile in TiledRange(J, J_tile_size):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:400:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:405:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:411:9: warning: 'neuronxcc.private_nkl.transpose._pe_load_tile' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _pe_load_tile(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:422:11: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_tile_I_vectorized' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+          _pe_transpose_tile_I_vectorized(
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:430:11: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_tile_J_vectorized' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+          _pe_transpose_tile_J_vectorized(
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:438:9: warning: 'neuronxcc.private_nkl.transpose._pe_store_tile' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _pe_store_tile(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:527:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:529:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:538:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  for J_128_tile in TiledRange(J_tile.size, nl.tile_size.pmax):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:539:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for I_512_tile in TiledRange(I_tile.size, nl.tile_size.psum_fmax):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:551:25: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for I_128_tile in TiledRange(I_512_tile, nl.tile_size.pmax):
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:569:7: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      _copy_with_engine(
+      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:586:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:588:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:596:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  for I_128_tile in TiledRange(I_tile.size, nl.tile_size.pmax):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:597:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for J_512_tile in TiledRange(J_tile.size, nl.tile_size.psum_fmax):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:609:25: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for J_128_tile in TiledRange(J_512_tile, nl.tile_size.pmax):
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:628:9: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _copy_with_engine(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:652:9: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _copy_with_engine(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:38:10: warning: 'neuronxcc.private_nkl.transpose_utils.is_valid_permutation' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert is_valid_permutation(permutation), "input permutation is invalid"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:41:10: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert n_elts(in_shape) == n_elts(in_tensor.shape), "tensor shape is invalid"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:41:30: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert n_elts(in_shape) == n_elts(in_tensor.shape), "tensor shape is invalid"
+                             ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:32:20: warning: 'neuronxcc.private_nkl.utils.StackAllocator.sizeinbytes' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  return (98304 // sizeinbytes(dtype)) // 2
+                   ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:886:29: warning: 'neuronxcc.private_nkl.utils.kernel_helpers.get_program_sharding_info' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  _, num_shards, shard_id = get_program_sharding_info()
+                            ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:887:9: warning: 'neuronxcc.private_nkl.transpose._pe_transpose' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  out = _pe_transpose(in_tensor, in_shape, permutation, out_dtype, num_shards, shard_id)
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose_utils.py:71:10: warning: 'neuronxcc.private_nkl.transpose_utils.is_valid_permutation' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  if not is_valid_permutation(permutation):
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/utils/tiled_range.py:66:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRangeIterator' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  if isinstance(size, TiledRangeIterator):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/utils/tiled_range.py:84:22: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRangeIterator' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    iterators.append(TiledRangeIterator(current_tile_size, i, base_offset + relative_offset))
+                     ^
+....../opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:458:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:465:33: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for vectorization_factor in TiledRange(num_full_128_tiles_per_I_tile, VECTORIZATION_FACTOR):
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:284:16: warning: 'neuronxcc.private_nkl.transpose.max_f_size' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  MAX_F_SIZE = max_f_size(dtype)
+               ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:289:15: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    return I, next_multiple(min(J, MAX_F_SIZE), 128)
+              ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:291:12: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    return next_multiple(min(I, MAX_F_SIZE), 128), J
+           ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:302:19: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    I_tile_size = next_multiple(I_tile_size, 128)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:303:19: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    J_tile_size = next_multiple(J_tile_size, 128)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:681:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:688:33: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for vectorization_factor in TiledRange(num_full_128_tiles_per_J_tile, VECTORIZATION_FACTOR):
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:751:3: warning: 'neuronxcc.private_nkl.transpose.check_input_transpose' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  check_input_transpose(in_tensor, in_shape, permutation)
+  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:757:33: warning: 'neuronxcc.private_nkl.transpose_utils.permutation_reduction' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  reduced_perm, reduced_shape = permutation_reduction(in_shape, permutation)
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:758:10: warning: 'neuronxcc.private_nkl.transpose_utils.permutes_last_two_dims' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert permutes_last_two_dims(reduced_perm), f"must permutate last two dims, got {reduced_perm}"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:763:11: warning: 'neuronxcc.private_nkl.transpose._str_to_dtype' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    dtype=_str_to_dtype(out_dtype),
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:764:12: warning: 'neuronxcc.private_nkl.transpose_utils._get_hbm_buffer' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    buffer=_get_hbm_buffer(),
+           ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:767:3: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_impl' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  _pe_transpose_impl(in_tensor, out_tensor, num_shards, shard_id)
+  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:373:25: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  flattened_B_dim = int(n_elts(in_shape[:-2])) if in_shape[:-2] else 1
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:378:30: warning: 'neuronxcc.private_nkl.transpose._pe_optimal_tile_sizes' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_tile_size, J_tile_size = _pe_optimal_tile_sizes(I, J, in_tensor.dtype)
+                             ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:381:17: warning: 'neuronxcc.private_nkl.utils.kernel_helpers.div_ceil' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  b_per_shard = div_ceil(flattened_B_dim, num_shards)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:384:19: warning: 'neuronxcc.private_nkl.transpose._to_compute_dtype' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  compute_dtype = _to_compute_dtype(in_tensor.dtype)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:398:19: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for I_tile in TiledRange(I, I_tile_size):
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:399:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for J_tile in TiledRange(J, J_tile_size):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:400:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:405:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:411:9: warning: 'neuronxcc.private_nkl.transpose._pe_load_tile' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _pe_load_tile(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:422:11: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_tile_I_vectorized' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+          _pe_transpose_tile_I_vectorized(
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:430:11: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_tile_J_vectorized' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+          _pe_transpose_tile_J_vectorized(
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:438:9: warning: 'neuronxcc.private_nkl.transpose._pe_store_tile' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _pe_store_tile(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:527:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:529:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:538:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  for J_128_tile in TiledRange(J_tile.size, nl.tile_size.pmax):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:539:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for I_512_tile in TiledRange(I_tile.size, nl.tile_size.psum_fmax):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:551:25: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for I_128_tile in TiledRange(I_512_tile, nl.tile_size.pmax):
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:569:7: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      _copy_with_engine(
+      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:586:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:588:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:596:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  for I_128_tile in TiledRange(I_tile.size, nl.tile_size.pmax):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:597:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for J_512_tile in TiledRange(J_tile.size, nl.tile_size.psum_fmax):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:609:25: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for J_128_tile in TiledRange(J_512_tile, nl.tile_size.pmax):
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:628:9: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _copy_with_engine(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:652:9: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _copy_with_engine(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:38:10: warning: 'neuronxcc.private_nkl.transpose_utils.is_valid_permutation' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert is_valid_permutation(permutation), "input permutation is invalid"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:41:10: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert n_elts(in_shape) == n_elts(in_tensor.shape), "tensor shape is invalid"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:41:30: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert n_elts(in_shape) == n_elts(in_tensor.shape), "tensor shape is invalid"
+                             ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:32:20: warning: 'neuronxcc.private_nkl.utils.StackAllocator.sizeinbytes' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  return (98304 // sizeinbytes(dtype)) // 2
+                   ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:886:29: warning: 'neuronxcc.private_nkl.utils.kernel_helpers.get_program_sharding_info' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  _, num_shards, shard_id = get_program_sharding_info()
+                            ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:887:9: warning: 'neuronxcc.private_nkl.transpose._pe_transpose' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  out = _pe_transpose(in_tensor, in_shape, permutation, out_dtype, num_shards, shard_id)
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose_utils.py:71:10: warning: 'neuronxcc.private_nkl.transpose_utils.is_valid_permutation' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  if not is_valid_permutation(permutation):
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/utils/tiled_range.py:66:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRangeIterator' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  if isinstance(size, TiledRangeIterator):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/utils/tiled_range.py:84:22: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRangeIterator' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    iterators.append(TiledRangeIterator(current_tile_size, i, base_offset + relative_offset))
+                     ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:458:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:465:33: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for vectorization_factor in TiledRange(num_full_128_tiles_per_I_tile, VECTORIZATION_FACTOR):
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:284:16: warning: 'neuronxcc.private_nkl.transpose.max_f_size' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  MAX_F_SIZE = max_f_size(dtype)
+               ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:289:15: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    return I, next_multiple(min(J, MAX_F_SIZE), 128)
+              ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:291:12: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    return next_multiple(min(I, MAX_F_SIZE), 128), J
+           ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:302:19: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    I_tile_size = next_multiple(I_tile_size, 128)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:303:19: warning: 'neuronxcc.private_nkl.transpose_utils.next_multiple' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    J_tile_size = next_multiple(J_tile_size, 128)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:681:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:688:33: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for vectorization_factor in TiledRange(num_full_128_tiles_per_J_tile, VECTORIZATION_FACTOR):
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:751:3: warning: 'neuronxcc.private_nkl.transpose.check_input_transpose' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  check_input_transpose(in_tensor, in_shape, permutation)
+  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:757:33: warning: 'neuronxcc.private_nkl.transpose_utils.permutation_reduction' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  reduced_perm, reduced_shape = permutation_reduction(in_shape, permutation)
+                                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:758:10: warning: 'neuronxcc.private_nkl.transpose_utils.permutes_last_two_dims' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert permutes_last_two_dims(reduced_perm), f"must permutate last two dims, got {reduced_perm}"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:763:11: warning: 'neuronxcc.private_nkl.transpose._str_to_dtype' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    dtype=_str_to_dtype(out_dtype),
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:764:12: warning: 'neuronxcc.private_nkl.transpose_utils._get_hbm_buffer' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    buffer=_get_hbm_buffer(),
+           ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:767:3: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_impl' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  _pe_transpose_impl(in_tensor, out_tensor, num_shards, shard_id)
+  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:373:25: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  flattened_B_dim = int(n_elts(in_shape[:-2])) if in_shape[:-2] else 1
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:378:30: warning: 'neuronxcc.private_nkl.transpose._pe_optimal_tile_sizes' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_tile_size, J_tile_size = _pe_optimal_tile_sizes(I, J, in_tensor.dtype)
+                             ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:381:17: warning: 'neuronxcc.private_nkl.utils.kernel_helpers.div_ceil' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  b_per_shard = div_ceil(flattened_B_dim, num_shards)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:384:19: warning: 'neuronxcc.private_nkl.transpose._to_compute_dtype' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  compute_dtype = _to_compute_dtype(in_tensor.dtype)
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:398:19: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for I_tile in TiledRange(I, I_tile_size):
+                  ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:399:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for J_tile in TiledRange(J, J_tile_size):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:400:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:405:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:411:9: warning: 'neuronxcc.private_nkl.transpose._pe_load_tile' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _pe_load_tile(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:422:11: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_tile_I_vectorized' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+          _pe_transpose_tile_I_vectorized(
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:430:11: warning: 'neuronxcc.private_nkl.transpose._pe_transpose_tile_J_vectorized' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+          _pe_transpose_tile_J_vectorized(
+          ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:438:9: warning: 'neuronxcc.private_nkl.transpose._pe_store_tile' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _pe_store_tile(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:527:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:529:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:538:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  for J_128_tile in TiledRange(J_tile.size, nl.tile_size.pmax):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:539:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for I_512_tile in TiledRange(I_tile.size, nl.tile_size.psum_fmax):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:551:25: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for I_128_tile in TiledRange(I_512_tile, nl.tile_size.pmax):
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:569:7: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      _copy_with_engine(
+      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:586:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  I_128_tiles = TiledRange(I_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:588:17: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  J_128_tiles = TiledRange(J_tile, nl.tile_size.pmax)
+                ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:596:21: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  for I_128_tile in TiledRange(I_tile.size, nl.tile_size.pmax):
+                    ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:597:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    for J_512_tile in TiledRange(J_tile.size, nl.tile_size.psum_fmax):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:609:25: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRange' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+      for J_128_tile in TiledRange(J_512_tile, nl.tile_size.pmax):
+                        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:628:9: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _copy_with_engine(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:652:9: warning: 'neuronxcc.private_nkl.transpose._copy_with_engine' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+        _copy_with_engine(
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:38:10: warning: 'neuronxcc.private_nkl.transpose_utils.is_valid_permutation' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert is_valid_permutation(permutation), "input permutation is invalid"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:41:10: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert n_elts(in_shape) == n_elts(in_tensor.shape), "tensor shape is invalid"
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:41:30: warning: 'neuronxcc.private_nkl.transpose_utils.n_elts' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  assert n_elts(in_shape) == n_elts(in_tensor.shape), "tensor shape is invalid"
+                             ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:32:20: warning: 'neuronxcc.private_nkl.utils.StackAllocator.sizeinbytes' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  return (98304 // sizeinbytes(dtype)) // 2
+                   ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:886:29: warning: 'neuronxcc.private_nkl.utils.kernel_helpers.get_program_sharding_info' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  _, num_shards, shard_id = get_program_sharding_info()
+                            ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose.py:887:9: warning: 'neuronxcc.private_nkl.transpose._pe_transpose' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  out = _pe_transpose(in_tensor, in_shape, permutation, out_dtype, num_shards, shard_id)
+        ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/transpose_utils.py:71:10: warning: 'neuronxcc.private_nkl.transpose_utils.is_valid_permutation' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  if not is_valid_permutation(permutation):
+         ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/utils/tiled_range.py:66:23: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRangeIterator' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+  if isinstance(size, TiledRangeIterator):
+                      ^
+/opt/aws_neuronx_venv_pytorch_inference_vllm_0_16/lib/python3.12/site-packages/neuronxcc/private_nkl/utils/tiled_range.py:84:22: warning: 'neuronxcc.private_nkl.utils.tiled_range.TiledRangeIterator' is from the 'neuronxcc' package which is not supported in NKI kernels; use the 'nki' package instead
+    iterators.append(TiledRangeIterator(current_tile_size, i, base_offset + relative_offset))
+                     ^
+...............................................................................................................................................................
+Compiler status PASS
+  SUCCESS in 3708.6s
+  Saved: /home/ubuntu/s3diff_jim/compile_256/unet_unet_inference_O1.pt
+  Backed up old unet.pt -> unet_matmult.pt
+  Active unet.pt now = unet_inference_O1
