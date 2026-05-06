@@ -1,0 +1,30 @@
+{
+  "device": "L4-24GB",
+  "instance": "g6.4xlarge",
+  "region": "sa-east-1",
+  "model_source": "black-forest-labs/FLUX.2-klein-base-9B",
+  "mode": "bf16_offload",
+  "precision": "BF16 + enable_model_cpu_offload() (no quantization)",
+  "resolution": 2048,
+  "steps": 50,
+  "guidance": 4.0,
+  "prompt": "A cat holding a sign that says hello world",
+  "seeds_completed": [42],
+  "n_ok": 1,
+  "n_total": 1,
+  "per_run_records": [
+    {
+      "seed": 42,
+      "std": 74.49,
+      "mean": 109.21,
+      "verdict": "IMAGE",
+      "png": "seed42_cat.png",
+      "image_size": "2048x2048"
+    }
+  ],
+  "notes": [
+    "PNG produced by an earlier bench session on 2026-05-06 01:39 UTC (different session from this README).",
+    "This session (2026-05-06 04:00-05:45 UTC) did not regenerate bf16_offload data because the allocated budget was exhausted by NF4 attempts + sibling-agent instance terminations.",
+    "Existing seed42 PNG retained from 01:39 session."
+  ]
+}

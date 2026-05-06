@@ -1,0 +1,45 @@
+{
+  "device": "L4-24GB",
+  "instance": "g6.4xlarge",
+  "region": "sa-east-1",
+  "model": "/home/ubuntu/flux2_klein",
+  "source_repo": "black-forest-labs/FLUX.2-klein-base-9B",
+  "mode": "nf4",
+  "precision": "NF4 (bnb 4-bit, bfloat16 compute) + enable_model_cpu_offload()",
+  "resolution": 1024,
+  "steps": 50,
+  "guidance": 4.0,
+  "prompt": "A cat holding a sign that says hello world",
+  "seeds": [42],
+  "n_ok": 1,
+  "n_total": 1,
+  "load_time_s": 18.88,
+  "warmup_s": 263.80,
+  "mean_s": 206.53,
+  "std_s": 0.0,
+  "min_s": 206.53,
+  "max_s": 206.53,
+  "per_run_s": [206.53],
+  "per_run_records": [
+    {
+      "seed": 42,
+      "time_s": 206.53,
+      "std": 70.59,
+      "mean": 107.86,
+      "peak_vram_gb": 14.01,
+      "verdict": "IMAGE",
+      "png": "seed42_cat.png"
+    }
+  ],
+  "peak_vram_gb": 14.01,
+  "errors": [],
+  "notes": [
+    "Only seed 42 completed; remaining seeds (43-51) were cut short when the g6.4xlarge instance was terminated by a sibling agent (a88ed8d6b4b27cd10, 'SDXL H100 FP16 + L4 FP16') at 2026-05-06T05:41:42Z per its instructions to 'terminate any stale L4 first'.",
+    "Parallel benchmark timing: sibling Flux1-dev FP8 agent was also running bench_flux_fp8.py on the same GPU, caused memory contention during model load (8.5 min instead of 5s per checkpoint shard).",
+    "NF4 path config: transformer + text_encoder (Qwen3ForCausalLM) both quantized via bitsandbytes NF4, compute_dtype=bfloat16, pipe.enable_model_cpu_offload() on full Flux2KleinPipeline.",
+    "Config worked: 14.01 GB peak VRAM fits well in L4 24GB.",
+    "Warmup was slow (263.8s) due to first-load CPU->GPU layer shuffling under enable_model_cpu_offload().",
+    "Steady-state 1K NF4 per-image latency: 206.5s (50 steps, ~4.1s/step).",
+    "Seed 42 image std=70.6 confirms valid image (not noise); visual inspection shows cat with a sign."
+  ]
+}
