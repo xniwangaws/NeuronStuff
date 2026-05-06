@@ -18,6 +18,7 @@
 | H100 p5.4xlarge | **FP8(基准, torchao)** | 8.54 | 22.77 GB | 10/10 | **$0.01026** | **1.00×** | **1.00×** |
 | **Neuron trn2.3xl** | **BF16 WORLD=4** | **8.03** | ~25 GB(单 Trainium2) | **10/10** | **$0.00499** | 1.06× 更快 | **0.49×**(**便宜 51%**) |
 | L4 g6.4xlarge | NF4(bnb+offload) | 57.65 | 6.79 GB | 10/10 | $0.02119 | 0.15×(慢 6.75×) | 2.06× 贵 |
+| L4 g6.4xlarge | **FP8(wangkanai, seq-offload)** | 123.21 | 2.39 GB | 10/10 | $0.04528 | 0.07×(慢 14.4×) | 4.41× 贵 |
 
 `$/image = (Mean / 3600) × $/hr`
 
@@ -26,6 +27,7 @@
 - H100 BF16 绝对速度最快(5.87s),比 FP8 便宜 17%(FP8 quantize 在单张小图上的 overhead 超过加速收益)
 - Neuron 单芯片 HBM ~25 GB,低于 H100 BF16(34 GB)
 - L4 NF4 速度慢 6.75×,load 678s(NF4 转换慢),性价比最差
+- L4 FP8(wangkanai/flux-dev-fp8)速度更慢(123 s,慢 14.4×):权重在 ckpt 内为 F8_E4M3,但 diffusers 加载时 upcast 到 bf16,12 B ≈ 24 GB 超出 L4 22 GB 显存,被迫走 sequential CPU offload → PCIe 成为瓶颈。峰值显存压到 2.39 GB 但单图成本 $0.04528(4.41× 贵于 H100 FP8);相比 L4 NF4 的 57 s,FP8 "干净"但在 22 GB L4 上吃亏于 offload 开销。
 
 ## 3. DiT 加载 / 冷启动 / 稳态拆分(Neuron 1K)
 
@@ -56,6 +58,7 @@
 | H100 1K BF16 | `alien_bench/results/flux1_alien_h100_bf16/seed{42..51}_alien.png` |
 | H100 1K FP8 | `alien_bench/results/flux1_alien_h100_fp8/seed{42..51}_alien.png` |
 | L4 1K NF4 | `alien_bench/results/flux1_alien_l4_nf4/seed{42..51}_alien.png` |
+| L4 1K FP8 | `alien_bench/results/flux1_alien_l4_fp8/seed{42..51}_alien.png` |
 
 ## 6. 硬件 / 软件配置
 
@@ -67,6 +70,8 @@
 **H100 p5.4xlarge**:DLAMI / torch 2.9.1+cu128 / diffusers 0.38 / FP8 via `torchao.Float8DynamicActivationFloat8WeightConfig`
 
 **L4 g6.4xlarge**:DLAMI / torch 2.7.0+cu128 / diffusers 0.38 / bitsandbytes NF4 + `enable_model_cpu_offload`
+
+**L4 g6.4xlarge FP8**:DLAMI PyTorch 2.9 / torch 2.9.1+cu130 / diffusers 0.35.1 / transformers 4.57.6 / 模型 [wangkanai/flux-dev-fp8](https://huggingface.co/wangkanai/flux-dev-fp8)(17 GB single-file ComfyUI-style ckpt,F8_E4M3 权重 16.7 B)/ `FluxPipeline.from_single_file` + `enable_sequential_cpu_offload`。12B transformer 在 bf16 compute 下 ≈ 24 GB,超过 L4 22 GB,必须 sequential offload 逐层流式 → PCIe 搬运主导耗时,单张 123 s。
 
 **实现**:FLUX.1-dev benchmark 基于 [AWS NxDI NeuronFluxApplication](https://awsdocs-neuron.readthedocs-hosted.com/),Neuron 端一键 compile + load + forward;GPU 端用 `diffusers.FluxPipeline`。
 
