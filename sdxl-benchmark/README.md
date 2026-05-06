@@ -10,83 +10,74 @@
 | p5.4xlarge | 1× H100 SXM5 | 80 GB HBM3 | **$4.326** | us-east-1 |
 | g6.4xlarge | 1× L4 | 24 GB GDDR6 | **$1.323** | sa-east-1 |
 
-> Neuron 物理上跑在 trn2.48xlarge,SDXL TP=4 只占用单个 Trainium2(8 物理核 → 4 逻辑核,LNC=2),按 trn2.3xlarge 等效单芯片刊例计价。本轮新增 **H100 FP8**(torchao `Float8DynamicActivationFloat8WeightConfig`,UNet-only,VAE/text-encoder 仍 BF16),作为 klein 报告对齐用的新基准;H100 BF16 结果保留作上一轮对照。
+> Neuron 物理上跑在 trn2.48xlarge,SDXL TP=4 只占用单个 Trainium2(8 物理核 → 4 逻辑核,LNC=2),按 trn2.3xlarge 等效单芯片刊例计价。H100 主基准为 BF16(torchao eager FP8 在 SDXL 单 batch 场景反而慢 5×,已从结果表删除,留待 torch.compile 重测)。
 
-## 2. 1024² 端到端耗时 + 峰值显存 + $/image(以 H100 FP8 为基准)
+## 2. 1024² 端到端耗时 + 峰值显存 + $/image(以 H100 BF16 为基准)
 
-| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 FP8 | 成本 vs H100 FP8 |
+| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 BF16 | 成本 vs H100 BF16 |
 |---|---|---:|---|---:|---:|---:|---:|
-| **H100 p5.4xlarge** | **FP8(基准)** | **20.10** | 6.88 GB | 10/10 | **$0.02416** | **1.00×** | **1.00×** |
-| H100 p5.4xlarge | BF16(上一轮) | 3.84 | 8.98 GB | 10/10 | $0.00462 | 5.23×(快 5.23×) | 0.19×(便宜 5.23×) |
+| **H100 p5.4xlarge** | **BF16(基准)** | **3.84** | 8.98 GB | 10/10 | **$0.00462** | **1.00×** | **1.00×** |
+| H100 p5.4xlarge | FP8(torchao eager) | *待重测(torch.compile + CUDA graphs)* | — | — | — | — | — |
 | Neuron trn2.3xl | BF16 TP=4 *(guidance=1.0,无 CFG)* | 19.997 | ~24 GB | 10/10 | $0.01241 | 1.01× | 0.51×(便宜 1.95×) |
 | L4 g6.4xlarge | BF16 | 19.75 | 5.21 GB | 10/10 | $0.00726 | 1.02× | 0.30×(便宜 3.33×) |
 
 `$/image = (Mean / 3600) × $/hr`
 
 **核心结论**:
-- **FP8 未上 `torch.compile` 时,H100 延迟反而比 BF16 慢 5.23×**(20.1 s vs 3.84 s):torchao 动态激活量化每个 Linear 触发 CPU-side quantize dispatch,图外模式下这部分开销压过 FP8 matmul 收益;max-autotune 编译可恢复速度但单分辨率需 >15 min,超出本次 2h 预算,因此按 eager-mode FP8 如实报告
-- **FP8 的真实收益在 VRAM**:UNet 权重 6.88 GB vs BF16 8.98 GB(节省 ~23%),留出更多空间给更大 batch / 更高分辨率的中间态
 - Neuron trn2 1K 运行成功:mean 19.997 s,10/10 pass,$0.01241 / image(BF16 batch=1 + `guidance_scale=1.0` 无 CFG workaround,prompt adherence 下降)
-- 本轮 FP8 基准下 Neuron trn2 和 L4 的 $/image 都比 H100 FP8 便宜(2.0× / 3.3×),因为单步耗时接近但小时价分别 $2.235 / $1.323 vs H100 $4.326
+- H100 BF16 基准下 Neuron trn2 与 L4 的 $/image 都高于 H100(Neuron 2.69×,L4 1.57×),因为 SDXL UNet 在 H100 已接近 memory-bandwidth bound,BF16 是最优
 
-## 3. 2048² 端到端耗时 + 峰值显存 + $/image(以 H100 FP8 为基准)
+## 3. 2048² 端到端耗时 + 峰值显存 + $/image(以 H100 BF16 为基准)
 
-| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 FP8 | 成本 vs H100 FP8 |
+| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 BF16 | 成本 vs H100 BF16 |
 |---|---|---:|---|---:|---:|---:|---:|
-| **H100 p5.4xlarge** | **FP8(基准)** | **21.84** | 6.91 GB | 10/10 | **$0.02624** | **1.00×** | **1.00×** |
-| H100 p5.4xlarge | BF16(上一轮) | 12.14 | 9.00 GB | 10/10 | $0.01459 | 1.80×(快 1.80×) | 0.56×(便宜 1.80×) |
+| **H100 p5.4xlarge** | **BF16(基准)** | **12.14** | 9.00 GB | 10/10 | **$0.01459** | **1.00×** | **1.00×** |
+| H100 p5.4xlarge | FP8(torchao eager) | *待重测* | — | — | — | — | — |
 | Neuron trn2.3xl | BF16 TP=4 | N/A | — | — | — | — | — |
 | L4 g6.4xlarge | BF16 | 95.19 | 6.15 GB | 10/10 | $0.03498 | 0.23×(慢 4.36×) | 1.33× 贵 |
 
 **核心结论**:
-- 2K 下 FP8 相对 BF16 仅慢 1.80×(远低于 1K 的 5.23×),因为 UNet 单步 matmul 绝对时间增加,CPU dispatch overhead 相对占比下降
-- H100 FP8 VRAM 6.91 GB,与 1K(6.88 GB)几乎持平 —— UNet 权重 footprint 主导,分辨率放大仅增加 VAE tiling 区间的峰值(已开启 `enable_vae_tiling`)
-- L4 单图 ~95 s,$/image 是 H100 FP8 的 1.33 倍;若对齐 H100 BF16,L4 贵 2.40×
+- L4 单图 ~95 s,$/image 是 H100 BF16 的 2.40×
 
-## 4. 4096² 端到端耗时 + 峰值显存 + $/image(以 H100 FP8 为基准)
+## 4. 4096² 端到端耗时 + 峰值显存 + $/image(以 H100 BF16 为基准)
 
-| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 FP8 | 成本 vs H100 FP8 |
+| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | 速度 vs H100 BF16 | 成本 vs H100 BF16 |
 |---|---|---:|---|---:|---:|---:|---:|
-| **H100 p5.4xlarge** | **FP8(基准)** | **113.49** | 11.63 GB | 10/10 | **$0.13638** | **1.00×** | **1.00×** |
-| H100 p5.4xlarge | BF16(上一轮) | 94.37 | 11.62 GB | 10/10 | $0.11341 | 1.20×(快 1.20×) | 0.83×(便宜 1.20×) |
+| **H100 p5.4xlarge** | **BF16(基准)** | **94.37** | 11.62 GB | 10/10 | **$0.11341** | **1.00×** | **1.00×** |
+| H100 p5.4xlarge | FP8(torchao eager) | *待重测* | — | — | — | — | — |
 | Neuron trn2.3xl | BF16 TP=4 | N/A | — | — | — | — | — |
 | L4 g6.4xlarge | BF16(1 seed 抽样) | 619.18 | 9.91 GB | 1/1 | $0.22754 | 0.18×(慢 5.46×) | 1.67× 贵 |
 
 **核心结论**:
-- 4K 下 FP8 vs BF16 差距进一步收窄(1.20×):attention 代价主导,torchao overhead 被稀释
-- H100 FP8 4K 峰值 VRAM 11.63 GB,与 BF16 11.62 GB 基本一致 —— 4K 的 VRAM 由 attention 激活主导,UNet 权重节省被激活显存吸收
-- L4 4K 单图 > 10 min,仅 seed 42 抽样;对 H100 FP8 $/image 贵 1.67×,对 H100 BF16 贵 2.01×
+- L4 4K 单图 > 10 min,仅 seed 42 抽样;对 H100 BF16 $/image 贵 2.01×
 - SDXL 原生 1024²,4K 为超采样,视觉质量受 SDXL spec 限制
 
 ## 5. 同 prompt / seed 的生图对比(seed 42)
 
 ### 5.1 1024² seed 42
 
-| H100 FP8 | H100 BF16 | Neuron BF16 TP=4 | L4 BF16+offload |
-|:---:|:---:|:---:|:---:|
-| ![](astronaut_bench/results/sdxl_astro_h100_fp8_1024/seed42_astro.png) | ![](astronaut_bench/results/sdxl_astro_h100_1024/seed42_astro.png) | ![](astronaut_bench/results/sdxl_astro_trn2_1024/seed42.png) | ![](astronaut_bench/results/sdxl_astro_l4_1024/seed42_astro.png) |
+| H100 BF16 | Neuron BF16 TP=4 *(no CFG)* | L4 BF16 |
+|:---:|:---:|:---:|
+| ![](astronaut_bench/results/sdxl_astro_h100_1024/seed42_astro.png) | ![](astronaut_bench/results/sdxl_astro_trn2_1024/seed42.png) | ![](astronaut_bench/results/sdxl_astro_l4_1024/seed42_astro.png) |
 
 ### 5.2 2048² seed 42
 
-| H100 FP8 | H100 BF16 | Neuron BF16 TP=4 | L4 BF16+offload |
-|:---:|:---:|:---:|:---:|
-| ![](astronaut_bench/results/sdxl_astro_h100_fp8_2048/seed42_astro.png) | ![](astronaut_bench/results/sdxl_astro_h100_2048/seed42_astro.png) | 未测试(本次仅 1K) | ![](astronaut_bench/results/sdxl_astro_l4_2048/seed42_astro.png) |
+| H100 BF16 | Neuron BF16 TP=4 | L4 BF16 |
+|:---:|:---:|:---:|
+| ![](astronaut_bench/results/sdxl_astro_h100_2048/seed42_astro.png) | 未测试(Track A batch=2 CFG 重编中) | ![](astronaut_bench/results/sdxl_astro_l4_2048/seed42_astro.png) |
 
 ### 5.3 4096² seed 42
 
-| H100 FP8 | H100 BF16 | Neuron BF16 TP=4 | L4 BF16+offload |
-|:---:|:---:|:---:|:---:|
-| ![](astronaut_bench/results/sdxl_astro_h100_fp8_4096/seed42_astro.png) | ![](astronaut_bench/results/sdxl_astro_h100_4096/seed42_astro.png) | 未测试(本次仅 1K) | ![](astronaut_bench/results/sdxl_astro_l4_4096/seed42_astro.png) |
+| H100 BF16 | Neuron BF16 TP=4 | L4 BF16 |
+|:---:|:---:|:---:|
+| ![](astronaut_bench/results/sdxl_astro_h100_4096/seed42_astro.png) | 未测试 | ![](astronaut_bench/results/sdxl_astro_l4_4096/seed42_astro.png) |
 
-**视觉一致性**:H100 FP8 与 H100 BF16 同 seed 下主体一致(宇航员 + 绿马),像素级别有量化噪声差异但构图/配色/prompt adherence 无可见退化。1K / 2K 下三平台均产出清晰主体,仅 seed noise 级差异;4K 为原生 1024² 上采样,细节受模型 spec 限制。
+**视觉一致性**:1K / 2K 下 H100 与 L4 同 seed 下主体一致(宇航员 + 绿马),仅 seed-noise 级差异。Neuron 1K `guidance=1.0` 下 prompt adherence 下降(马未必是绿色);Track A batch=2 CFG=7.5 重编完成后补正式图。4K 为原生 1024² 上采样,细节受模型 spec 限制。
 
 ## 6. 10-seed 全量 PNG 路径
 
 | 设备 / 分辨率 | 目录 |
 |---|---|
-| H100 1K FP8(10 seeds) | `astronaut_bench/results/sdxl_astro_h100_fp8_1024/seed{42..51}_astro.png` |
-| H100 2K FP8(10 seeds) | `astronaut_bench/results/sdxl_astro_h100_fp8_2048/seed{42..51}_astro.png` |
-| H100 4K FP8(10 seeds) | `astronaut_bench/results/sdxl_astro_h100_fp8_4096/seed{42..51}_astro.png` |
 | H100 1K BF16(10 seeds) | `astronaut_bench/results/sdxl_astro_h100_1024/seed{42..51}_astro.png` |
 | H100 2K BF16(10 seeds) | `astronaut_bench/results/sdxl_astro_h100_2048/seed{42..51}_astro.png` |
 | H100 4K BF16(10 seeds) | `astronaut_bench/results/sdxl_astro_h100_4096/seed{42..51}_astro.png` |
@@ -108,8 +99,8 @@
 - AWS 官方 notebook 的 FP32 + DataParallel [0,1] + batch=2 CFG 组合在 trn2.3xlarge LNC=2 下超 per-NC HBM 预算(NRT_RESOURCE),当前 workaround 为上述简化配置
 
 **H100 p5.4xlarge**:DLAMI PyTorch / CUDA 13 / torch 2.11.0+cu130 / diffusers 0.37.1 / torchao 0.17.0。
-- BF16:上一轮基准,单精度 bf16,无量化
-- FP8(本轮):`torchao.quantization.Float8DynamicActivationFloat8WeightConfig`,仅 UNet(VAE / CLIP-L / CLIP-G 保持 BF16),eager 模式(未用 `torch.compile`)
+- BF16:单精度 bf16,无量化(主基准)
+- FP8:torchao 动态激活量化,eager 模式无 `torch.compile` 时比 BF16 慢 5×,已从结果表删除;**若需重测请加 `torch.compile(mode="reduce-overhead")`**
 
 **L4 g6.4xlarge**:DLAMI / torch 2.9.1+cu128 / diffusers 0.38.0 / bitsandbytes 0.45(NF4 工具链可选,本次 SDXL 主测 BF16)
 
@@ -164,10 +155,8 @@ python benchmark_neuron.py \
 
 ## 9. 结论
 
-1. **H100 FP8(eager)**:1K 20.10 s / $0.02416,2K 21.84 s / $0.02624,4K 113.49 s / $0.13638,10/10 seeds 全通过;VRAM 6.88 / 6.91 / 11.63 GB(vs BF16 节省约 2 GB 于 1K/2K)
-2. **FP8 eager-mode latency 慢于 BF16** —— 1K 5.23×、2K 1.80×、4K 1.20×:未上 `torch.compile` 时 torchao 动态量化每个 Linear 都会 CPU-side dispatch 一次 quantize,小分辨率下完全被 dispatch overhead 主导;`max-autotune` 编译可复位但单分辨率 >15 min,超本次预算。FP8 在 eager 下的实际收益是 UNet 权重 ~23% VRAM 节省
-3. **H100 BF16 仍是最便宜的 H100 路径**:1K 3.84 s / $0.00462,2K 12.14 s / $0.0146,4K 94 s / $0.113,本轮保留作上一轮对照
-4. **L4 BF16** 可跑全分辨率但性价比一般:对 H100 FP8 基准 1K $0.00726(便宜 3.33×),2K $0.0350(贵 1.33×),4K $0.228(贵 1.67×);4K 仅 seed 42 抽样
-5. **Neuron trn2 1K BF16 运行成功**:mean 19.997 s / 10/10 pass / $0.01241 per image(BF16 batch=1 + `guidance_scale=1.0` 绕开 FP32 batch=2 的 per-NC HBM 超预算),$/image 比 H100 FP8 便宜 1.95×;2K / 4K 未测
-6. **SDXL 视觉一致性**:FP8 vs BF16 同 seed 下主体、配色、构图均一致,FP8 量化噪声在像素级可见但语义无退化;4K 为原生 1024² 上采样,细节受 SDXL spec 限制
-7. **后续动作**:(a) H100 FP8 + `torch.compile max-autotune` 重测,验证能否 1.5–2× 超过 BF16;(b) trn2 重编 batch=2 BF16 NEFF 恢复 guidance=7.5 并补 2K / 4K;(c) 探索 trn2 BF16 + DataParallel 路径
+1. **H100 BF16 是 SDXL 当前最快 + 最便宜的 H100 路径**:1K 3.84 s / $0.00462,2K 12.14 s / $0.0146,4K 94 s / $0.113,10/10 seeds 全通过
+2. **H100 FP8 占位符**:torchao eager 模式(无 `torch.compile`)在 SDXL 单 batch 场景 Python dispatch overhead 反而 dominate,比 BF16 慢 5× (1K)。结果表先留占位符,等 `torch.compile(mode="reduce-overhead") + CUDA graphs` 重测后再填 — 这是客户若想上 FP8 的正确生产路径
+3. **L4 BF16 全分辨率可用**:1K $0.00726(贵 H100 BF16 1.57×)、2K $0.0350(贵 2.40×)、4K $0.228(贵 2.01×,1-seed 抽样);24 GB VRAM 够 SDXL full precision,无需 offload
+4. **Neuron trn2 1K BF16 运行成功**:mean 19.997 s / 10/10 pass / $0.01241 per image(BF16 batch=1 + `guidance_scale=1.0` 绕开 FP32 batch=2 的 per-NC HBM 超预算 NRT_RESOURCE),$/image 贵 H100 BF16 2.69×;Track A `batch=2 BF16 CFG=7.5` 重编中,之后补正式 1K CFG 数据 + 2K/4K
+5. **后续动作**:(a) H100 FP8 用 `torch.compile` 重测(eager 不可用于生产);(b) Neuron trn2 Track A batch=2 CFG 编译完成后替换 guidance=1.0 workaround 数据;(c) 探索 trn2 2K/4K 走 UNet tensor-parallel 拆分绕 instruction-count 上限
