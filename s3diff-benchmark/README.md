@@ -14,6 +14,37 @@
 
 ---
 
+## ⭐ 核心结果总结
+
+### 主表 (warm mean, 秒 / 每张图成本, 美元)
+
+| 设备 | 1K warm | 1K $/图 | 2K warm | 2K $/图 | 4K warm | 4K $/图 | **8K warm** | **8K $/图** | Pass |
+|---|---|---|---|---|---|---|---|---|---|
+| **Neuron trn2.3xl BF16 整机** | 6.31s | $0.00381 | 60.18s | $0.0374 | 431.97s | $0.1882 | **235.08s** ⭐ | **$0.1460** ⭐ | 3/3 |
+| **Neuron trn2.3xl BF16 (1/4 核算)** | 6.31s | **$0.00095** | 60.18s | **$0.00936** | 431.97s | **$0.04707** | **235.08s** | **$0.03651** ⭐ | 3/3 |
+| H100 80GB BF16 | 1.26s ⭐ | $0.00151 | 24.26s ⭐ | $0.0292 | 107.54s ⭐ | $0.1293 | 429.02s | $0.5155 | 10/10 |
+| L4 24GB BF16 | 2.34s | **$0.00086** ⭐ | 28.45s | **$0.0105** ⭐ | 130.63s | **$0.0480** ⭐ | **OOM** | — | 10/10 at ≤4K |
+
+### 关键发现
+
+- **8K 成本 Trn2 整机最便宜** — 比 H100 便宜 **3.53×**；Trn2 1/4 核算便宜 **14.12×**；L4 无法运行（attention 需要 13.64 GB，超过 24 GB VRAM 可用）
+- **8K 速度 Trn2 反超 H100**：235s vs 429s, Trn2 **快 1.83×**（归功于 PR 149 固定 tile + 一次编译方案，所有 8K tile 共用同一 NEFF）
+- **1K-4K 时 GPU 更快**：L4 `$/图` 在 1K/2K/4K 都最便宜；H100 绝对速度最快；Trn2 整机 `$/图` 是 L4 的 3-4×
+- **Trn2 成本优势拐点在 2K+** (1/4 核算)：2K 比 L4 便宜 1.12×, 4K 便宜 1.02×, **8K 远远超过其他**
+- **画质**：1K PSNR Trn2 43.10 dB vs H100 45.10 dB（2 dB 差距来自 bf16 matmul 累加噪声，肉眼无差别），8K 两台输出肉眼无差别
+
+### 问题记录
+
+- **L4 8K OOM**：S3Diff UNet attention 在 8K 需要 13.64 GB 单次分配，L4 24GB VRAM 装不下
+- **Trn2 Trial 6 8K NRT OOM**：原生 Trial 6 `torch.compile(backend="neuron")` 方案在 8K 试图分配 14.6 GB，单核 HBM 不够；所以 8K 切换到 PR 149 `torch_neuronx.trace()` 固定 512 tile 方案（相当于 Jim 为 Trn2 重新设计了 tile 策略）
+- **16K 未完成**：H100 16K benchmark 在跑但 SSH timeout 无法确认结果（可能在 VAE 阶段卡住或 OOM）；Trn2 16K 未启动
+
+### 原始数据
+
+完整数据见 [`customer_report/data/s3diff_benchmark.csv`](customer_report/data/s3diff_benchmark.csv)。价格计算: `$/图 = capacity_block_price($/hr) × warm_s / 3600`。trn2.3xlarge = $2.235/hr, p5.4xlarge = $4.326/hr, g6.4xlarge = $1.323/hr.
+
+---
+
 ## 1. 核心指标 — 客户关心的耗时
 
 > 客户定义的 warm_mean 计算公式:

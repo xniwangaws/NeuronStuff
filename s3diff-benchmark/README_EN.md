@@ -14,6 +14,37 @@
 
 ---
 
+## ⭐ Results Summary
+
+### Main table (warm mean, seconds / $/image)
+
+| Device | 1K warm | 1K $/img | 2K warm | 2K $/img | 4K warm | 4K $/img | **8K warm** | **8K $/img** | Pass |
+|---|---|---|---|---|---|---|---|---|---|
+| **Neuron trn2.3xl BF16 whole instance** | 6.31s | $0.00381 | 60.18s | $0.0374 | 431.97s | $0.1882 | **235.08s** ⭐ | **$0.1460** ⭐ | 3/3 |
+| **Neuron trn2.3xl BF16 (÷4 pricing)** | 6.31s | **$0.00095** | 60.18s | **$0.00936** | 431.97s | **$0.04707** | **235.08s** | **$0.03651** ⭐ | 3/3 |
+| H100 80GB BF16 | 1.26s ⭐ | $0.00151 | 24.26s ⭐ | $0.0292 | 107.54s ⭐ | $0.1293 | 429.02s | $0.5155 | 10/10 |
+| L4 24GB BF16 | 2.34s | **$0.00086** ⭐ | 28.45s | **$0.0105** ⭐ | 130.63s | **$0.0480** ⭐ | **OOM** | — | 10/10 at ≤4K |
+
+### Key findings
+
+- **At 8K, Trn2 whole-instance is the cheapest** — 3.53× cheaper than H100; Trn2 ÷4-core pricing is 14.12× cheaper; L4 cannot run (attention needs 13.64 GB, exceeds 24 GB VRAM available)
+- **At 8K, Trn2 beats H100 in absolute speed**: 235s vs 429s, Trn2 **1.83× faster** (thanks to PR 149 fixed-tile + one-shot compilation so all 8K tiles reuse the same NEFF)
+- **At 1K-4K, GPUs win**: L4 has the cheapest `$/img` at all of 1K/2K/4K; H100 is absolute fastest; Trn2 whole-instance `$/img` is 3-4× L4
+- **Trn2 cost-advantage crossover around 2K+** (÷4 pricing): 1.12× cheaper than L4 at 2K, 1.02× at 4K, **far ahead at 8K**
+- **Quality**: 1K PSNR Trn2 43.10 dB vs H100 45.10 dB (2 dB gap from bf16 matmul accumulation noise, visually indistinguishable); 8K outputs on Trn2 and H100 are visually identical
+
+### Problems
+
+- **L4 OOM at 8K**: S3Diff UNet attention at 8K requires 13.64 GB single allocation; L4 24GB VRAM can't fit
+- **Trn2 Trial 6 NRT OOM at 8K**: Native Trial 6 `torch.compile(backend="neuron")` tries 14.6 GB allocation; exceeds single-core HBM. So 8K switches to PR 149 `torch_neuronx.trace()` fixed-512 tile path (effectively Jim's re-designed tile strategy for Trn2)
+- **16K incomplete**: H100 16K bench is running but SSH timeout prevents confirming result (possibly stuck in VAE or OOM); Trn2 16K not yet started
+
+### Raw data
+
+Full data in [`customer_report/data/s3diff_benchmark.csv`](customer_report/data/s3diff_benchmark.csv). Cost formula: `$/img = capacity_block_price($/hr) × warm_s / 3600`. trn2.3xlarge = $2.235/hr, p5.4xlarge = $4.326/hr, g6.4xlarge = $1.323/hr.
+
+---
+
 ## 1. Core Metrics — Customer-defined Latencies
 
 > Customer-defined warm_mean formula:
