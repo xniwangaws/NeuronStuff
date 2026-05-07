@@ -41,10 +41,11 @@ _[English version: README.en.md](README.en.md)_
 | **H100 p5.4xlarge** | **FP8+torch.compile(reduce-overhead)** | **8.37** | 6.91 GB | 10/10 | **$0.01005** | **1.45× faster** | **0.69×**(便宜 31%） |
 | Neuron trn2.3xl | BF16 | **编译不可行** | — | — | — | — | — |
 | L4 g6.4xlarge | BF16 | 95.19 | 6.15 GB | 10/10 | $0.03498 | 0.13×(慢 7.84×) | 2.40× 贵 |
+| **L4 g6.4xlarge** | **FP8+torch.compile(reduce-overhead)** | **74.85** | 6.88 GB | 10/10 | **$0.02751** | **0.16×(慢 6.16×)** | **1.89× 贵** |
 
 **核心结论**:
 - H100 BF16 2K 12.14s 为基准。H100 **FP8+torch.compile** (2026-05-07 新测) 8.37s — 比 BF16 快 1.45×
-- L4 2K 95.19s,**$/image 贵 2.40×**
+- L4 2K 95.19s (BF16) / **74.85s (FP8+compile, 1.27× 更快)** — $/image 贵 2.40× / 1.89× vs H100 BF16
 - **Neuron trn2.3xl SDK 2.29 2K/4K 编译不可行**(详见下)
 
 ## 4. 4096² 端到端耗时 + 峰值显存 + $/image(以 H100 BF16 为基准)
@@ -55,10 +56,11 @@ _[English version: README.en.md](README.en.md)_
 | **H100 p5.4xlarge** | **FP8+torch.compile(reduce-overhead)** | **63.86** | 7.04 GB | 10/10 | **$0.07673** | **1.48× faster** | **0.68×**(便宜 32%） |
 | Neuron trn2.3xl | BF16 | **编译不可行(UNet 9.8M 指令超限)** | — | — | — | — | — |
 | L4 g6.4xlarge | BF16(1 seed 抽样) | 619.18 | 9.91 GB | 1/1 | $0.22754 | 0.18×(慢 5.46×) | 1.67× 贵 |
+| **L4 g6.4xlarge** | **FP8+torch.compile (3 seeds 抽样)** | **550.21** | 7.01 GB | 3/3 | **$0.20221** | **0.17×(慢 5.86×)** | **1.78× 贵** |
 
 **核心结论**:
 - H100 BF16 4K 94.37s 为基准。H100 **FP8+torch.compile** (2026-05-07 新测) 63.86s — 比 BF16 快 1.48×
-- L4 4K ~619s(1 seed 抽样),$/image 贵 2.01×
+- L4 4K ~619s (BF16, 1 seed) / **550.21s (FP8+compile, 3 seeds, 1.13× 更快)** — $/image 贵 2.01× / 1.78× vs H100 BF16
 - Neuron trn2.3xl 4K 编译不可行(UNet 9.8M 指令超 5M 硬限)
 
 ## 5. 同 prompt / seed 的生图对比(seed 42)
@@ -94,6 +96,8 @@ _[English version: README.en.md](README.en.md)_
 | L4 2K BF16(10 seeds) | `astronaut_bench/results/sdxl_astro_l4_2048/seed{42..51}_astro.png` |
 | L4 4K BF16(1 seed 抽样) | `astronaut_bench/results/sdxl_astro_l4_4096/seed42_astro.png` |
 | **L4 1K FP8+torch.compile(10 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_1024/seed{42..51}_astro.png` |
+| **L4 2K FP8+torch.compile(10 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_2048/seed{42..51}_astro.png` |
+| **L4 4K FP8+torch.compile(3 seeds 抽样)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_4096/seed{42,43,44}_astro.png` |
 | Neuron trn2 2K / 4K | 编译不可行(见 §3 / §4) |
 
 每个目录含 `results.json`(mean_s / peak_vram_gb / per-seed std 等)。

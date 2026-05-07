@@ -41,10 +41,11 @@ _[中文版: README.zh.md](README.zh.md)_
 | **H100 p5.4xlarge** | **FP8 + torch.compile(reduce-overhead)** | **8.37** | 6.91 GB | 10/10 | **$0.01005** | **1.45× faster** | **0.69× (31% cheaper)** |
 | Neuron trn2.3xl | BF16 | **compile blocked** | — | — | — | — | — |
 | L4 g6.4xlarge | BF16 | 95.19 | 6.15 GB | 10/10 | $0.03498 | 0.13× (7.84× slower) | 2.40× more expensive |
+| **L4 g6.4xlarge** | **FP8 + torch.compile(reduce-overhead)** | **74.85** | 6.88 GB | 10/10 | **$0.02751** | **0.16× (6.16× slower)** | **1.89× more expensive** |
 
 **Key takeaways:**
 - H100 BF16 at 2K is 12.14 s (baseline). **H100 FP8 + torch.compile** (added 2026-05-07) is 8.37 s — **1.45× faster** than BF16.
-- L4 2K is 95.19 s, **$/image 2.40× more expensive** than H100 BF16.
+- L4 2K: 95.19 s (BF16) / **74.85 s (FP8+compile, 1.27× faster)** — $/image 2.40× / 1.89× more expensive vs H100 BF16.
 - **Neuron trn2.3xl SDK 2.29 2K/4K cannot compile** (see details below).
 
 ## 4. 4096² latency + peak memory + $/image (H100 BF16 baseline)
@@ -55,10 +56,11 @@ _[中文版: README.zh.md](README.zh.md)_
 | **H100 p5.4xlarge** | **FP8 + torch.compile(reduce-overhead)** | **63.86** | 7.04 GB | 10/10 | **$0.07673** | **1.48× faster** | **0.68× (32% cheaper)** |
 | Neuron trn2.3xl | BF16 | **compile blocked (UNet 9.8M instr > 5M limit)** | — | — | — | — | — |
 | L4 g6.4xlarge | BF16 (1 seed) | 619.18 | 9.91 GB | 1/1 | $0.22754 | 0.18× (5.46× slower) | 1.67× more expensive |
+| **L4 g6.4xlarge** | **FP8 + torch.compile (3 seeds)** | **550.21** | 7.01 GB | 3/3 | **$0.20221** | **0.17× (5.86× slower)** | **1.78× more expensive** |
 
 **Key takeaways:**
 - H100 BF16 at 4K is 94.37 s (baseline). **H100 FP8 + torch.compile** (added 2026-05-07) is 63.86 s — **1.48× faster** than BF16.
-- L4 4K is ~619 s (1-seed sample), $/image 2.01× more expensive.
+- L4 4K: ~619 s (BF16, 1 seed) / **550.21 s (FP8+compile, 3 seeds, 1.13× faster)** — $/image 2.01× / 1.78× more expensive vs H100 BF16.
 - Neuron trn2.3xl 4K cannot compile — UNet generates 9.8M instructions, exceeds the 5M `NCC_EVRF007` hard limit.
 
 ## 5. Same prompt / seed image comparison (seed 42)
@@ -97,6 +99,8 @@ _[中文版: README.zh.md](README.zh.md)_
 | L4 2K BF16 (10 seeds) | `astronaut_bench/results/sdxl_astro_l4_2048/seed{42..51}_astro.png` |
 | L4 4K BF16 (1 seed) | `astronaut_bench/results/sdxl_astro_l4_4096/seed42_astro.png` |
 | **L4 1K FP8+torch.compile (10 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_1024/seed{42..51}_astro.png` |
+| **L4 2K FP8+torch.compile (10 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_2048/seed{42..51}_astro.png` |
+| **L4 4K FP8+torch.compile (3 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_4096/seed{42,43,44}_astro.png` |
 | **Neuron trn2 1K BF16 CFG=7.5 DP=2 NKI (10 seeds)** | `astronaut_bench/results/sdxl_astro_trn2_whn09_1024_seeds42_51/seed{42..51}.png` |
 | Neuron trn2 2K / 4K | compile blocked (see §3 / §4) |
 
