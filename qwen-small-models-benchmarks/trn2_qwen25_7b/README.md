@@ -54,10 +54,21 @@ bash bench.sh
 
 ### Key Observations
 
-- **4K context TTFT is 7x faster than H100** (1.61s vs 11.48s)
-- **64K context achieves 65% of H100** with TTFT 53x faster (7.02s vs 369.84s)
 - **4K throughput reaches 901 tok/s** — highest absolute throughput among 7B-class models on Trn2
+- **64K context achieves 65% of H100 throughput** (33.55 tok/s per TP group vs 103 tok/s)
 - All configs use TP=4 LNC=2, optimal for 7B model size
+
+### TTFT Comparison Note (fair high C)
+
+The `TTFT H100` column above reports Mean TTFT at the peak-throughput concurrency (c64/c128/c256). For long contexts these values include significant queueing delay. Fair comparison using the lowest H100 concurrency reaching 90% of peak throughput:
+
+| Ctx | H100 fair C | H100 TTFT | Trn2 TTFT | Comparison |
+|-----|-------------|-----------|-----------|------------|
+| 4K  | c=128 | 5.80s | 1.61s | Trn2 3.6x faster |
+| 8K  | c=128 | 6.77s | 3.32s | Trn2 2.0x faster |
+| 16K | c=32  | 2.47s | 8.21s | H100 3.3x faster |
+| 32K | c=32  | 7.64s | 2.21s | Trn2 3.5x faster |
+| 64K | c=16  | 10.11s | 7.02s | Trn2 1.4x faster |
 
 ## Configuration Naming Convention
 

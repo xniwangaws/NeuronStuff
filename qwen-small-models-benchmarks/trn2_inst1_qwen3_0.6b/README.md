@@ -54,6 +54,12 @@ bash bench.sh
 ### Key Observations
 
 - **Qwen3-0.6B achieves 79-85% of H100 throughput** — the highest efficiency among all small models tested
+- **4K TTFT**: Trn2 0.38s vs H100 1.38s (fair C, bs128) — **Trn2 3.6x faster**
+- **16K TTFT**: Trn2 1.42s vs H100 1.41s (fair C, bs32) — parity
+- **32K TTFT**: Trn2 5.06s vs H100 1.43s (fair C, bs16) — H100 3.5x faster
+- Trn2 TTFT advantage is strongest at short context (4K); at 32K H100 leads
+
+- **Qwen3-0.6B achieves 79-85% of H100 throughput** — the highest efficiency among all small models tested
 - **4K TTFT is 12x faster than H100** (0.38s vs 4.64s)
 - **16K TTFT is 21x faster than H100** (1.42s vs 30.22s)
 - Trn2 consistently delivers significantly lower TTFT across all context lengths

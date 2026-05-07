@@ -54,6 +54,11 @@ bash bench.sh
 ### Key Observations
 
 - **16K context achieves 92% of H100** — the highest relative efficiency across all models and context lengths
+- **4K TTFT**: Trn2 0.53s vs H100 2.12s (fair C, bs128) — **Trn2 4.0x faster**
+- **32K TTFT**: Trn2 3.13s vs H100 0.86s (fair C, bs8) — **H100 3.6x faster**
+- Trn2 shows strong scaling with LNC=2 across all configurations
+
+- **16K context achieves 92% of H100** — the highest relative efficiency across all models and context lengths
 - **32K TTFT is 29x faster than H100** (3.13s vs 89.89s)
 - **4K TTFT is 12x faster than H100** (0.53s vs 6.31s)
 - Trn2 shows strong scaling with LNC=2 across all configurations
