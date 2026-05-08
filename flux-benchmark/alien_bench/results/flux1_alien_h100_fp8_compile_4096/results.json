@@ -1,0 +1,41 @@
+{
+  "device": "h100 res=4096 fp8+compile(reduce-overhead)",
+  "model": "FLUX.1-dev",
+  "prompt": "A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest",
+  "steps": 28,
+  "guidance": 3.5,
+  "resolution": "4096x4096",
+  "compile_mode": "reduce-overhead",
+  "fullgraph": false,
+  "load_s": 5.6,
+  "peak_vram_gb": 52.4,
+  "mean_s": 192.12,
+  "n_ok": 3,
+  "n_total": 3,
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 193.75,
+      "peak_vram_gb": 52.4,
+      "std": 15.56,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_compile_4096/seed42_alien.png",
+      "status": "ok"
+    },
+    {
+      "seed": 43,
+      "time_s": 191.29,
+      "peak_vram_gb": 52.4,
+      "std": 14.69,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_compile_4096/seed43_alien.png",
+      "status": "ok"
+    },
+    {
+      "seed": 44,
+      "time_s": 191.31,
+      "peak_vram_gb": 52.4,
+      "std": 11.33,
+      "png": "/home/ubuntu/flux1_alien_h100_fp8_compile_4096/seed44_alien.png",
+      "status": "ok"
+    }
+  ]
+}

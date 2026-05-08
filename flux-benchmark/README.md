@@ -19,6 +19,7 @@ _[English version: README.en.md](README.en.md)_
 |---|---|---:|---|---:|---:|---:|---:|
 | H100 p5.4xlarge | BF16 | **5.87** | 33.85 GB | 10/10 | $0.00706 | 1.45× 更快 | 0.83×(便宜 17%) |
 | H100 p5.4xlarge | **FP8(基准, torchao)** | 8.54 | 22.77 GB | 10/10 | **$0.01026** | **1.00×** | **1.00×** |
+| **H100 p5.4xlarge** | **FP8+torch.compile(reduce-overhead)** | **3.04** | 22.77 GB | 10/10 | **$0.00365** | **2.81× faster** | **0.36×**(便宜 64%） |
 | **Neuron trn2.3xl** | **BF16 WORLD=4** | **8.03** | ~25 GB(单 Trainium2) | **10/10** | **$0.00499** | 1.06× 更快 | **0.49×**(**便宜 51%**) |
 | L4 g6.4xlarge | NF4(bnb+offload) | 57.65 | 6.79 GB | 10/10 | $0.02119 | 0.15×(慢 6.75×) | 2.06× 贵 |
 | L4 g6.4xlarge | **FP8(wangkanai, seq-offload)** | 123.21 | 2.39 GB | 10/10 | $0.04528 | 0.07×(慢 14.4×) | 4.41× 贵 |
@@ -37,9 +38,10 @@ _[English version: README.en.md](README.en.md)_
 | 设备 | 精度 | Res | Mean (s) | Peak VRAM | Pass | **$/image** |
 |---|---|---|---:|---:|---:|---:|
 | H100 p5.4xlarge | FP8(torchao) | 2048² | **37.52** | 29.9 GB | 10/10 | **$0.04509** |
+| **H100 p5.4xlarge** | **FP8+torch.compile** | 2048² | **17.08** | 29.9 GB | 10/10 | **$0.02053** |
 | H100 p5.4xlarge | FP8(torchao) | 4096² | **328.70** | 37.67 GB | 10/10 | **$0.39492** |
 | L4 g6.4xlarge | FP8(wangkanai, seq-offload) | 2048² | **339.38** | 2.42 GB | 10/10 | **$0.12471** |
-| Neuron trn2.3xl | BF16 TP=4 | 2048² | **BLOCKED** | — | 0/10 | **NCC_EVRF007**: VAE decoder NEFF 5,234,444 指令 > 5M 硬限 (2026-05-07 加测) |
+| **Neuron trn2.3xl** | **BF16 TP=4 (Transformer Neuron + VAE CPU)** | 2048² | **109.1** | ~25 GB | 10/10 | **$0.0677** — Jim flags bypass EVRF007, VAE on CPU float32 |
 | Neuron trn2.3xl | BF16 TP=4 | 4096² | **BLOCKED** | — | — | 同理,未尝试 |
 | L4 g6.4xlarge | FP8 wangkanai | 4096² | **BLOCKED OOM** | — | 0/3 | L4 22GB VRAM 吃不下 12B bf16 upcast (~16GB) + 4K activation (~8GB) |
 

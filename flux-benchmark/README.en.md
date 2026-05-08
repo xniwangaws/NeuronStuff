@@ -18,6 +18,7 @@ _[中文版: README.md](README.md)_
 |---|---|---:|---|---:|---:|---:|---:|
 | H100 p5.4xlarge | BF16 | **5.87** | 33.85 GB | 10/10 | $0.00706 | 1.45× faster | 0.83× (17% cheaper) |
 | H100 p5.4xlarge | **FP8 (baseline, torchao eager)** | 8.54 | 22.77 GB | 10/10 | **$0.01026** | **1.00×** | **1.00×** |
+| **H100 p5.4xlarge** | **FP8 + torch.compile(reduce-overhead)** | **3.04** | 22.77 GB | 10/10 | **$0.00365** | **2.81× faster** | **0.36× (64% cheaper)** |
 | **Neuron trn2.3xl** | **BF16 WORLD=4** | **8.03** | ~25 GB (single Trainium2) | **10/10** | **$0.00499** | 1.06× faster | **0.49× (51% cheaper)** |
 | L4 g6.4xlarge | NF4 (bnb + offload) | 57.65 | 6.79 GB | 10/10 | $0.02119 | 0.15× (6.75× slower) | 2.06× more expensive |
 | L4 g6.4xlarge | **FP8 (wangkanai, seq-offload)** | 123.21 | 2.39 GB | 10/10 | $0.04528 | 0.07× (14.4× slower) | 4.41× more expensive |
@@ -36,9 +37,10 @@ _[中文版: README.md](README.md)_
 | Device | Precision | Res | Mean (s) | Peak VRAM | Pass | **$/image** |
 |---|---|---|---:|---:|---:|---:|
 | H100 p5.4xlarge | FP8 (torchao eager) | 2048² | **37.52** | 29.9 GB | 10/10 | **$0.04509** |
+| **H100 p5.4xlarge** | **FP8 + torch.compile** | 2048² | **17.08** | 29.9 GB | 10/10 | **$0.02053** |
 | H100 p5.4xlarge | FP8 (torchao eager) | 4096² | **328.70** | 37.67 GB | 10/10 | **$0.39492** |
 | L4 g6.4xlarge | FP8 (wangkanai, seq-offload) | 2048² | **339.38** | 2.42 GB | 10/10 | **$0.12471** |
-| Neuron trn2.3xl | BF16 | 2048² | **BLOCKED** | — | 0/10 | `NCC_EVRF007`: VAE decoder NEFF 5,234,444 instructions > 5M hard limit (attempted 2026-05-07) |
+| **Neuron trn2.3xl** | **BF16 TP=4 (Transformer Neuron + VAE CPU)** | 2048² | **109.1** | ~25 GB | 10/10 | **$0.0677** — Jim flags bypass EVRF007, VAE on CPU float32 | `NCC_EVRF007`: VAE decoder NEFF 5,234,444 instructions > 5M hard limit (attempted 2026-05-07) |
 | Neuron trn2.3xl | BF16 | 4096² | **BLOCKED** | — | — | Same root cause, not attempted separately |
 | L4 g6.4xlarge | FP8 wangkanai | 4096² | **BLOCKED OOM** | — | 0/3 | L4 22 GB VRAM cannot hold 12 B bf16 upcast (~16 GB) + 4K activations (~8 GB) |
 

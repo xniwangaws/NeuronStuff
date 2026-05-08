@@ -1,0 +1,75 @@
+{
+  "device": "Neuron trn2.3xlarge (SDK 2.29) FLUX.1-dev 2K Transformer-Neuron + CPU-VAE",
+  "model": "FLUX.1-dev BF16",
+  "prompt": "A close-up image of a green alien with fluorescent skin in the middle of a dark purple forest",
+  "steps": 28,
+  "guidance": 3.5,
+  "resolution": "2048x2048",
+  "compile_s": 0.0,
+  "load_s": 104.1,
+  "mean_s": 109.1,
+  "n_seeds": 10,
+  "note": "Transformer TP=4 on Neuron (Jim flags bypass EVRF007). VAE decoder on CPU float32 (bypass NCC_EXSP001 HBM 32.66GB > 24GB).",
+  "runs": [
+    {
+      "seed": 42,
+      "time_s": 109.1,
+      "std": 17.21,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed42_alien.png"
+    },
+    {
+      "seed": 43,
+      "time_s": 109.04,
+      "std": 59.71,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed43_alien.png"
+    },
+    {
+      "seed": 44,
+      "time_s": 109.27,
+      "std": 37.62,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed44_alien.png"
+    },
+    {
+      "seed": 45,
+      "time_s": 108.94,
+      "std": 22.92,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed45_alien.png"
+    },
+    {
+      "seed": 46,
+      "time_s": 108.98,
+      "std": 31.08,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed46_alien.png"
+    },
+    {
+      "seed": 47,
+      "time_s": 109.04,
+      "std": 33.03,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed47_alien.png"
+    },
+    {
+      "seed": 48,
+      "time_s": 109.21,
+      "std": 44.96,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed48_alien.png"
+    },
+    {
+      "seed": 49,
+      "time_s": 109.11,
+      "std": 39.67,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed49_alien.png"
+    },
+    {
+      "seed": 50,
+      "time_s": 109.03,
+      "std": 34.63,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed50_alien.png"
+    },
+    {
+      "seed": 51,
+      "time_s": 109.26,
+      "std": 50.77,
+      "png": "/home/ubuntu/flux1_2k_cpuvae_results/seed51_alien.png"
+    }
+  ]
+}
