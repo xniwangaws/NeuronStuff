@@ -41,7 +41,7 @@ _[English version: README.en.md](README.en.md)_
 | **H100 p5.4xlarge** | **FP8+torch.compile** | 2048² | **17.08** | 29.9 GB | 10/10 | **$0.02053** |
 | H100 p5.4xlarge | FP8(torchao) | 4096² | **328.70** | 37.67 GB | 10/10 | **$0.39492** |
 | L4 g6.4xlarge | FP8(wangkanai, seq-offload) | 2048² | **339.38** | 2.42 GB | 10/10 | **$0.12471** |
-| **Neuron trn2.3xl** | **BF16 TP=4 (Transformer Neuron + VAE CPU)** | 2048² | **109.1** | ~25 GB | 10/10 | **$0.0677** — Jim flags bypass EVRF007, VAE on CPU float32 |
+| **Neuron trn2.3xl** | **BF16 TP=4 DiT + Neuron VAE (seg)** | 2048² | **68.0** | ~25 GB | 10/10 | **$0.0677** — Jim flags bypass EVRF007, VAE on CPU float32 |
 | Neuron trn2.3xl | BF16 TP=4 | 4096² | **BLOCKED** | — | — | 同理,未尝试 |
 | L4 g6.4xlarge | FP8 wangkanai | 4096² | **BLOCKED OOM** | — | 0/3 | L4 22GB VRAM 吃不下 12B bf16 upcast (~16GB) + 4K activation (~8GB) |
 
@@ -146,4 +146,22 @@ python3 alien_bench/bench_l4_alien.py --precision nf4 --out ~/flux1_alien_l4_nf4
 - **Neuron 2K 瓶颈是 CPU VAE**（50s/93s = 54%）：分段 VAE 编译完成后预计降至 ~61s
 - **L4 2K 可行但极慢**：303s，DiT FP8 12B 勉强塞进 22GB VRAM，激活空间仅 1.25GB headroom
 - **4K 结论**：FLUX.1-dev spec 限制 max_area=4MP；4K=16MP 超出模型训练分布，所有设备产出灰色噪声
+
+
+## 2d. Neuron 分段 VAE 实测（全 Neuron pipeline）
+
+> DiT TP=4 on Neuron + VAE 20-segment 逐段加载 on Neuron（含 chunked attention FP32）
+
+| 分辨率 | DiT (s) | VAE (s) | 总计 (s) | $/image |
+|--------|---------|---------|----------|---------|
+| 2048² | **43.3** | **24.6** | **~68** | **$0.042** |
+
+对比 CPU VAE: 43.3 + 49.9 = 93.3s → 分段 Neuron VAE 加速 **1.37×**
+
+**VAE 段拆分**: 20 个 NEFF (conv_in, mid_r0, attn, mid_r1, up0×4, up1×4, up2×4, up3×3, out_head)
+- 纯计算: ~10.4s
+- 磁盘加载开销: ~14.2s（逐段 jit.load + unload）
+- 预加载失败: 20 段 scratch 总和超出单 NC pair 24GB HBM
+
+**SDXL 2K VAE (7段)**: 预加载成功，纯计算 **3.0s**（所有段共存于 HBM）
 
