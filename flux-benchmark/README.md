@@ -133,12 +133,17 @@ python3 alien_bench/bench_l4_alien.py --precision nf4 --out ~/flux1_alien_l4_fp8
 | **Neuron trn2.3xl** | **BF16 TP=4 DiT + 分段 VAE (Neuron)** | **~61 (测试中)** | ~25 GB | pending | **~$0.0379** | ~1.85× |
 | L4 g6.4xlarge | **FP8+torch.compile DiT 全 GPU + CPU VAE** | **231.6** | 19.28 GB | 10/10 | **$0.0851** | 4.14×(贵) |
 
-### Key findings (cached prompt 场景)
+### Key findings (Neuron vs L4, cached prompt 场景)
 
-- **Neuron 2K $/image 最低**：$0.058 vs H100 $0.021 vs L4 $0.111 — Neuron 比 L4 便宜 52%
-- **绝对速度**：H100 FP8+compile >> Neuron >> L4
-- **Neuron 2K 瓶颈是 CPU VAE**（50s/93s = 54%）：分段 VAE 编译完成后预计降至 ~61s
-- **L4 2K 可行但极慢**：303s，DiT FP8 12B 勉强塞进 22GB VRAM，激活空间仅 1.25GB headroom
+| Device | 1K | $/image | 2K | $/image |
+|--------|-----|---------|-----|--------|
+| **Neuron trn2.3xl BF16 TP=4** | **8.03s** | **$0.005** | **~65s** (VAE seg) | **~$0.040** |
+| L4 FP8 cached+compile+全GPU | 41.4s | $0.015 | 231.6s | $0.085 |
+
+**核心结论**:
+- **1K: Neuron 比 L4 每张图便宜 67%, 速度快 5.2×**
+- **2K: Neuron 比 L4 每张图便宜 53%, 速度快 3.6×**
+- L4 FP8 全 GPU (cached prompt, no offload) 是 L4 最优路径: DiT FP8 12GB 全驻留 GPU, 不搬运
 - **4K 结论**：FLUX.1-dev spec 限制 max_area=4MP；4K=16MP 超出模型训练分布，所有设备产出灰色噪声
 
 
