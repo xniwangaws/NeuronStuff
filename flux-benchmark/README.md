@@ -115,3 +115,35 @@ python3 alien_bench/bench_l4_alien.py --precision nf4 --out ~/flux1_alien_l4_nf4
 3. **速度**:Neuron 8.03s ≈ H100 FP8 8.54s,**比 FP8 快 1.06×**;H100 BF16 5.87s 最快(+45%)但贵 1.41×
 4. **HBM 占用**:Neuron 25 GB,远低于 H100 BF16 的 34 GB,单芯片 96GB 仍大量余量
 5. **Capacity 考量**:p5 在 us-east / us-west / eu / sa-east 全 region 均 `InsufficientInstanceCapacity`,最终只有 ap-northeast-1 锁到;trn2 capacity block 更容易获取,对规模化部署是关键加分项
+
+## 2c. 客户场景：固定 prompt + cached embeddings（不加载 Text Encoder）
+
+> 客户需求："固定prompt，提前运行text encoder并存储，实际使用时不加载text encoder"
+
+该场景下 Text Encoder 不占 VRAM/HBM，DiT + VAE 独占全部显存。
+
+### 1024² 对比
+
+| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | vs H100 FP8+compile |
+|---|---|---:|---|---:|---:|---:|
+| H100 p5.4xlarge | FP8+torch.compile | **3.04** | 22.77 GB | 10/10 | **$0.00365** | **1.00×** |
+| **Neuron trn2.3xl** | **BF16 TP=4 (NxDI)** | **8.03** | ~25 GB | 10/10 | **$0.00499** | 1.37×(贵 37%) |
+| L4 g6.4xlarge | **FP8+torch.compile+cached** | **41.4** | 13.6 GB | 10/10 | **$0.01522** | 4.17×(贵) |
+
+### 2048² 对比
+
+| 设备 | 精度 | Mean (s) | Peak VRAM/HBM | Pass | **$/image** | vs H100 FP8+compile |
+|---|---|---:|---|---:|---:|---:|
+| H100 p5.4xlarge | FP8+torch.compile | **17.08** | 29.9 GB | 10/10 | **$0.02053** | **1.00×** |
+| **Neuron trn2.3xl** | **BF16 TP=4 DiT + CPU VAE** | **93.3** | ~25 GB | 10/10 | **$0.05792** | 2.82×(贵) |
+| **Neuron trn2.3xl** | **BF16 TP=4 DiT + 分段 VAE (Neuron)** | **~61 (测试中)** | ~25 GB | pending | **~$0.0379** | ~1.85× |
+| L4 g6.4xlarge | **FP8 DiT 全 GPU + CPU VAE** | **303** | 20.78 GB | 10/10 | **$0.1113** | 5.42×(贵) |
+
+### Key findings (cached prompt 场景)
+
+- **Neuron 2K $/image 最低**：$0.058 vs H100 $0.021 vs L4 $0.111 — Neuron 比 L4 便宜 48%
+- **绝对速度**：H100 FP8+compile >> Neuron >> L4
+- **Neuron 2K 瓶颈是 CPU VAE**（50s/93s = 54%）：分段 VAE 编译完成后预计降至 ~61s
+- **L4 2K 可行但极慢**：303s，DiT FP8 12B 勉强塞进 22GB VRAM，激活空间仅 1.25GB headroom
+- **4K 结论**：FLUX.1-dev spec 限制 max_area=4MP；4K=16MP 超出模型训练分布，所有设备产出灰色噪声
+
