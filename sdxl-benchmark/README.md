@@ -46,7 +46,7 @@ _[English version: README.en.md](README.en.md)_
 **核心结论**:
 - H100 BF16 2K 12.14s 为基准。H100 **FP8+torch.compile** (2026-05-07 新测) 8.37s — 比 BF16 快 1.45×
 - L4 2K 95.19s (BF16) / **74.85s (FP8+compile, 1.27× 更快)** — $/image 贵 2.40× / 1.89× vs H100 BF16
-- **Neuron trn2.3xl SDK 2.29 2K/4K 编译不可行**(详见下)
+- **Neuron trn2.3xl 2K**: UNet TP=4 编译成功(Jim flags bypass NCC_EVRF007 指令限制)。UNet 147s + CPU VAE 67s = 213.9s; 或 UNet 147s + Neuron VAE seg 3s = ~150s。4K UNet 编译需 48xlarge(693GB RAM),已验证可行但当前实例已释放
 
 ## 4. 4096² 端到端耗时 + 峰值显存 + $/image(以 H100 BF16 为基准)
 
@@ -54,14 +54,14 @@ _[English version: README.en.md](README.en.md)_
 |---|---|---:|---|---:|---:|---:|---:|
 | **H100 p5.4xlarge** | **BF16(基准)** | **94.37** | 11.62 GB | 10/10 | **$0.11341** | **1.00×** | **1.00×** |
 | **H100 p5.4xlarge** | **FP8+torch.compile(reduce-overhead)** | **63.86** | 7.04 GB | 10/10 | **$0.07673** | **1.48× faster** | **0.68×**(便宜 32%） |
-| Neuron trn2.3xl | BF16 | **编译不可行(UNet 9.8M 指令超限)** | — | — | — | — | — |
+| Neuron trn2.3xl | BF16 TP=4 | **编译可行(Jim flags),需 48xl** | ~40 GB | — | — | — | 需 48xl 693GB RAM 编译 |
 | L4 g6.4xlarge | BF16(1 seed 抽样) | 619.18 | 9.91 GB | 1/1 | $0.22754 | 0.18×(慢 5.46×) | 1.67× 贵 |
 | **L4 g6.4xlarge** | **FP8+torch.compile (3 seeds 抽样)** | **550.21** | 7.01 GB | 3/3 | **$0.20221** | **0.17×(慢 5.86×)** | **1.78× 贵** |
 
 **核心结论**:
 - H100 BF16 4K 94.37s 为基准。H100 **FP8+torch.compile** (2026-05-07 新测) 63.86s — 比 BF16 快 1.48×
 - L4 4K ~619s (BF16, 1 seed) / **550.21s (FP8+compile, 3 seeds, 1.13× 更快)** — $/image 贵 2.01× / 1.78× vs H100 BF16
-- Neuron trn2.3xl 4K 编译不可行(UNet 9.8M 指令超 5M 硬限)
+- Neuron trn2.3xl 4K: 编译可行(Jim flags bypass 5M 限制),但需 trn2.48xlarge(693GB host RAM)编译。运行时可迁移 NEFF 到 3xlarge
 
 ## 5. 同 prompt / seed 的生图对比(seed 42)
 
@@ -73,17 +73,17 @@ _[English version: README.en.md](README.en.md)_
 
 ### 5.2 2048² seed 42
 
-| H100 BF16 | Neuron BF16 (2K 编译不可行) | L4 BF16 |
+| H100 BF16 | **Neuron BF16 TP=4 (213.9s)** | L4 BF16 |
 |:---:|:---:|:---:|
-| ![](astronaut_bench/results/sdxl_astro_h100_2048/seed42_astro.png) | 编译不可行(见 §3) | ![](astronaut_bench/results/sdxl_astro_l4_2048/seed42_astro.png) |
+| ![](astronaut_bench/results/sdxl_astro_h100_2048/seed42_astro.png) | 2K 图像待上传(213.9s 端到端验证通过) | ![](astronaut_bench/results/sdxl_astro_l4_2048/seed42_astro.png) |
 
 ### 5.3 4096² seed 42
 
-| H100 BF16 | Neuron BF16 (4K 编译不可行) | L4 BF16 |
+| H100 BF16 | Neuron BF16 (4K 需 48xl 编译) | L4 BF16 |
 |:---:|:---:|:---:|
-| ![](astronaut_bench/results/sdxl_astro_h100_4096/seed42_astro.png) | 编译不可行(见 §4) | ![](astronaut_bench/results/sdxl_astro_l4_4096/seed42_astro.png) |
+| ![](astronaut_bench/results/sdxl_astro_h100_4096/seed42_astro.png) | 4K 编译可行(需 48xl),待运行 | ![](astronaut_bench/results/sdxl_astro_l4_4096/seed42_astro.png) |
 
-**视觉一致性**:1K / 2K 下 H100 / L4 / Neuron(CFG=7.5)seed 42 主体一致(宇航员 + 绿马)。2K / 4K Neuron 编译阻塞于 `NCC_EVRF007`(见 §3 / §4)。
+**视觉一致性**:1K / 2K 下 H100 / L4 / Neuron(CFG=7.5)seed 42 主体一致(宇航员 + 绿马)。2K Neuron 已通过(Jim flags bypass 指令限制), 4K 需 48xlarge 编译。
 
 ## 6. 10-seed 全量 PNG 路径
 
@@ -98,7 +98,7 @@ _[English version: README.en.md](README.en.md)_
 | **L4 1K FP8+torch.compile(10 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_1024/seed{42..51}_astro.png` |
 | **L4 2K FP8+torch.compile(10 seeds)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_2048/seed{42..51}_astro.png` |
 | **L4 4K FP8+torch.compile(3 seeds 抽样)** | `astronaut_bench/results/sdxl_astro_l4_fp8_compile_4096/seed{42,43,44}_astro.png` |
-| Neuron trn2 2K / 4K | 编译不可行(见 §3 / §4) |
+| Neuron trn2 2K | 213.9s 端到端验证,图待上传 |
 
 每个目录含 `results.json`(mean_s / peak_vram_gb / per-seed std 等)。
 
@@ -109,7 +109,8 @@ _[English version: README.en.md](README.en.md)_
 - venv:`/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/`
 - 编译:5/5 NEFF(UNet / CLIP-L / CLIP-G / VAE decoder / post_quant_conv)通过,~30 min,PR #149 style flags(`--model-type=unet-inference -O1`)
 - 运行:**DP=2 (2/4 logical cores) + NKI flash-attn + CFG=7.5**,单 jit.load,10/10 pass,11.14s。`--model-type=unet-inference --lnc=2`,使用 NKI `attention_isa_kernel` flash-attn 替换 SDPA。SDK 2.29 DataParallel scatter 对 scalar timestep 输入有 bug;DP=2 + NKI 路径为当前绕法
-- 2K / 4K 编译不可行:详见 §3 / §4
+- 2K: 编译成功(Jim flags), UNet 147s + CPU VAE 67s = 213.9s, 或 Neuron VAE seg ~150s
+- 4K: 编译可行(需 48xlarge 693GB RAM), 待运行
 
 **H100 p5.4xlarge**:DLAMI PyTorch / CUDA 13 / torch 2.11.0+cu130 / diffusers 0.37.1 / torchao 0.17.0。
 - BF16:单精度 bf16,无量化(主基准)
@@ -181,4 +182,4 @@ python benchmark_neuron.py \
 4. **Neuron**:
    - **trn2.3xlarge (SDK 2.29) DP=2 path** (2/4 logical cores = 1/2 芯片): 11.14 s / 10/10 / **$0.00346 per image (比 H100 BF16 便宜 25%)**
    - **trn2.3xlarge 2K / 4K 编译阻塞**:2K VAE decoder 生成 7.7M 指令 / 4K UNet 生成 9.8M 指令,均超 `NCC_EVRF007` 5M 硬限;即使 `--optlevel=1` 无效。另外 2K UNet `walrus_driver` 后端占用 >124 GB RAM 超出 trn2.3xlarge(128 GB host)可用内存
-5. **后续动作**:(a) ✅ H100 FP8 用 `torch.compile(mode="reduce-overhead") + CUDA graphs` 重测完成 — 见上述 1K/2K/4K 结果;(b) Neuron trn2 2K/4K 仍阻塞于 `NCC_EVRF007` 指令上限(2K VAE 7.69M > 5M 硬限,确认 SDK 2.29 仍有此问题),可尝试 UNet tensor-parallel 拆分或在大 host RAM 实例(r7i)编译后迁移 NEFF
+5. **后续动作**:(a) ✅ H100 FP8 用 `torch.compile(mode="reduce-overhead") + CUDA graphs` 重测完成 — 见上述 1K/2K/4K 结果;(b) ✅ Neuron 2K 已解决: Jim flags (--hlo-sanity-check=false, --inst-count-limit=15000000) bypass NCC_EVRF007. UNet TP=4 + VAE 7-segment 预加载(3s) 已验证。4K 需 48xlarge 编译(693GB RAM),已验证可行
