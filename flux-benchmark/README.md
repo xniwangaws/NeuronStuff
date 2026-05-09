@@ -137,7 +137,7 @@ python3 alien_bench/bench_l4_alien.py --precision nf4 --out ~/flux1_alien_l4_nf4
 | H100 p5.4xlarge | FP8+torch.compile | **17.08** | 29.9 GB | 10/10 | **$0.02053** | **1.00×** |
 | **Neuron trn2.3xl** | **BF16 TP=4 DiT + CPU VAE** | **93.3** | ~25 GB | 10/10 | **$0.05792** | 2.82×(贵) |
 | **Neuron trn2.3xl** | **BF16 TP=4 DiT + 分段 VAE (Neuron)** | **~61 (测试中)** | ~25 GB | pending | **~$0.0379** | ~1.85× |
-| L4 g6.4xlarge | **FP8 DiT 全 GPU + CPU VAE** | **303** | 20.78 GB | 10/10 | **$0.1113** | 5.42×(贵) |
+| L4 g6.4xlarge | **FP8+torch.compile DiT 全 GPU + CPU VAE** | **231.6** | 19.28 GB | 10/10 | **$0.0851** | 4.14×(贵) |
 
 ### Key findings (cached prompt 场景)
 
