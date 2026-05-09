@@ -164,3 +164,12 @@ python3 alien_bench/bench_l4_alien.py --precision nf4 --out ~/flux1_alien_l4_fp8
 
 **SDXL 2K VAE (7段)**: 预加载成功，纯计算 **3.0s**（所有段共存于 HBM）
 
+
+## 2K 对比图 (seed 42, alien prompt)
+
+| **Neuron trn2.3xl BF16 TP=4 (93.3s)** | **L4 FP8+compile (231.6s)** |
+|:---:|:---:|
+| ![Neuron 2K](alien_bench/results/flux1_2k_neuron_seed42.png) | ![L4 FP8 2K](alien_bench/results/flux1_2k_l4_fp8_seed42.png) |
+
+- Neuron: 2.5x faster, cost $0.058/image vs L4 $0.085/image (32% cheaper)
+- Both: 2048x2048, 50 inference steps, CFG=3.5
