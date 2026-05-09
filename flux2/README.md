@@ -153,3 +153,32 @@ Trainium2 **没有 NVIDIA MIG 式的硬件显存切分**。Neuron 用 **LNC(Logi
 6. **L4 FP8 可行但无经济优势**:走 BFL 官方 `klein-9b-fp8` + `torch._scaled_mm` shim,1K 77.25 s / 2K 388.66 s,10/10 pass;$/image = $0.0284 / $0.1428,比 Neuron 贵 7%(1K)/ 20%(2K),比 H100 FP8 贵 12%(1K/2K)。ckpt 本体是 guidance-distilled(4-step 原生),但在本 prompt 下 50-step 未见明显 artifact
 7. **Capacity 可用性**:p5 在 us-east / us-west / eu / sa-east 全 region `InsufficientInstanceCapacity`,最终只有 ap-northeast-1c 锁到;trn2 capacity block 更易获取 —— 综合性价比 + 可用性,**Neuron trn2 是 FLUX.2-klein 更可规模化部署的选择**
 
+
+## 11. 客户场景：固定 prompt + cached embeddings
+
+> 客户需求："固定prompt，提前运行text encoder并存储，实际使用时不加载text encoder"
+
+该场景下 Text Encoder（Qwen3-8B-FP8）不占 VRAM/HBM，DiT + VAE 独占全部显存。
+
+### 综合对比（cached prompt 场景）
+
+| Device | Mean 1K | $/image | Mean 2K | $/image |
+|--------|---------|---------|---------|---------|
+| H100 FP8 | 21.18s | $0.025 | 106.20s | $0.128 |
+| **Neuron trn2.3xl BF16 TP=4** | **42.90s** | **$0.027** | **191.44s** | **$0.119** |
+| L4 FP8 cached+全GPU | 77.25s | $0.028 | 388.66s | $0.143 |
+
+### 核心结论（简洁版）
+
+1. **Neuron 2K 单图成本最低** — 比 H100 FP8 便宜 7%，比 H100 BF16 便宜 8%
+2. **Neuron 1K 也有竞争力** — 比 H100 BF16 便宜 8%，仅比 H100 FP8 贵 5%
+3. **绝对速度**：H100 快 2.03×(1K) / 1.80×(2K)，但 trn2 时租仅 H100 的 52% → 综合 $/image 持平或更优
+4. **L4 FP8 无成本优势**：1K 比 Neuron 贵 7%，2K 贵 20%
+5. **4K 所有设备均不可用**：klein max_area=4MP，4K=16MP 超出模型规格，输出灰色噪声（非硬件问题）
+
+### 已知限制
+
+- Neuron 4K 编译超时（HLO gen timeout，NUM_PATCHES=65536 过大）
+- L4 FP8 需要自定义 FP8 Linear shim（`torch._scaled_mm`，per-tensor E4M3）— diffusers `from_single_file` 不支持 BFL 的 `input_scale` 0-dim scalar 格式
+- 4K 如需支持，建议：2K 生成 + Real-ESRGAN/SUPIR 超分至 4K
+
