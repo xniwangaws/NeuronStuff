@@ -137,12 +137,12 @@ python3 alien_bench/bench_l4_alien.py --precision nf4 --out ~/flux1_alien_l4_fp8
 
 | Device | 1K | $/image | 2K | $/image |
 |--------|-----|---------|-----|--------|
-| **Neuron trn2.3xl BF16 TP=4** | **8.03s** | **$0.005** | **~65s** (VAE seg) | **~$0.040** |
+| **Neuron trn2.3xl BF16 TP=4** | **8.03s** | **$0.005** | **65s** (VAE seg) | **$0.040** |
 | L4 FP8 cached+compile+全GPU | 41.4s | $0.015 | 231.6s | $0.085 |
 
 **核心结论**:
 - **1K: Neuron 比 L4 每张图便宜 67%, 速度快 5.2×**
-- **2K: Neuron 比 L4 每张图便宜 53%, 速度快 3.6×**
+- **2K: Neuron 比 L4 每张图便宜 53%, 速度快 3.6× (预加载优化后预计便宜 65%, 快 4.7×)**
 - L4 FP8 全 GPU (cached prompt, no offload) 是 L4 最优路径: DiT FP8 12GB 全驻留 GPU, 不搬运
 - **4K 结论**：FLUX.1-dev spec 限制 max_area=4MP；4K=16MP 超出模型训练分布，所有设备产出灰色噪声
 
