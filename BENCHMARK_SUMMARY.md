@@ -11,7 +11,7 @@
 | Model | Params | 1K Neuron | 1K L4 | Neuron vs L4 (1K) | 2K Neuron | 2K L4 | Neuron vs L4 (2K) |
 |---|---|---|---|---|---|---|---|
 | FLUX.1-dev | 12B | 8.03s / $0.005 | 41.4s / $0.015 | **5.2× faster, 67% cheaper** | 93.3s / $0.058 | 231.6s / $0.085 | **2.5× faster, 32% cheaper** |
-| FLUX.2-klein | 9B | 42.9s / $0.027 | 76.5s / $0.028 | **1.8× faster, cost 持平** | 191.4s / $0.119 | 382.7s / $0.141 | **2.0× faster, 16% cheaper** |
+| FLUX.2-klein | 9B | 38.0s / $0.024 | 76.5s / $0.028 | **2.0× faster, 14% cheaper** | 184s / $0.114 | 382.7s / $0.141 | **2.1× faster, 19% cheaper** |
 | SDXL | 2.6B | 11.14s / $0.0035 | 12.68s / $0.0047 | **1.1× faster, 26% cheaper** | 213.9s / $0.133 | 74.85s / $0.028 | L4 2.9× faster, 79% cheaper |
 
 ## Key Insight
