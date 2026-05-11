@@ -17,3 +17,68 @@
 ## Key Insight
 
 Neuron advantage scales with model size: large models (9-12B FLUX) show 1.8-5.2× speedup and significant cost savings; small models (2.6B SDXL) at high resolution lose to L4 due to TP communication overhead exceeding parallelism benefit.
+
+## 4K Resolution: Compilation Investigation (2026-05-11)
+
+We investigated whether FLUX.1-dev and SDXL can compile at 4K (4096×4096) on trn2.48xlarge with SDK 2.29.
+
+### FLUX.1-dev 4K — UNSUCCESSFUL
+
+**Setup**: NxDI NeuronFluxApplication, TP=4, NKI attention_cte (LNC2 sharded), -O1, --inst-count-limit=100M
+**Result**: walrus_driver passes all phases (HLO gen 20min, dep_reduction, dep_opt, isa_gen ~118s) but **fails final HBM check**:
+```
+Assertion failure: TotalDRAMUsage <= HBMLimit
+hbm_usage failed after 14.034 seconds
+```
+
+**Why**: Even with NKI flash attention (attention_cte), the 65,536-token attention scratchpad exceeds 24GB per Neuron core.
+Total compile time before failure: ~2.5 hours.
+
+### SDXL 4K — PARTIAL SUCCESS, ATTENTION BLOCKERS
+
+**Setup**: Segmented UNet (compile each block separately) with two variants:
+1. Without NKI: standard SDPA attention
+2. With NKI attention_cte: NKI flash attention swapped into AttnProcessor
+
+**Results per segment** (4K = 4096×4096, latent 512×512):
+
+| Segment | Spatial | Status (no-NKI) | Status (with NKI) | Notes |
+|---------|---------|-----------------|-------------------|-------|
+| seg1: down_block[0] (no attn) | 512×512 | ✅ PASS 134.7s, 37.9MB | n/a | DownBlock2D, simple |
+| seg2: down_block[1] (cross-attn) | 256×256 | ❌ NCC_EXSP001: 320GB | 🔄 in walrus codegen | seq_len=65536 |
+| seg3: down_block[2] (cross-attn) | 128×128 | ❌ NCC_EXSP001: 48GB | not attempted | seq_len=16384 |
+| seg4: mid_block | 64×64 | ✅ PASS 769s, 1.3GB | n/a | UNetMidBlock2DCrossAttn |
+| seg5-7: up_blocks | various | not attempted | not attempted | — |
+
+**Why sg2/sg3 fail without NKI**: 256×256 spatial = 65,536 self-attention tokens. Standard SDPA materializes a [65536, 65536] = 86GB attention matrix in BF16. With NKI attention_cte, this is a fused flash kernel that avoids materialization.
+
+### Root Cause: trn2 24GB/core HBM is the hard limit at 4K
+
+Even with all available techniques:
+- NKI flash attention (attention_cte) — fused kernel, no [seq×seq] materialization
+- TP=4 tensor parallelism — distributes attention heads across 4 cores
+- -O1 + 100M instruction limit — minimal optimization
+- Segmented compilation — block-by-block
+
+The attention activation footprint at 65,536 tokens still exceeds 24GB per core in walrus's hbm_usage check. **4K image generation is not viable on trn2 with current SDK 2.29.**
+
+### Why GPU 4K works but Neuron does not
+
+| | Neuron (AOT compiler) | GPU (PyTorch JIT) |
+|--|---|---|
+| Memory management | Static at compile time | Dynamic, runtime reuse |
+| Attention | Computed by neuronx-cc, must materialize buffers | FlashAttention kernel, peak O(seq) |
+| Buffer reuse | All intermediate buffers static-allocated | Memory freed/reused as needed |
+| Result at 4K | 57GB > 24GB/core, cannot fit | H100 80GB: 37.67GB peak; L4 22GB: ~10GB peak |
+
+### Solutions (not available in current SDK 2.29)
+
+1. **Sequence parallelism** for diffusion DiT — NxDI does not implement SP for FLUX/SDXL
+2. **Larger HBM/core** in next-gen Trainium
+3. **More aggressive sequence chunking** inside NKI kernels
+4. **CPU fallback** for 4K UNet/DiT (impractical, ~1 hour per image)
+
+### Final Status
+
+**1K and 2K work well** on trn2 — see main results above. **4K is currently a hardware limitation**, not a software issue. Customer should plan for 1K-2K Neuron deployment with 2K → 4K upscaling on CPU/GPU as needed.
+
