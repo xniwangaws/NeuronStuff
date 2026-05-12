@@ -38,20 +38,6 @@ _[English version: README.en.md](README.en.md)_
 - SDXL UNet 太小 (2.6B), TP=4 通信开销超过并行收益; UNet 在 256×256 spatial 的 self-attention 是瓶颈
 - Neuron VAE seg 优化可降至 ~150s, 但仍慢于 L4
 
-## 4. 4096² 可行性
-
-| 设备 | 状态 | 备注 |
-|---|---|---|
-| **Neuron trn2** | **编译失败** | NCC_EOOM002: peak HBM 57GB > 24GB/core 限制 (其中 DMA spill 44GB) |
-| L4 g6.4xlarge | BF16 | 619s, 9.91 GB peak (1 seed sample) |
-| **L4 g6.4xlarge** | **FP8+torch.compile** | **550.21s** / $0.2022 (3 seeds sample) |
-
-**Neuron 4K 阻塞**:
-- 整体 UNet 编译: 57GB HBM > 24GB/core
-- 分段编译: seg2/seg3 含 attention 失败 (320GB/48GB), seg1+seg4 PASS
-- 即使加 NKI flash attention, transpose DMA spill 仍超
-- **当前 SDK 2.29 + Trn2 24GB/core 是硬件限制**
-
 ## 5. 同 prompt / seed 的生图对比 (seed 42)
 
 ### 5.1 1024²
@@ -65,12 +51,6 @@ _[English version: README.en.md](README.en.md)_
 | Neuron trn2 BF16 TP=4 (213.9s) | L4 FP8+compile (74.85s) |
 |:---:|:---:|
 | 图像在原 ap-southeast-4 实例上生成,实例已释放 | ![](astronaut_bench/results/sdxl_astro_l4_fp8_compile_2048/seed42_astro.png) |
-
-### 5.3 4096²
-
-| Neuron | L4 FP8+compile (550s) |
-|:---:|:---:|
-| 编译失败 (HBM 24GB 限制) | ![](astronaut_bench/results/sdxl_astro_l4_fp8_compile_4096/seed42_astro.png) |
 
 ## 6. 硬件 / 软件配置
 
@@ -86,11 +66,9 @@ _[English version: README.en.md](README.en.md)_
 
 1. **1K**: Neuron 略胜 — 速度快 14%, 便宜 26% vs L4 FP8+compile
 2. **2K**: L4 FP8+compile 大胜 — 快 2.86×, 便宜 79% (SDXL 模型小, Neuron 并行优势不明显)
-3. **4K**: 仅 L4 可用 (550s); Neuron 受 24GB/core HBM 限制无法编译
 4. **场景建议**:
    - 1K: 优选 Neuron (成本最低, 速度接近)
    - 2K: 优选 L4 FP8+compile (快/便宜全胜)
-   - 4K: 仅 L4 可行
 
 ## 8. 复现步骤 (Exact Reproduction Steps)
 
@@ -153,20 +131,6 @@ python3 bench_neuron_astro.py
 # Expected: ~213.9s/image, 10 seeds, peak ~40GB HBM
 ```
 
-**4K Neuron — 不可行 (Compilation Fails)**:
-```
-Error: NCC_EOOM002 — Peak HBM 57.268 GB > 24 GB/core limit
-Breakdown:
-  - 11.190 GB I/O tensors
-  - 43.803 GB DMA ring spills (21.565 GB transpose alone)
-  - 4.661 GB scratchpad
-
-Even with TP=4, NKI attention_cte, -O1, and --inst-count-limit=100M,
-the compile passes HLO gen + dep_reduction + isa_gen but fails final
-hbm_usage check after ~2.5 hours.
-
-Trn2's 24GB/core HBM is the hard limit at 4K (65,536-token attention).
-```
 
 ### 8.2 L4 复现
 
@@ -185,27 +149,25 @@ source /opt/pytorch/bin/activate
 pip install torchao diffusers transformers
 ```
 
-**1K / 2K / 4K L4 BF16**:
+**1K / 2K L4 BF16**:
 ```bash
 cd astronaut_bench
 python3 bench_gpu_astro.py --resolution 1024  # ~19.75s
 python3 bench_gpu_astro.py --resolution 2048  # ~95.19s
-python3 bench_gpu_astro.py --resolution 4096  # ~619s (1 seed, requires 22GB VRAM)
 ```
 
-**1K / 2K / 4K L4 FP8+torch.compile (推荐)**:
+**1K / 2K L4 FP8+torch.compile (推荐)**:
 ```bash
 cd astronaut_bench
 python3 bench_gpu_astro_fp8_compile.py --resolution 1024  # ~12.68s, peak 6.87GB
 python3 bench_gpu_astro_fp8_compile.py --resolution 2048  # ~74.85s, peak 6.88GB
-python3 bench_gpu_astro_fp8_compile.py --resolution 4096  # ~550.21s, peak 7.01GB
 ```
 
 ### 8.3 关键文件
 
 | 文件 | 用途 |
 |------|------|
-| `astronaut_bench/trace_sdxl_res.py` | Neuron trace 脚本 (参数化 RES=1024/2048/4096) |
+| `astronaut_bench/trace_sdxl_res.py` | Neuron trace 脚本 (参数化 RES=1024/2048) |
 | `astronaut_bench/sdxl_whn09_fixed.py` | Neuron 1K 推理 (NKI flash-attn DP=2) |
 | `astronaut_bench/bench_neuron_astro.py` | Neuron 2K 推理 (TP=1 DP=4) |
 | `astronaut_bench/bench_gpu_astro.py` | L4/H100 BF16 推理 |
@@ -235,14 +197,3 @@ def get_attention_scores_neuron(self, query, key, attn_mask):
 Attention.get_attention_scores = get_attention_scores_neuron  # monkey-patch diffusers
 ```
 
-### 8.5 4K 失败的尝试 (供参考, 都不成功)
-
-| 尝试 | 配置 | 结果 |
-|------|------|------|
-| 整体 UNet TP=1 batch=2 | `torch_neuronx.trace` 直接 trace | NCC_EXSP001: 49GB > 24GB |
-| 整体 UNet TP=4 + DataParallel | + Jim flags `--inst-count-limit=15M` | NCC_EOOM002: 57GB > 24GB |
-| 分段编译 (per-block NEFF) | seg by seg, no NKI | seg1+seg4 PASS; seg2/seg3 FAIL (320GB/48GB) |
-| 分段编译 + NKI attention_cte | swap AttnProcessor2_0 → NKI flash | walrus 跑 6-7 小时后仍 hbm_usage FAIL |
-| NxDI-style TP=4 (ColumnParallelLinear) | `parallel_model_trace` + NKI | 同样 hbm_usage 限制 |
-
-**结论**: 4K 在当前 SDK 2.29 + Trn2 24GB/core 上是硬件 + 编译器的根本限制。所有路径都死在 walrus 的 `hbm_usage.cpp:131 Assertion: TotalDRAMUsage <= HBMLimit`.
