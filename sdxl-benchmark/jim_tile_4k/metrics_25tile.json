@@ -1,0 +1,60 @@
+{
+  "runs": [
+    {
+      "idx": 0,
+      "txt2img_s": 7.111404895782471,
+      "upscale_s": 0.11943769454956055,
+      "num_tiles": 25,
+      "tile_loop_s": 184.66042637825012,
+      "per_tile_s_mean": 7.374446830749512,
+      "per_tile_s_min": 7.361867427825928,
+      "per_tile_s_max": 7.408783674240112,
+      "blend_s": 0.1699068546295166,
+      "total_s": 196.84210228919983
+    },
+    {
+      "idx": 1,
+      "txt2img_s": 7.036451816558838,
+      "upscale_s": 0.11914372444152832,
+      "num_tiles": 25,
+      "tile_loop_s": 184.41012930870056,
+      "per_tile_s_mean": 7.364378080368042,
+      "per_tile_s_min": 7.348246097564697,
+      "per_tile_s_max": 7.3746702671051025,
+      "blend_s": 0.16622400283813477,
+      "total_s": 191.75558996200562
+    },
+    {
+      "idx": 2,
+      "txt2img_s": 7.037831544876099,
+      "upscale_s": 0.12087607383728027,
+      "num_tiles": 25,
+      "tile_loop_s": 184.78332495689392,
+      "per_tile_s_mean": 7.3793305492401124,
+      "per_tile_s_min": 7.365918874740601,
+      "per_tile_s_max": 7.399696588516235,
+      "blend_s": 0.16873788833618164,
+      "total_s": 192.1343355178833
+    },
+    {
+      "idx": 3,
+      "txt2img_s": 7.036259174346924,
+      "upscale_s": 0.11961627006530762,
+      "num_tiles": 25,
+      "tile_loop_s": 184.5062174797058,
+      "per_tile_s_mean": 7.3680582523345945,
+      "per_tile_s_min": 7.356159925460815,
+      "per_tile_s_max": 7.3793416023254395,
+      "blend_s": 0.16896295547485352,
+      "total_s": 191.85459899902344
+    }
+  ],
+  "tile": 1024,
+  "overlap": 128,
+  "target": 4096,
+  "strength": 0.3,
+  "n_steps": 20,
+  "refine_steps_per_tile": 6,
+  "prompt": "An astronaut riding a green horse",
+  "seed": 42
+}

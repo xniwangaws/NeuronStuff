@@ -1,0 +1,36 @@
+{
+  "runs": [
+    {
+      "idx": 0,
+      "txt2img_s": 7.113468408584595,
+      "upscale_s": 0.11936473846435547,
+      "num_tiles": 16,
+      "tile_loop_s": 120.26414275169373,
+      "per_tile_s_mean": 7.504185646772385,
+      "per_tile_s_min": 7.495488166809082,
+      "per_tile_s_max": 7.521119832992554,
+      "blend_s": 0.1859300136566162,
+      "total_s": 132.1563322544098
+    },
+    {
+      "idx": 1,
+      "txt2img_s": 7.035566329956055,
+      "upscale_s": 0.1196739673614502,
+      "num_tiles": 16,
+      "tile_loop_s": 120.25647497177124,
+      "per_tile_s_mean": 7.503622591495514,
+      "per_tile_s_min": 7.493143320083618,
+      "per_tile_s_max": 7.508458614349365,
+      "blend_s": 0.17757368087768555,
+      "total_s": 127.6132504940033
+    }
+  ],
+  "tile": 1024,
+  "overlap": 0,
+  "target": 4096,
+  "strength": 0.3,
+  "n_steps": 20,
+  "refine_steps_per_tile": 6,
+  "prompt": "An astronaut riding a green horse",
+  "seed": 42
+}

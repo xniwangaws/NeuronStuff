@@ -1,0 +1,15 @@
+[load] base pipeline (CPU bf16)
+Loading pipeline components...:   0%|          | 0/7 [00:00<?, ?it/s]`torch_dtype` is deprecated! Use `dtype` instead!
+Loading pipeline components...:  29%|██▊       | 2/7 [00:00<00:00, 19.05it/s]Loading pipeline components...:  57%|█████▋    | 4/7 [00:01<00:00,  3.32it/s]Loading pipeline components...:  86%|████████▌ | 6/7 [00:01<00:00,  4.30it/s]Loading pipeline components...: 100%|██████████| 7/7 [00:01<00:00,  5.14it/s]
+/home/ubuntu/work_jim_tile4k/sdxl_tile_4k.py:75: FutureWarning: Accessing config attribute `in_channels` directly via 'UNet2DConditionModel' object attribute is deprecated. Please access 'in_channels' over 'UNet2DConditionModel's config object instead, e.g. 'unet.config.in_channels'.
+  self.in_channels = unetwrap.unet.in_channels
+2026-May-28 03:53:37.0476 31257:31317 [0] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):232 CCOM WARN NET/OFI Failed to initialize rdma protocol
+2026-May-28 03:53:37.0479 31257:31317 [0] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):376 CCOM WARN NET/OFI aws-ofi-nccl initialization failed
+2026-May-28 03:53:37.0482 31257:31317 [0] ncclResult_t nccl_net_ofi_init(ncclDebugLogger_t):78 CCOM WARN NET/OFI Initializing plugin failed
+2026-May-28 03:53:37.0484 31257:31317 [0] net_plugin.cc:97 CCOM WARN OFI plugin initNet() failed is EFA enabled?
+[load] traced UNet -> single core
+[load] traced text_encoder/_2 -> single core
+[load] traced VAE decoder
+[run 0] total=132.16s txt2img=7.11s upscale=0.12s tiles=16 tile_loop=120.26s per_tile=7.50s blend=0.19s
+[run 1] total=127.61s txt2img=7.04s upscale=0.12s tiles=16 tile_loop=120.26s per_tile=7.50s blend=0.18s
+[done] metrics -> /home/ubuntu/work_jim_tile4k/metrics.json
