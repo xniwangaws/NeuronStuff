@@ -1,0 +1,28 @@
+sys:1: DeprecationWarning: torch_neuronx.nki_jit is deprecated, use nki.jit instead.
+[load] UNet (BF16) from /home/ubuntu/sdxl-base
+[cpu-fwd] running UNet on CPU once to capture per-block I/O...
+[cpu-fwd] stem out: h0=(1, 320, 256, 256) emb=(1, 1280)
+[cpu-fwd] down0: out=(1, 320, 128, 128) residuals=[(1, 320, 256, 256), (1, 320, 256, 256), (1, 320, 128, 128)]
+[cpu-fwd] down1: out=(1, 640, 64, 64) residuals=[(1, 640, 128, 128), (1, 640, 128, 128), (1, 640, 64, 64)]
+[cpu-fwd] down2: out=(1, 1280, 64, 64) residuals=[(1, 1280, 64, 64), (1, 1280, 64, 64)]
+[cpu-fwd] mid: out=(1, 1280, 64, 64)
+[cpu-fwd] up0: out=(1, 1280, 128, 128)
+[cpu-fwd] up1: out=(1, 640, 256, 256)
+[cpu-fwd] up2: out=(1, 320, 256, 256)
+[cpu-fwd] head: out=(1, 4, 256, 256)
+[p0_stem] tracing... input shapes: [(1, 4, 256, 256), (1, 320), (1, 1280), (1, 6)]
+.
+Compiler status PASS
+[p0_stem] DONE in 5.1s, size=23.9 MB
+[p1_down0] tracing... input shapes: [(1, 320, 256, 256), (1, 1280)]
+...
+Compiler status PASS
+[p1_down0] DONE in 44.5s, size=23.9 MB
+[p7_up2] tracing... input shapes: [(1, 640, 256, 256), (1, 320, 256, 256), (1, 320, 256, 256), (1, 320, 256, 256), (1, 1280)]
+......
+Compiler status PASS
+[p7_up2] DONE in 104.1s, size=52.6 MB
+[p8_head] tracing... input shapes: [(1, 320, 256, 256)]
+.
+Compiler status PASS
+[p8_head] DONE in 3.7s, size=0.5 MB

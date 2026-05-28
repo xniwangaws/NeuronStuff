@@ -1,0 +1,172 @@
+{
+  "01_post_quant_conv": {
+    "elapsed_s": 34.28733229637146,
+    "in_shape": [
+      1,
+      4,
+      256,
+      256
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_01_post_quant_conv.pt",
+    "out_shape": [
+      1,
+      4,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "02_conv_in": {
+    "elapsed_s": 2.4105169773101807,
+    "in_shape": [
+      1,
+      4,
+      256,
+      256
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_02_conv_in.pt",
+    "out_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "03a_mid_resnet0": {
+    "elapsed_s": 21.487499475479126,
+    "in_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_03a_mid_resnet0.pt",
+    "out_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "03b_mid_attn": {
+    "elapsed_s": 438.55193614959717,
+    "in_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_03b_mid_attn.pt",
+    "out_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "03c_mid_resnet1": {
+    "elapsed_s": 21.409770011901855,
+    "in_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_03c_mid_resnet1.pt",
+    "out_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "04_up_block_0": {
+    "elapsed_s": 97.51863431930542,
+    "in_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_04_up_block_0.pt",
+    "out_shape": [
+      1,
+      512,
+      512,
+      512
+    ],
+    "status": "OK"
+  },
+  "05_up_block_1": {
+    "elapsed_s": 326.39306640625,
+    "in_shape": [
+      1,
+      512,
+      512,
+      512
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_05_up_block_1.pt",
+    "out_shape": [
+      1,
+      512,
+      1024,
+      1024
+    ],
+    "status": "OK"
+  },
+  "06_up_block_2": {
+    "elapsed_s": 782.8296585083008,
+    "in_shape": [
+      1,
+      512,
+      1024,
+      1024
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_06_up_block_2.pt",
+    "out_shape": [
+      1,
+      256,
+      2048,
+      2048
+    ],
+    "status": "OK"
+  },
+  "07_up_block_3": {
+    "elapsed_s": 1949.0291335582733,
+    "in_shape": [
+      1,
+      256,
+      2048,
+      2048
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_07_up_block_3.pt",
+    "out_shape": [
+      1,
+      128,
+      2048,
+      2048
+    ],
+    "status": "OK"
+  },
+  "08_conv_out_block": {
+    "elapsed_s": 352.8912150859833,
+    "in_shape": [
+      1,
+      128,
+      2048,
+      2048
+    ],
+    "out_pt": "/home/ubuntu/work_a/traced_08_conv_out_block.pt",
+    "out_shape": [
+      1,
+      3,
+      2048,
+      2048
+    ],
+    "status": "OK"
+  }
+}

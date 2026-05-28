@@ -1,0 +1,46 @@
+Loading VAE in bf16...
+[resume] 01_post_quant_conv already traced -> /home/ubuntu/work_a/traced_01_post_quant_conv.pt
+[resume] 02_conv_in already traced -> /home/ubuntu/work_a/traced_02_conv_in.pt
+
+[trace] === 03a_mid_resnet0  in_shape=[1, 512, 256, 256] dtype=torch.bfloat16 ===
+..
+Compiler status PASS
+[trace] OK   03a_mid_resnet0 in 21.5s  -> /home/ubuntu/work_a/traced_03a_mid_resnet0.pt
+
+[trace] === 03b_mid_attn  in_shape=[1, 512, 256, 256] dtype=torch.bfloat16 ===
+......................
+Compiler status PASS
+[trace] OK   03b_mid_attn in 438.6s  -> /home/ubuntu/work_a/traced_03b_mid_attn.pt
+
+[trace] === 03c_mid_resnet1  in_shape=[1, 512, 256, 256] dtype=torch.bfloat16 ===
+..
+Compiler status PASS
+[trace] OK   03c_mid_resnet1 in 21.4s  -> /home/ubuntu/work_a/traced_03c_mid_resnet1.pt
+
+[trace] === 04_up_block_0  in_shape=[1, 512, 256, 256] dtype=torch.bfloat16 ===
+.....
+Compiler status PASS
+[trace] OK   04_up_block_0 in 97.5s  -> /home/ubuntu/work_a/traced_04_up_block_0.pt
+
+[trace] === 05_up_block_1  in_shape=[1, 512, 512, 512] dtype=torch.bfloat16 ===
+................
+Compiler status PASS
+[trace] OK   05_up_block_1 in 326.4s  -> /home/ubuntu/work_a/traced_05_up_block_1.pt
+
+[trace] === 06_up_block_2  in_shape=[1, 512, 1024, 1024] dtype=torch.bfloat16 ===
+......................................
+Compiler status PASS
+[trace] OK   06_up_block_2 in 782.8s  -> /home/ubuntu/work_a/traced_06_up_block_2.pt
+
+[trace] === 07_up_block_3  in_shape=[1, 256, 2048, 2048] dtype=torch.bfloat16 ===
+.................................................................................................
+Compiler status PASS
+[trace] OK   07_up_block_3 in 1949.0s  -> /home/ubuntu/work_a/traced_07_up_block_3.pt
+
+[trace] === 08_conv_out_block  in_shape=[1, 128, 2048, 2048] dtype=torch.bfloat16 ===
+..................
+Compiler status PASS
+[trace] OK   08_conv_out_block in 352.9s  -> /home/ubuntu/work_a/traced_08_conv_out_block.pt
+
+Final output shape: [1, 3, 2048, 2048]  dtype=torch.bfloat16
+Wrote /home/ubuntu/work_a/trace_log.json

@@ -1,0 +1,129 @@
+[19:36:51] Loading SDXL VAE from /home/ubuntu/sdxl-base
+[19:36:52] Input latent shape: (1, 4, 256, 256) bf16 -> output expected 2048x2048
+[19:36:52] Sanity CPU forward...
+[19:37:42] CPU output shape: (1, 3, 2048, 2048)
+[19:37:42] Tracing VAE decoder with compiler_args=['--model-type=unet-inference', '--lnc=2', '-O1', '--tensorizer-options=--inst-count-limit=15000000', '--internal-max-instruction-limit=15000000', '--verbose=DEBUG']
+[19:37:42] compiler_workdir=/tmp/sdxl_2k_ticket_workdir
+2026-05-25T19:37:45Z INFO 3300 [root]: /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/neuronx-cc compile /tmp/sdxl_2k_ticket_workdir/model --framework XLA --target trn2 --output /tmp/sdxl_2k_ticket_workdir/graph.neff --model-type=unet-inference --lnc=2 -O1 --tensorizer-options=--inst-count-limit=15000000 --internal-max-instruction-limit=15000000 --verbose=DEBUG
+2026-05-25T19:37:45Z DEBUG 3300 [urllib3.connectionpool]: Starting new HTTP connection (1): 169.254.169.254:80
+2026-05-25T19:37:45Z DEBUG 3300 [urllib3.connectionpool]: http://169.254.169.254:80 "PUT /latest/api/token HTTP/1.1" 200 56
+2026-05-25T19:37:45Z DEBUG 3300 [urllib3.connectionpool]: Resetting dropped connection: 169.254.169.254
+2026-05-25T19:37:45Z DEBUG 3300 [urllib3.connectionpool]: http://169.254.169.254:80 "GET /latest/meta-data/ami-id HTTP/1.1" 200 21
+2026-05-25T19:37:45Z DEBUG 3300 [urllib3.connectionpool]: Resetting dropped connection: 169.254.169.254
+2026-05-25T19:37:45Z DEBUG 3300 [urllib3.connectionpool]: http://169.254.169.254:80 "GET /latest/meta-data/kernel-id HTTP/1.1" 404 339
+2026-05-25T19:37:45Z DEBUG 3300 [urllib3.connectionpool]: Resetting dropped connection: 169.254.169.254
+2026-05-25T19:37:45Z DEBUG 3300 [urllib3.connectionpool]: http://169.254.169.254:80 "GET /latest/meta-data/placement/availability-zone-id HTTP/1.1" 200 8
+2026-05-25T19:37:45Z INFO 3300 [root]: NeuronX Compiler version 2.25.3371.0+f524f7f8 Python version 3.12.3 HWM version 2.25.0.3371++f524f7f8 NumPy version 2.4.6 Running on AMI ami-0bfa28859f98aa666 Running in region sae1-az2
+2026-05-25T19:37:45Z DEBUG 3312 [root]: Fast-math: ['none']
+2026-05-25T19:37:45Z INFO 3312 [root]: XLA detected
+2026-05-25T19:37:45Z INFO 3312 [root]: Pipeline: HLOToTensorizer Frontend StaticIOTranspose WalrusDriver NeffWrapper
+2026-05-25T19:37:45Z DEBUG 3312 [root]: Found neuronxcc.driver.jobs.HLOToTensorizer at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/HLOToTensorizer.cpython-312-x86_64-linux-gnu.so
+2026-05-25T19:37:46Z DEBUG 3312 [root]: Found neuronxcc.driver.jobs.Frontend at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/Frontend.cpython-312-x86_64-linux-gnu.so
+2026-05-25T19:37:46Z DEBUG 3312 [root]: Found neuronxcc.driver.jobs.StaticIOTranspose at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/StaticIOTranspose.cpython-312-x86_64-linux-gnu.so
+2026-05-25T19:37:46Z DEBUG 3312 [root]: Found neuronxcc.driver.jobs.WalrusDriver at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/WalrusDriver.cpython-312-x86_64-linux-gnu.so
+2026-05-25T19:37:46Z DEBUG 3312 [root]: Found neuronxcc.driver.jobs.NeffWrapper at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/NeffWrapper.cpython-312-x86_64-linux-gnu.so
+2026-05-25T19:37:46Z DEBUG 3312 [root]: job_specific_args=['/tmp/sdxl_2k_ticket_workdir/model', '--internal-max-instruction-limit=15000000']
+2026-05-25T19:37:46Z INFO 3312 [root]: Intermediate files stored in /home/ubuntu/neuronxcc-l0nfrwig, output in /home/ubuntu
+2026-05-25T19:37:46Z INFO 3312 [pipeline.Pipeline.0]: Job Pipeline len(in_states) 1
+2026-05-25T19:37:46Z INFO 3312 [pipeline.Pipeline.0]: Processing input #0
+2026-05-25T19:37:46Z INFO 3312 [pipeline.Pipeline.0]: Running pipeline Pipeline.0
+2026-05-25T19:37:46Z INFO 3312 [pipeline.Pipeline.0]: Starting job job.HLOToTensorizer.0
+2026-05-25T19:37:46Z INFO 3312 [job.HLOToTensorizer.0]: Job HLOToTensorizer len(in_states) 1
+2026-05-25T19:37:46Z INFO 3312 [job.HLOToTensorizer.0]: Processing input #0
+2026-05-25T19:37:46Z DEBUG 3312 [job.HLOToTensorizer.0]: hlo2tensorizer: /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/starfish/bin/hlo2penguin
+2026-05-25T19:37:46Z INFO 3312 [job.HLOToTensorizer.0]: Executing: /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/starfish/bin/hlo2penguin --input /tmp/sdxl_2k_ticket_workdir/model --out-dir ./ --output penguin.py --target-instance=trn2 --logical-nc-config=2 --verbose=debug --logfile=/home/ubuntu/log-neuron-cc.txt --ml-dtypes-version=0.5.4 --logfile-verbose=info --modular-flow-mac-target=200000000000 --partition --emit-tensor-level-dropout-ops --expand-batch-norm-training --enable-native-kernel --native-kernel-auto-cast=none-to-bf16
+2026-05-25T19:38:11Z INFO 3312 [job.HLOToTensorizer.0]: WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1779737890.947261    3324 main.cc:689] IR signature: 9a5d40355b8e0c9f39412d437f0142998f31833690abd1735fdbb4fcadd5fb8c for model
+2026-05-25 19:38:11.088622: I hilo/hlo2penguin/lowering_utils/FrontendDriver.cc:1187] [INFO] Found compute bound graph
+2026-05-25 19:38:11.088689: I hilo/hlo_passes/InstructionHistogram.cc:100] [INFO] 
+Post-Partition Histogram before graph level optimizations - Total HLO instructions: 1321
+             reshape       335  25.36% ################################################################
+           broadcast       300  22.71% #########################################################
+            constant       272  20.59% ###################################################
+                 add        85   6.43% ################
+            multiply        81   6.13% ###############
+           transpose        54   4.09% ##########
+         convolution        36   2.73% ######
+             convert        34   2.57% ######
+                call        32   2.42% ######
+   get-tuple-element        30   2.27% #####
+ batch-norm-training        30   2.27% #####
+              divide        16   1.21% ###
+                 dot         6   0.45% #
+              reduce         3   0.23% 
+             compare         2   0.15% 
+         exponential         1   0.08% 
+              select         1   0.08% 
+               tuple         1   0.08% 
+            subtract         1   0.08% 
+           parameter         1   0.08% 
+
+
+2026-05-25 19:38:11.095662: E hilo/hlo_passes/NeuronHloVerifier.cc:1406] [ERROR] [NCC_EVRF007] Instructions generated by compiler 7,691,582 exceeds the typical limit of 5,000,000. Input computation graph is too big or has large operators. Consider using --optlevel=1, smaller batches or sequence length, or applying model parallelism. For further troubleshooting visit https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-training/app_notes/nxd-training-tp-appnote.html.
+
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]: ***************************************************************
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:  An Internal Compiler Error has occurred
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]: ***************************************************************
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]: 
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]: WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1779737890.947261    3324 main.cc:689] IR signature: 9a5d40355b8e0c9f39412d437f0142998f31833690abd1735fdbb4fcadd5fb8c for model
+2026-05-25 19:38:11.088622: I hilo/hlo2penguin/lowering_utils/FrontendDriver.cc:1187] [INFO] Found compute bound graph
+2026-05-25 19:38:11.088689: I hilo/hlo_passes/InstructionHistogram.cc:100] [INFO] 
+Post-Partition Histogram before graph level optimizations - Total HLO instructions: 1321
+             reshape       335  25.36% ################################################################
+           broadcast       300  22.71% #########################################################
+            constant       272  20.59% ###################################################
+                 add        85   6.43% ################
+            multiply        81   6.13% ###############
+           transpose        54   4.09% ##########
+         convolution        36   2.73% ######
+             convert        34   2.57% ######
+                call        32   2.42% ######
+   get-tuple-element        30   2.27% #####
+ batch-norm-training        30   2.27% #####
+              divide        16   1.21% ###
+                 dot         6   0.45% #
+              reduce         3   0.23% 
+             compare         2   0.15% 
+         exponential         1   0.08% 
+              select         1   0.08% 
+               tuple         1   0.08% 
+            subtract         1   0.08% 
+           parameter         1   0.08% 
+
+
+2026-05-25 19:38:11.095662: E hilo/hlo_passes/NeuronHloVerifier.cc:1406] [ERROR] [NCC_EVRF007] Instructions generated by compiler 7,691,582 exceeds the typical limit of 5,000,000. Input computation graph is too big or has large operators. Consider using --optlevel=1, smaller batches or sequence length, or applying model parallelism. For further troubleshooting visit https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-training/app_notes/nxd-training-tp-appnote.html.
+
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]: 
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]: Internal details:
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]: Type: <class 'neuronxcc.driver.Exceptions.CompilerInvalidInputException'>
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/CommandDriver.py", line 360, in neuronxcc.driver.CommandDriver.CommandDriver.run_subcommand
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1551, in neuronxcc.driver.commands.CompileCommand.CompileCommand.run
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1486, in neuronxcc.driver.commands.CompileCommand.CompileCommand.runPipeline
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1533, in neuronxcc.driver.commands.CompileCommand.CompileCommand.runPipeline
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1515, in neuronxcc.driver.commands.CompileCommand.CompileCommand.runPipeline
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1518, in neuronxcc.driver.commands.CompileCommand.CompileCommand.runPipeline
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Job.py", line 373, in neuronxcc.driver.Job.SingleInputJob.run
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Job.py", line 402, in neuronxcc.driver.Job.SingleInputJob.runOnState
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Pipeline.py", line 31, in neuronxcc.driver.Pipeline.Pipeline.runSingleInput
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Job.py", line 373, in neuronxcc.driver.Job.SingleInputJob.run
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Job.py", line 402, in neuronxcc.driver.Job.SingleInputJob.runOnState
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/jobs/HLOToTensorizer.py", line 37, in neuronxcc.driver.jobs.HLOToTensorizer.HLOToTensorizer.runSingleInput
+2026-05-25T19:38:11Z ERROR 3312 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/jobs/HLOToTensorizer.py", line 205, in neuronxcc.driver.jobs.HLOToTensorizer.HLOToTensorizer.runHlo2Tensorizer
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]: 
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]: Diagnostic information:
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]:   NeuronX Compiler version 2.25.3371.0+f524f7f8
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]:   
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]:   Python version 3.12.3
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]:   HWM version 2.25.0.3371++f524f7f8
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]:   NumPy version 2.4.6
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]:   
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]:   Running on AMI ami-0bfa28859f98aa666
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]:   Running in region sae1-az2
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]: 
+2026-05-25T19:38:11Z USER 3312 [neuronxcc.driver.CommandDriver]: Diagnostic logs stored in /home/ubuntu/log-neuron-cc.txt
+2026-05-25T19:38:11Z INFO 3312 [neuronxcc.driver.CommandDriver]: Artifacts stored in: /home/ubuntu/neuronxcc-l0nfrwig
+2026-05-25T19:38:11Z INFO 3300 [root]: Subcommand returned with exitcode=70
+[19:38:11] Compile FAILED after 28.5s
+Exception class: RuntimeError
+Exception message: neuronx-cc failed with 70

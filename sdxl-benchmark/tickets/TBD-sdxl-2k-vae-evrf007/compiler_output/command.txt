@@ -1,0 +1,1 @@
+neuronx-cc compile model --framework XLA --target trn2 --output graph.neff --model-type=unet-inference --lnc=2 -O1 --tensorizer-options=--inst-count-limit=15000000 --internal-max-instruction-limit=15000000 --verbose=DEBUG

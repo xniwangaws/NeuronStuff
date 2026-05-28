@@ -1,0 +1,196 @@
+{
+  "01_post_quant_conv": {
+    "compile_dir_bytes": 63888,
+    "elapsed_s": 34.28733229637146,
+    "in_shape": [
+      1,
+      4,
+      256,
+      256
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_01_post_quant_conv.pt",
+    "out_shape": [
+      1,
+      4,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "02_conv_in": {
+    "compile_dir_bytes": 275838,
+    "elapsed_s": 2.4105169773101807,
+    "in_shape": [
+      1,
+      4,
+      256,
+      256
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_02_conv_in.pt",
+    "out_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "03_mid_block": {
+    "compile_dir_bytes": 21018946,
+    "max_instr_seen": null
+  },
+  "03a_mid_resnet0": {
+    "compile_dir_bytes": 19620688,
+    "elapsed_s": 21.487499475479126,
+    "in_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_03a_mid_resnet0.pt",
+    "out_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "03b_mid_attn": {
+    "compile_dir_bytes": 93376615,
+    "elapsed_s": 438.55193614959717,
+    "in_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_03b_mid_attn.pt",
+    "out_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "03c_mid_resnet1": {
+    "compile_dir_bytes": 19630928,
+    "elapsed_s": 21.409770011901855,
+    "in_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_03c_mid_resnet1.pt",
+    "out_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "status": "OK"
+  },
+  "04_up_block_0": {
+    "compile_dir_bytes": 103270992,
+    "elapsed_s": 97.51863431930542,
+    "in_shape": [
+      1,
+      512,
+      256,
+      256
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_04_up_block_0.pt",
+    "out_shape": [
+      1,
+      512,
+      512,
+      512
+    ],
+    "status": "OK"
+  },
+  "05_up_block_1": {
+    "compile_dir_bytes": 137390690,
+    "elapsed_s": 326.39306640625,
+    "in_shape": [
+      1,
+      512,
+      512,
+      512
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_05_up_block_1.pt",
+    "out_shape": [
+      1,
+      512,
+      1024,
+      1024
+    ],
+    "status": "OK"
+  },
+  "06_up_block_2": {
+    "compile_dir_bytes": 98733534,
+    "elapsed_s": 782.8296585083008,
+    "in_shape": [
+      1,
+      512,
+      1024,
+      1024
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_06_up_block_2.pt",
+    "out_shape": [
+      1,
+      256,
+      2048,
+      2048
+    ],
+    "status": "OK"
+  },
+  "07_up_block_3": {
+    "compile_dir_bytes": 50483332,
+    "elapsed_s": 1949.0291335582733,
+    "in_shape": [
+      1,
+      256,
+      2048,
+      2048
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_07_up_block_3.pt",
+    "out_shape": [
+      1,
+      128,
+      2048,
+      2048
+    ],
+    "status": "OK"
+  },
+  "08_conv_out_block": {
+    "compile_dir_bytes": 8849612,
+    "elapsed_s": 352.8912150859833,
+    "in_shape": [
+      1,
+      128,
+      2048,
+      2048
+    ],
+    "max_instr_seen": null,
+    "out_pt": "/home/ubuntu/work_a/traced_08_conv_out_block.pt",
+    "out_shape": [
+      1,
+      3,
+      2048,
+      2048
+    ],
+    "status": "OK"
+  }
+}
