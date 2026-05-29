@@ -1,0 +1,70 @@
+{
+  "prompt": "An astronaut riding a green horse",
+  "steps": 50,
+  "cfg": 7.5,
+  "height": 1024,
+  "width": 1024,
+  "tp": 4,
+  "unet_arch": "TP=4 NEFF, batch=1, split CFG -> 2x batch=1",
+  "runs": [
+    {
+      "idx": 0,
+      "kind": "cold",
+      "total_s": 32.24084758758545,
+      "num_unet_calls": 50,
+      "unet_call_ms_mean": 637.7329254150391,
+      "unet_call_ms_min": 632.9967975616455,
+      "unet_call_ms_max": 838.9253616333008,
+      "unet_total_s": 31.886646270751953
+    },
+    {
+      "idx": 1,
+      "kind": "warm",
+      "total_s": 32.00777196884155,
+      "num_unet_calls": 50,
+      "unet_call_ms_mean": 633.7390327453613,
+      "unet_call_ms_min": 633.0263614654541,
+      "unet_call_ms_max": 634.6073150634766,
+      "unet_total_s": 31.686951637268066
+    },
+    {
+      "idx": 2,
+      "kind": "warm",
+      "total_s": 32.003870487213135,
+      "num_unet_calls": 50,
+      "unet_call_ms_mean": 633.7590980529785,
+      "unet_call_ms_min": 633.185625076294,
+      "unet_call_ms_max": 634.631872177124,
+      "unet_total_s": 31.687954902648926
+    },
+    {
+      "idx": 3,
+      "kind": "warm",
+      "total_s": 32.19404745101929,
+      "num_unet_calls": 50,
+      "unet_call_ms_mean": 637.5642156600952,
+      "unet_call_ms_min": 633.0788135528564,
+      "unet_call_ms_max": 828.3636569976807,
+      "unet_total_s": 31.87821078300476
+    },
+    {
+      "idx": "seed43",
+      "kind": "warm",
+      "total_s": 31.9946186542511,
+      "num_unet_calls": 50,
+      "unet_call_ms_mean": 633.5901403427124,
+      "unet_total_s": 31.67950701713562
+    }
+  ],
+  "saved_pngs": {
+    "seed42": "/home/ubuntu/work_unet_tp4/sdxl_1k_tp4_seed42.png",
+    "seed43": "/home/ubuntu/work_unet_tp4/sdxl_1k_tp4_seed43.png"
+  },
+  "cold_s": 32.24084758758545,
+  "warm_s_mean": 32.068563302357994,
+  "warm_s_list": [
+    32.00777196884155,
+    32.003870487213135,
+    32.19404745101929
+  ]
+}
