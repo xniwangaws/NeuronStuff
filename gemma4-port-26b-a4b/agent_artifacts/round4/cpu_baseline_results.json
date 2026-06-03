@@ -1,0 +1,136 @@
+{
+  "easy": {
+    "user_text": "What is 2+2?",
+    "rendered_prompt": "<bos><|turn>user\nWhat is 2+2?<turn|>\n<|turn>model\n<|channel>thought\n<channel|>",
+    "prompt_ids": [
+      2,
+      105,
+      2364,
+      107,
+      3689,
+      563,
+      236743,
+      236778,
+      236862,
+      236778,
+      236881,
+      106,
+      107,
+      105,
+      4368,
+      107,
+      100,
+      45518,
+      107,
+      101
+    ],
+    "greedy": {
+      "tokens": [
+        236778,
+        900,
+        236743,
+        236778,
+        578,
+        236743,
+        236812,
+        106
+      ],
+      "text": "2 + 2 = 4",
+      "wall_s": 3.4737933749993317
+    }
+  },
+  "medium": {
+    "user_text": "Name three primary colors.",
+    "rendered_prompt": "<bos><|turn>user\nName three primary colors.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>",
+    "prompt_ids": [
+      2,
+      105,
+      2364,
+      107,
+      1567,
+      1806,
+      5905,
+      7913,
+      236761,
+      106,
+      107,
+      105,
+      4368,
+      107,
+      100,
+      45518,
+      107,
+      101
+    ],
+    "greedy": {
+      "tokens": [
+        818,
+        1806,
+        5905,
+        7913,
+        4911,
+        580,
+        506,
+        4403,
+        568,
+        661,
+        7728,
+        236761,
+        6647,
+        779,
+        840,
+        506
+      ],
+      "text": "The three primary colors depend on the context (art vs. science), but the",
+      "wall_s": 4.776654780000172
+    }
+  },
+  "open": {
+    "user_text": "Write a haiku about autumn.",
+    "rendered_prompt": "<bos><|turn>user\nWrite a haiku about autumn.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>",
+    "prompt_ids": [
+      2,
+      105,
+      2364,
+      107,
+      6974,
+      496,
+      678,
+      20517,
+      1003,
+      16273,
+      236761,
+      106,
+      107,
+      105,
+      4368,
+      107,
+      100,
+      45518,
+      107,
+      101
+    ],
+    "greedy": {
+      "tokens": [
+        48496,
+        6895,
+        49113,
+        236764,
+        107,
+        165541,
+        236758,
+        2634,
+        140845,
+        506,
+        5597,
+        3768,
+        236764,
+        107,
+        46797,
+        5899
+      ],
+      "text": "Golden leaves descend,\nCrisp air chills the morning sun,\nNature goes",
+      "wall_s": 4.609306202999505
+    }
+  }
+}

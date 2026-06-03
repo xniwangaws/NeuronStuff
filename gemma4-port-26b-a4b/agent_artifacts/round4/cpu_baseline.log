@@ -1,0 +1,28 @@
+Loading tokenizer ...
+  chat_template loaded (17466 chars)
+Loading Gemma4ForConditionalGeneration (bf16 CPU) ...
+Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:  94%|█████████▎| 949/1013 [00:00<00:00, 9480.20it/s]Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 9743.30it/s]
+  load took 0.3s
+
+--- easy: 'What is 2+2?' ---
+  rendered prompt (20 tok): '<bos><|turn>user\nWhat is 2+2?<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+  prompt ids: [2, 105, 2364, 107, 3689, 563, 236743, 236778, 236862, 236778, 236881, 106, 107, 105, 4368, 107, 100, 45518, 107, 101]
+  generated ids (8): [236778, 900, 236743, 236778, 578, 236743, 236812, 106]
+  text: '2 + 2 = 4'
+  took 3.5s (0.4s/tok)
+
+--- medium: 'Name three primary colors.' ---
+  rendered prompt (18 tok): '<bos><|turn>user\nName three primary colors.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+  prompt ids: [2, 105, 2364, 107, 1567, 1806, 5905, 7913, 236761, 106, 107, 105, 4368, 107, 100, 45518, 107, 101]
+  generated ids (16): [818, 1806, 5905, 7913, 4911, 580, 506, 4403, 568, 661, 7728, 236761, 6647, 779, 840, 506]
+  text: 'The three primary colors depend on the context (art vs. science), but the'
+  took 4.8s (0.3s/tok)
+
+--- open: 'Write a haiku about autumn.' ---
+  rendered prompt (20 tok): '<bos><|turn>user\nWrite a haiku about autumn.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+  prompt ids: [2, 105, 2364, 107, 6974, 496, 678, 20517, 1003, 16273, 236761, 106, 107, 105, 4368, 107, 100, 45518, 107, 101]
+  generated ids (16): [48496, 6895, 49113, 236764, 107, 165541, 236758, 2634, 140845, 506, 5597, 3768, 236764, 107, 46797, 5899]
+  text: 'Golden leaves descend,\nCrisp air chills the morning sun,\nNature goes'
+  took 4.6s (0.3s/tok)
+
+Done.

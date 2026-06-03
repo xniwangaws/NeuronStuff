@@ -1,0 +1,246 @@
+{
+  "easy": {
+    "user_text": "What is 2+2?",
+    "prompt_ids": [
+      2,
+      105,
+      2364,
+      107,
+      3689,
+      563,
+      236743,
+      236778,
+      236862,
+      236778,
+      236881,
+      106,
+      107,
+      105,
+      107,
+      4368,
+      107,
+      100,
+      45518,
+      101
+    ],
+    "rendered_prompt": "<bos><|turn>user\nWhat is 2+2?<turn|>\n<|turn>\nmodel\n<|channel>thought<channel|>",
+    "greedy": {
+      "tokens": [
+        236778,
+        900,
+        236743,
+        236778,
+        578,
+        236743,
+        236812,
+        106
+      ],
+      "text": "2 + 2 = 4",
+      "timing": {
+        "ttft_ms": 307.8069150005831,
+        "tpot_ms": 8.93476414291529,
+        "total_tokens": 8
+      }
+    },
+    "sample": {
+      "tokens": [
+        236778,
+        900,
+        236743,
+        236778,
+        578,
+        236743,
+        236812,
+        106
+      ],
+      "text": "2 + 2 = 4",
+      "timing": {
+        "ttft_ms": 303.34491200028424,
+        "tpot_ms": 27.967187285737186,
+        "total_tokens": 8
+      },
+      "params": {
+        "temperature": 1.0,
+        "top_k": 64,
+        "top_p": 0.95,
+        "seed": 42
+      }
+    }
+  },
+  "medium": {
+    "user_text": "Name three primary colors.",
+    "prompt_ids": [
+      2,
+      105,
+      2364,
+      107,
+      1567,
+      1806,
+      5905,
+      7913,
+      236761,
+      106,
+      107,
+      105,
+      107,
+      4368,
+      107,
+      100,
+      45518,
+      101
+    ],
+    "rendered_prompt": "<bos><|turn>user\nName three primary colors.<turn|>\n<|turn>\nmodel\n<|channel>thought<channel|>",
+    "greedy": {
+      "tokens": [
+        818,
+        1806,
+        5905,
+        7913,
+        659,
+        5213,
+        1192,
+        125546,
+        5213,
+        23861,
+        125546,
+        532,
+        5213,
+        9503,
+        84750,
+        106
+      ],
+      "text": "The three primary colors are **red**, **yellow**, and **blue**.",
+      "timing": {
+        "ttft_ms": 303.3751119992303,
+        "tpot_ms": 8.217396533351955,
+        "total_tokens": 16
+      }
+    },
+    "sample": {
+      "tokens": [
+        818,
+        1806,
+        5905,
+        7913,
+        659,
+        5213,
+        1192,
+        125546,
+        5213,
+        23861,
+        125546,
+        532,
+        5213,
+        9503,
+        84750,
+        106
+      ],
+      "text": "The three primary colors are **red**, **yellow**, and **blue**.",
+      "timing": {
+        "ttft_ms": 303.44587699983094,
+        "tpot_ms": 27.51902373329358,
+        "total_tokens": 16
+      },
+      "params": {
+        "temperature": 1.0,
+        "top_k": 64,
+        "top_p": 0.95,
+        "seed": 42
+      }
+    }
+  },
+  "open": {
+    "user_text": "Write a haiku about autumn.",
+    "prompt_ids": [
+      2,
+      105,
+      2364,
+      107,
+      6974,
+      496,
+      678,
+      20517,
+      1003,
+      16273,
+      236761,
+      106,
+      107,
+      105,
+      107,
+      4368,
+      107,
+      100,
+      45518,
+      101
+    ],
+    "rendered_prompt": "<bos><|turn>user\nWrite a haiku about autumn.<turn|>\n<|turn>\nmodel\n<|channel>thought<channel|>",
+    "greedy": {
+      "tokens": [
+        21713,
+        6895,
+        27552,
+        531,
+        7764,
+        236764,
+        107,
+        1659,
+        14398,
+        29146,
+        3654,
+        531,
+        13949,
+        236764,
+        107,
+        46797,
+        16071,
+        38888,
+        236761,
+        106
+      ],
+      "text": "Gold leaves drift to earth,\nChilly winds begin to blow,\nNature falls asleep.",
+      "timing": {
+        "ttft_ms": 303.2246289994873,
+        "tpot_ms": 8.199853000022765,
+        "total_tokens": 20
+      }
+    },
+    "sample": {
+      "tokens": [
+        21713,
+        6895,
+        27552,
+        531,
+        7764,
+        236764,
+        107,
+        165541,
+        236758,
+        2634,
+        140845,
+        506,
+        5597,
+        3768,
+        236764,
+        107,
+        46797,
+        5899,
+        531,
+        6745,
+        236761,
+        106
+      ],
+      "text": "Gold leaves drift to earth,\nCrisp air chills the morning sun,\nNature goes to sleep.",
+      "timing": {
+        "ttft_ms": 303.23518800014426,
+        "tpot_ms": 27.77100509523561,
+        "total_tokens": 22
+      },
+      "params": {
+        "temperature": 1.0,
+        "top_k": 64,
+        "top_p": 0.95,
+        "seed": 42
+      }
+    }
+  }
+}
