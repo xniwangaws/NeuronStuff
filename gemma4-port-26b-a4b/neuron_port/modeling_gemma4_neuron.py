@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2026 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License").
@@ -7,168 +8,523 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # ==========================================================================
-# NeuronX Distributed Inference port of Google's Gemma-4-26B-A4B-it.
+# NeuronX Distributed Inference port of google/gemma-4-26B-A4B-it.
 # ==========================================================================
 #
-# This is a *dry-run* port: it generates the Python implementation that should
-# compile against AWS Trainium when paired with NxDI 2.27+. No code in this
-# file has been run on hardware. See ``agent_artifacts/traces/architecture_analysis.md``
-# for the architectural reasoning behind the choices below, and ``README.md``
-# in this directory for what was reused vs ported fresh.
+# Round 2 — heavily borrowed from Jim Burtoft's PR #106 (gemma-4-31B-IT) for
+# attention, KV cache, softcapping, and weight conversion. The MoE block,
+# router, and decoder-layer MoE branch are 26B-A4B-specific (the 31B model
+# is dense). NKI flash attention kernels (`nki_flash_attn_d256_swa.py` and
+# `nki_flash_attn_large_d.py`) are taken verbatim from PR #106; head_dim
+# values match (256 sliding / 512 full) so they work as-is.
 #
-# Reference HF source:
-#     transformers_src/src/transformers/models/gemma4/modeling_gemma4.py
+# Differences from PR #106 worth knowing about:
+#   * 26B-A4B has `enable_moe_block=True`, `num_experts=128`, `top_k=8`.
+#     Each decoder layer runs the dense MLP and the MoE block in parallel
+#     (HF source lines 1429-1441), then sums their outputs.
+#   * `hidden_size=2816` (vs 31B's 5376), `num_attention_heads=16`,
+#     `num_key_value_heads=8` for sliding, `num_global_key_value_heads=2`.
+#   * `final_logit_softcapping=30.0` (same as 31B-IT).
+#   * `hidden_size_per_layer_input=0` — no per-layer-embedding (PLE) on
+#     26B-A4B, so the round-1 PLE code is dropped.
 #
-# Naming convention (per skill instructions): a class with no 1:1 mapping to
-# HuggingFace gets a ``_u`` suffix.
+# To use the NKI kernels at runtime, callers must invoke
+# `from neuron_port import ndxi_patch; ndxi_patch.apply_patch()` before
+# constructing `NeuronGemma4ForCausalLM`.
 
 from __future__ import annotations
 
+import copy
 import math
-from typing import Any, Optional
+from types import SimpleNamespace
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 import torch
+import torch.nn.functional as F
 from torch import nn
-from torch.nn import functional as F
-
-# ---------------------------------------------------------------------------
-# NxDI / NxD imports — kept at the top level (this file is only imported
-# inside the venv that has them).
-# ---------------------------------------------------------------------------
 
 from neuronx_distributed.parallel_layers.layers import (
     ColumnParallelLinear,
     ParallelEmbedding,
     RowParallelLinear,
 )
+
+from neuronx_distributed_inference.models.config import InferenceConfig, NeuronConfig
 from neuronx_distributed_inference.models.model_base import (
     NeuronBaseForCausalLM,
     NeuronBaseModel,
 )
 from neuronx_distributed_inference.modules.attention.attention_base import (
+    FlashAttentionStrategy,
     NeuronAttentionBase,
 )
-from neuronx_distributed_inference.modules.attention.utils import RotaryEmbedding
-from neuronx_distributed_inference.modules.custom_calls import CustomRMSNorm
+from neuronx_distributed_inference.modules.attention.utils import (
+    RotaryEmbedding,
+    apply_rotary_pos_emb,
+)
+from neuronx_distributed_inference.modules.attention.gqa import (
+    determine_sharding_strategy,
+    get_shardable_head_counts,
+)
+from neuronx_distributed_inference.modules.kvcache.kv_cache_manager import (
+    KVCacheManager,
+)
+from neuronx_distributed_inference.modules.kvcache.utils import get_kv_shapes
 
-# MoE block: NxDI ships two implementations (moe.py + moe_v2.py). Per the
-# system prompt we use moe_v2.
+# MoE module from NxDI v2.
 from neuronx_distributed_inference.modules.moe_v2 import initialize_moe_module
 
-from .configuration_gemma4_neuron import (
-    make_gemma4_inference_config_class,
-    make_gemma4_neuron_config_class,
-)
+# NKI flash attention kernel for head_dim=256 SWA layers (sliding window).
+try:
+    from .nki_flash_attn_d256_swa import flash_attn_d256_swa as _nki_flash_attn_d256_swa  # type: ignore[import-not-found]
+
+    _HAS_NKI_SWA_KERNEL = True
+except Exception:  # pragma: no cover - kernel optional at import time
+    _HAS_NKI_SWA_KERNEL = False
 
 
-# ---------------------------------------------------------------------------
-# 0. Materialise the runtime config classes (factories defined in
-# configuration_gemma4_neuron.py — see that file's docstring).
-# ---------------------------------------------------------------------------
-
-Gemma4InferenceConfig = make_gemma4_inference_config_class()
-Gemma4NeuronConfig = make_gemma4_neuron_config_class()
+# ====================================================================================
+# Normalization (PR #106 pattern: Gemma4RMSNorm with weight, Gemma4VNorm without)
+# ====================================================================================
 
 
-# ---------------------------------------------------------------------------
-# 1. Normalisation helpers
-# ---------------------------------------------------------------------------
-#
-# Gemma4 uses ``Gemma4RMSNorm`` everywhere. The genericmoe v16 knowledge-base
-# entry however found that on Neuron hardware the *outer* norms (input,
-# post-attention, pre-/post-MLP, final) must be ``nn.LayerNorm`` to avoid
-# gibberish output, while inner norms (q_norm, k_norm, router norm) are fine
-# as RMSNorm.
-#
-# We expose two helpers so both stay obvious in the code below.
+class Gemma4RMSNorm(nn.Module):
+    """Standard Gemma4 RMSNorm: normed * weight (weight init to ones)."""
+
+    def __init__(self, dim: int, eps: float = 1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+
+    def _norm(self, x: torch.Tensor) -> torch.Tensor:
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        output = self._norm(x.float())
+        output = output * self.weight.float()
+        return output.type_as(x)
 
 
-def _outer_norm(hidden_size: int, eps: float) -> nn.Module:
-    """LayerNorm for outer normalisations (decoder, final).
+class Gemma4VNorm(nn.Module):
+    """Gemma4 v_norm: RMSNorm without learnable scale (with_scale=False)."""
 
-    KB-driven: see ``genericmoe_v16_final_success_summary.md`` — outer
-    LayerNorm prevents activation drift on Neuron.
-    """
-
-    return nn.LayerNorm(hidden_size, eps=eps, elementwise_affine=True)
-
-
-def _inner_norm(hidden_size: int, eps: float, with_scale: bool = True) -> nn.Module:
-    """RMSNorm for inner normalisations (Q/K/V/router).
-
-    Uses NxDI's ``CustomRMSNorm`` for the affine variant (matches gemma4's
-    ``with_scale=True``). For ``with_scale=False`` (gemma4's v_norm and the
-    router input norm) we fall back to a plain non-affine RMSNorm.
-    """
-
-    if with_scale:
-        return CustomRMSNorm(hidden_size, eps=eps)
-
-    return _RMSNormNoScale_u(hidden_size, eps=eps)
-
-
-class _RMSNormNoScale_u(nn.Module):
-    """Centring-only RMSNorm (no learned scale).
-
-    Mirrors gemma4's ``Gemma4RMSNorm(..., with_scale=False)``.
-    """
-
-    def __init__(self, dim: int, eps: float = 1e-6) -> None:
+    def __init__(self, dim: int, eps: float = 1e-6):
         super().__init__()
         self.eps = eps
 
-    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
-        in_dtype = hidden_states.dtype
-        hidden_states_f32 = hidden_states.float()
-        ms = hidden_states_f32.pow(2).mean(-1, keepdim=True) + self.eps
-        normed = hidden_states_f32 * torch.pow(ms, -0.5)
-        return normed.to(in_dtype)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        output = x.float() * torch.rsqrt(
+            x.float().pow(2).mean(-1, keepdim=True) + self.eps
+        )
+        return output.type_as(x)
 
 
-# ---------------------------------------------------------------------------
-# 2. Dense MLP (Gemma4TextMLP)
-# ---------------------------------------------------------------------------
-#
-# Plain SwiGLU with `gelu_pytorch_tanh` activation. ``up_proj`` and ``gate_proj``
-# are kept separate so the existing HF checkpoint maps directly. NxDI's
-# parallel layers handle the TP sharding.
+def get_rmsnorm_cls():
+    """Single source of truth for the outer norm class (matches PR #106)."""
+    return Gemma4RMSNorm
 
 
-class NeuronGemma4MLP(nn.Module):
-    """Dense feed-forward block (mirrors ``Gemma4TextMLP``)."""
+# ====================================================================================
+# Embeddings + softcapped LM head (verbatim from PR #106)
+# ====================================================================================
+
+
+class SoftcappedLMHead(nn.Module):
+    """Wrap lm_head and apply final_logit_softcapping: cap * tanh(x / cap)."""
+
+    def __init__(self, linear: nn.Module, cap: float):
+        super().__init__()
+        self.linear = linear
+        self.cap = cap
+
+    def forward(self, x):
+        logits = self.linear(x)
+        logits = logits.float()
+        return self.cap * torch.tanh(logits / self.cap)
+
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.linear, name)
+
+
+class Gemma4ScaledEmbedding(nn.Module):
+    """Token embedding with sqrt(hidden_size) scaling (per gemma4 source)."""
 
     def __init__(
         self,
-        config: Any,
-        layer_idx: int,
-    ) -> None:
+        num_embeddings: int,
+        embedding_dim: int,
+        padding_idx: int,
+        dtype: torch.dtype,
+        shard_across_embedding: bool = True,
+        pad: bool = True,
+        sequence_parallel_enabled: bool = False,
+    ):
         super().__init__()
-        self.config = config
-        self.hidden_size = config.hidden_size
+        self.embed_scale = embedding_dim**0.5
+        self.embedding = ParallelEmbedding(
+            num_embeddings,
+            embedding_dim,
+            padding_idx,
+            dtype=dtype,
+            shard_across_embedding=shard_across_embedding,
+            pad=pad,
+            sequence_parallel_enabled=sequence_parallel_enabled,
+        )
 
-        # Gemma4 has an optional "double-wide MLP" on KV-shared layers; for
-        # 26B-A4B ``num_kv_shared_layers=0`` so this stays at intermediate_size.
-        first_kv_shared_layer_idx = (
-            config.num_hidden_layers - getattr(config, "num_kv_shared_layers", 0)
+    def forward(self, input_ids: torch.Tensor):
+        return self.embedding(input_ids) * self.embed_scale
+
+
+# ====================================================================================
+# Configuration (PR #106 pattern, extended for MoE attributes)
+# ====================================================================================
+
+
+class Gemma4NeuronConfig(NeuronConfig):
+    """NeuronConfig hard-pinning the gemma4 attention class."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # attn_cls is set per-layer in get_updated_configs(); this default is
+        # used for the framework-level introspection only.
+        self.attn_cls = NeuronGemma4Attention
+
+
+class Gemma4InferenceConfig(InferenceConfig):
+    """Inference config that pulls fields from HF gemma4 config.json (text_config)."""
+
+    def __init__(
+        self,
+        neuron_config: NeuronConfig,
+        fused_spec_config=None,
+        load_config=None,
+        **kwargs,
+    ):
+        self.neuron_config = neuron_config
+        self.fused_spec_config = fused_spec_config
+
+        if load_config is not None:
+            load_config(self)
+        else:
+            self.load_config()
+
+        # Gemma4 nests text params under text_config.
+        text_config = getattr(self, "text_config", None)
+        if text_config is not None:
+            if isinstance(text_config, dict):
+                self.text_config = SimpleNamespace(**text_config)
+                text_config = self.text_config
+            text_attrs = [
+                "hidden_size",
+                "num_attention_heads",
+                "num_hidden_layers",
+                "num_key_value_heads",
+                "head_dim",
+                "intermediate_size",
+                "vocab_size",
+                "max_position_embeddings",
+                "rms_norm_eps",
+                "sliding_window",
+                "hidden_activation",
+                # Gemma4-specific
+                "global_head_dim",
+                "num_global_key_value_heads",
+                "attention_k_eq_v",
+                "final_logit_softcapping",
+                "layer_types",
+                "rope_parameters",
+                # MoE-specific (26B-A4B)
+                "enable_moe_block",
+                "num_experts",
+                "top_k_experts",
+                "moe_intermediate_size",
+                # PLE / KV-share (0 on 26B-A4B but kept for forward compat)
+                "hidden_size_per_layer_input",
+                "vocab_size_per_layer_input",
+                "num_kv_shared_layers",
+                "use_double_wide_mlp",
+                "tie_word_embeddings",
+                "pad_token_id",
+            ]
+            for attr in text_attrs:
+                if isinstance(text_config, dict):
+                    if attr in text_config:
+                        setattr(self, attr, text_config[attr])
+                elif hasattr(text_config, attr):
+                    setattr(self, attr, getattr(text_config, attr))
+
+        # PretrainedConfig defaults that SimpleNamespace conversion drops.
+        text_config = getattr(self, "text_config", None)
+        if text_config is not None:
+            for attr, default in [
+                ("output_attentions", False),
+                ("output_hidden_states", False),
+                ("use_return_dict", True),
+            ]:
+                if not hasattr(text_config, attr):
+                    setattr(text_config, attr, default)
+        for attr, default in [
+            ("output_attentions", False),
+            ("output_hidden_states", False),
+            ("use_return_dict", True),
+        ]:
+            if not hasattr(self, attr):
+                setattr(self, attr, default)
+
+        if not hasattr(self, "pad_token_id"):
+            self.pad_token_id = 0
+        if not hasattr(self, "tie_word_embeddings"):
+            self.tie_word_embeddings = True
+        if not hasattr(self, "attention_bias"):
+            self.attention_bias = False
+
+        if hasattr(self, "hidden_activation") and not hasattr(self, "hidden_act"):
+            self.hidden_act = self.hidden_activation
+
+        self.add_derived_config()
+        self.validate_config()
+
+    def add_derived_config(self):
+        self.num_cores_per_group = 1
+
+    def get_required_attributes(self) -> List[str]:
+        return [
+            "hidden_size",
+            "num_attention_heads",
+            "num_hidden_layers",
+            "num_key_value_heads",
+            "head_dim",
+            "vocab_size",
+            "max_position_embeddings",
+            "rms_norm_eps",
+            "intermediate_size",
+            "global_head_dim",
+            "num_global_key_value_heads",
+            "layer_types",
+        ]
+
+    @classmethod
+    def get_neuron_config_cls(cls) -> Type[Gemma4NeuronConfig]:
+        return Gemma4NeuronConfig
+
+
+def get_updated_configs(config: Gemma4InferenceConfig):
+    """Per-layer configs for heterogeneous SWA/global layers (PR #106 pattern)."""
+    updated_configs = []
+    for i in range(config.num_hidden_layers):
+        layer_config = copy.deepcopy(config)
+        layer_type = config.layer_types[i]
+
+        # MoE config aliases that NxDI's `initialize_moe_module` reads off the
+        # layer config. We do NOT overwrite `intermediate_size` here (the
+        # dense MLP needs it); the MoE block uses `_moe_config` (set later)
+        # which has the moe_intermediate_size.
+        if getattr(layer_config, "enable_moe_block", False):
+            layer_config.num_local_experts = layer_config.num_experts
+            layer_config.num_experts_per_tok = layer_config.top_k_experts
+
+        if layer_type == "sliding_attention":
+            layer_config.sliding_window = config.sliding_window
+            layer_config._layer_head_dim = config.head_dim
+            layer_config._layer_num_kv_heads = config.num_key_value_heads
+            layer_config._layer_is_sliding = True
+            layer_config._layer_k_eq_v = False
+            rope_params = config.rope_parameters.get("sliding_attention", {})
+            layer_config._layer_rope_theta = rope_params.get("rope_theta", 10000.0)
+            layer_config._layer_partial_rotary_factor = 1.0
+        else:
+            layer_config.sliding_window = None
+            layer_config._layer_head_dim = config.global_head_dim
+            layer_config._layer_num_kv_heads = config.num_global_key_value_heads
+            layer_config._layer_is_sliding = False
+            layer_config._layer_k_eq_v = getattr(config, "attention_k_eq_v", False)
+            rope_params = config.rope_parameters.get("full_attention", {})
+            layer_config._layer_rope_theta = rope_params.get("rope_theta", 1000000.0)
+            layer_config._layer_partial_rotary_factor = rope_params.get(
+                "partial_rotary_factor", 0.25
+            )
+
+        updated_configs.append(layer_config)
+    return updated_configs
+
+
+# ====================================================================================
+# Attention (PR #106 verbatim, head_dim values match for 26B-A4B)
+# ====================================================================================
+
+
+class NeuronGemma4Attention(NeuronAttentionBase):
+    """Gemma4 attention with per-layer head_dim/kv_heads, partial RoPE, v_norm.
+
+    Borrowed wholesale from PR #106 (Jim Burtoft, gemma-4-31B-IT). 26B-A4B
+    shares all the head dimensions (256 sliding / 512 global) so this works
+    unchanged. The only per-config differences (kv head counts, rope theta)
+    are read from the per-layer config dict produced by `get_updated_configs`.
+    """
+
+    def __init__(self, config: Gemma4InferenceConfig):
+        head_dim = config._layer_head_dim
+        num_kv_heads = config._layer_num_kv_heads
+        is_sliding = config._layer_is_sliding
+        rope_theta = config._layer_rope_theta
+        partial_rotary_factor = config._layer_partial_rotary_factor
+
+        # Partial RoPE: rotate first head_dim*factor dims, leave the rest alone.
+        rotary_dim = int(head_dim * partial_rotary_factor)
+        rotary_dim = rotary_dim - (rotary_dim % 2)
+
+        rotary_emb = RotaryEmbedding(
+            dim=rotary_dim,
+            max_position_embeddings=config.max_position_embeddings,
+            base=rope_theta,
         )
-        is_kv_shared_layer = (
-            getattr(config, "num_kv_shared_layers", 0) > 0
-            and layer_idx >= first_kv_shared_layer_idx
+
+        # PR #106 Discovery #27: pass sliding_window=None to base for ALL layers
+        # to avoid OOB in get_last_kv_window when bucket_size < sliding_window.
+        # Windowed masking is applied at the decoder-layer level via local_mask.
+        super().__init__(
+            config=config,
+            hidden_size=config.hidden_size,
+            num_attention_heads=config.num_attention_heads,
+            num_key_value_heads=num_kv_heads,
+            head_dim=head_dim,
+            rotary_emb=rotary_emb,
+            rms_norm_eps=config.rms_norm_eps,
+            use_qk_norm=False,
+            sliding_window=None,
+            post_transpose_layernorm=True,
         )
-        use_double_wide_mlp = (
-            getattr(config, "use_double_wide_mlp", False) and is_kv_shared_layer
+
+        # QK norms: gemma4 RMSNorm with learned weight (initialized to 1).
+        self.q_layernorm = get_rmsnorm_cls()(dim=head_dim, eps=config.rms_norm_eps)
+        self.k_layernorm = get_rmsnorm_cls()(dim=head_dim, eps=config.rms_norm_eps)
+
+        # V norm: RMSNorm without learnable scale.
+        self.v_norm = Gemma4VNorm(dim=head_dim, eps=config.rms_norm_eps)
+
+        self._is_sliding = is_sliding
+        self._k_eq_v = config._layer_k_eq_v
+        self._head_dim = head_dim
+        self._rotary_dim = rotary_dim
+        self._partial_rotary_factor = partial_rotary_factor
+
+    def apply_rotary_embedding(
+        self, Q, K, V, position_ids, cos_cache, sin_cache, use_polar_compatible_rope
+    ):
+        if self.rotary_emb is None:
+            return Q, K, cos_cache, sin_cache
+        if cos_cache is None or sin_cache is None:
+            cos_cache, sin_cache = self.rotary_emb(V, position_ids)
+
+        if self._rotary_dim == self._head_dim:
+            Q, K = apply_rotary_pos_emb(Q, K, cos_cache, sin_cache)
+        else:
+            q_rot = Q[..., : self._rotary_dim]
+            q_pass = Q[..., self._rotary_dim :]
+            k_rot = K[..., : self._rotary_dim]
+            k_pass = K[..., self._rotary_dim :]
+            q_rot, k_rot = apply_rotary_pos_emb(q_rot, k_rot, cos_cache, sin_cache)
+            Q = torch.cat([q_rot, q_pass], dim=-1)
+            K = torch.cat([k_rot, k_pass], dim=-1)
+        return Q, K, cos_cache, sin_cache
+
+    def perform_prefill(self, Q, K, V, q_len, bsz, attention_mask):
+        """Use NKI d=256 SWA kernel for sliding layers when available."""
+        if (
+            _HAS_NKI_SWA_KERNEL
+            and self._is_sliding
+            and self._head_dim == 256
+            and q_len >= 128
+        ):
+            q_kernel = Q.to(self.torch_dtype)
+            k_kernel = K.to(self.torch_dtype)
+            v_kernel = V.to(self.torch_dtype)
+
+            n_kv_heads = K.shape[1]
+            n_q_heads = Q.shape[1]
+            q_h_per_kv = n_q_heads // n_kv_heads
+            window_size = 1024
+
+            out_parts = []
+            for b in range(bsz):
+                for kv_h in range(n_kv_heads):
+                    q_slice = q_kernel[
+                        b : b + 1, kv_h * q_h_per_kv : (kv_h + 1) * q_h_per_kv, :, :
+                    ]
+                    k_slice = k_kernel[b : b + 1, kv_h : kv_h + 1, :, :]
+                    v_slice = v_kernel[b : b + 1, kv_h : kv_h + 1, :, :]
+                    o_part = _nki_flash_attn_d256_swa(
+                        q_slice,
+                        k_slice,
+                        v_slice,
+                        q_h_per_k_h=q_h_per_kv,
+                        n_kv_heads=1,
+                        seqlen_q=q_len,
+                        seqlen_kv=q_len,
+                        window_size=window_size,
+                    )
+                    out_parts.append(o_part)
+            attn_output = torch.cat(out_parts, dim=1)
+            if bsz > 1:
+                attn_output = attn_output.reshape(bsz, n_q_heads, q_len, self._head_dim)
+            return attn_output, FlashAttentionStrategy.NONE
+
+        return super().perform_prefill(Q, K, V, q_len, bsz, attention_mask)
+
+    def prep_qkv_tensors(
+        self,
+        position_ids,
+        hidden_states,
+        past_key_value=None,
+        adapter_ids=None,
+        cos_cache=None,
+        sin_cache=None,
+        rmsnorm=None,
+        skip_rope=False,
+        residual=None,
+        use_polar_compatible_rope=False,
+    ):
+        Q, K, V, cos_cache, sin_cache, residual = super().prep_qkv_tensors(
+            position_ids=position_ids,
+            hidden_states=hidden_states,
+            past_key_value=past_key_value,
+            adapter_ids=adapter_ids,
+            cos_cache=cos_cache,
+            sin_cache=sin_cache,
+            rmsnorm=rmsnorm,
+            skip_rope=skip_rope,
+            residual=residual,
+            use_polar_compatible_rope=use_polar_compatible_rope,
         )
-        self.intermediate_size = config.intermediate_size * (2 if use_double_wide_mlp else 1)
+        # Apply v_norm on BHSD-laid V (last dim == head_dim).
+        V = self.v_norm(V)
+        return Q, K, V, cos_cache, sin_cache, residual
+
+
+# ====================================================================================
+# MLP (dense feed-forward)
+# ====================================================================================
+
+
+class NeuronGemma4MLP(nn.Module):
+    """Dense SwiGLU MLP with `gelu_pytorch_tanh` activation."""
+
+    def __init__(self, config: Gemma4InferenceConfig):
+        super().__init__()
+        self.hidden_size = config.hidden_size
+        self.intermediate_size = config.intermediate_size
 
         dtype = config.neuron_config.torch_dtype
-
-        # Column-parallel: hidden -> intermediate (gate, up split inside)
         self.gate_proj = ColumnParallelLinear(
             self.hidden_size,
             self.intermediate_size,
             bias=False,
             gather_output=False,
             dtype=dtype,
+            pad=True,
         )
         self.up_proj = ColumnParallelLinear(
             self.hidden_size,
@@ -176,6 +532,7 @@ class NeuronGemma4MLP(nn.Module):
             bias=False,
             gather_output=False,
             dtype=dtype,
+            pad=True,
         )
         self.down_proj = RowParallelLinear(
             self.intermediate_size,
@@ -184,602 +541,584 @@ class NeuronGemma4MLP(nn.Module):
             input_is_parallel=True,
             dtype=dtype,
         )
+        self.act_fn = nn.GELU(approximate="tanh")
 
-        if config.hidden_activation == "gelu_pytorch_tanh":
-            self.act_fn = lambda x: F.gelu(x, approximate="tanh")
-        else:
-            # Fallback path; gemma4 always specifies gelu_pytorch_tanh
-            self.act_fn = F.gelu
-
-    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
-        return self.down_proj(self.act_fn(self.gate_proj(hidden_states)) * self.up_proj(hidden_states))
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, None]:
+        return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x)), None
 
 
-# ---------------------------------------------------------------------------
-# 3. Router (Gemma4TextRouter)
-# ---------------------------------------------------------------------------
-#
-# Has two gemma4-specific learned tensors that NxDI's standard ``RouterTopK``
-# does not carry: ``scale`` (per-hidden-dim) and ``per_expert_scale``. We
-# therefore implement the router fresh with the ``_u`` suffix. Output mirrors
-# what ``initialize_moe_module`` expects.
+# ====================================================================================
+# Router + MoE block (26B-A4B specific — PR #106 has no MoE)
+# ====================================================================================
 
 
-class NeuronGemma4Router_u(nn.Module):
-    """Top-K router with gemma4's scaling tweaks. No 1:1 NxDI equivalent."""
+class NeuronGemma4Router(nn.Module):
+    """Top-K router with gemma4's `scale` and `per_expert_scale` learned tensors.
 
-    def __init__(self, config: Any) -> None:
+    Mirrors HF `Gemma4TextRouter` (modeling_gemma4.py:1334). Routing is FP32
+    for numerical stability across experts.
+    """
+
+    def __init__(self, config: Gemma4InferenceConfig):
         super().__init__()
         self.config = config
         self.hidden_size = config.hidden_size
         self.scalar_root_size = self.hidden_size**-0.5
         self.eps = config.rms_norm_eps
         self.top_k = config.top_k_experts
+        self.num_experts = config.num_experts
 
-        # Internal RMSNorm (no scale) — gemma4 source line 1342
-        self.norm = _inner_norm(self.hidden_size, self.eps, with_scale=False)
-
-        # Projection — replicated across TP ranks so every rank computes the
-        # same routing decision. (NxDI MoE expert dispatch needs identical
-        # routing on every rank, otherwise tokens get routed differently per
-        # rank and the all-to-all goes wrong.)
-        self.proj = nn.Linear(self.hidden_size, config.num_experts, bias=False, dtype=torch.float32)
-
-        # Learned scale parameters (gemma4-specific)
+        # No-scale RMSNorm (gemma4 source line 1342: with_scale=False).
+        self.norm = Gemma4VNorm(self.hidden_size, eps=self.eps)
+        # Replicated across TP — every rank must reach the same routing.
+        self.proj = nn.Linear(
+            self.hidden_size, self.num_experts, bias=False, dtype=torch.float32
+        )
+        # Learned scale parameters (gemma4 source 1344-1345).
         self.scale = nn.Parameter(torch.ones(self.hidden_size, dtype=torch.float32))
         self.per_expert_scale = nn.Parameter(
-            torch.ones(config.num_experts, dtype=torch.float32)
+            torch.ones(self.num_experts, dtype=torch.float32)
         )
 
-    def forward(self, hidden_states: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        # FP32 routing (KB: critical for MoE numerical stability)
+    def forward(self, hidden_states: torch.Tensor):
         h = hidden_states.float()
         h = self.norm(h)
         h = h * self.scale * self.scalar_root_size
 
         scores = self.proj(h)  # [N, E]
         probs = F.softmax(scores, dim=-1)
-
         top_k_weights, top_k_index = torch.topk(probs, k=self.top_k, dim=-1)
-
-        # Per-token re-normalisation so weights sum to 1 (gemma4 source line 1362)
+        # Per-token re-normalisation (gemma4 source line 1362).
         top_k_weights = top_k_weights / top_k_weights.sum(dim=-1, keepdim=True)
-
-        # Apply learned per-expert scale (gemma4 source line 1365)
+        # Apply per-expert scale (gemma4 source line 1365).
         top_k_weights = top_k_weights * self.per_expert_scale[top_k_index]
-
         return probs, top_k_weights, top_k_index
 
 
-# ---------------------------------------------------------------------------
-# 4. MoE block — wraps NxDI's ``initialize_moe_module``.
-# ---------------------------------------------------------------------------
-#
-# We delegate the heavy lifting (expert dispatch, sharded gate_up_proj /
-# down_proj, all-to-all routing, etc.) to NxDI's ``MoE`` v2 module. The only
-# gemma4-specific bit is the router above.
+class NeuronGemma4MoEBlock(nn.Module):
+    """Combines the gemma4 router with NxDI's expert dispatch."""
 
-
-class NeuronGemma4MoEBlock_u(nn.Module):
-    """Composes Gemma4 router + NxDI expert dispatch."""
-
-    def __init__(self, config: Any) -> None:
+    def __init__(self, config: Gemma4InferenceConfig):
         super().__init__()
         self.config = config
-        self.router = NeuronGemma4Router_u(config)
+        self.router = NeuronGemma4Router(config)
+        moe_config = copy.deepcopy(config)
+        moe_config.intermediate_size = config.moe_intermediate_size
+        moe_config.num_local_experts = config.num_experts
+        moe_config.num_experts_per_tok = config.top_k_experts
+        self.experts = initialize_moe_module(config=moe_config)
 
-        # ``initialize_moe_module`` returns an `MoE` module with sharded
-        # ``ExpertMLPs``. Routing is delegated back to ``self.router`` via
-        # the ``router_topk_fn`` hook (some NxDI versions call this hook
-        # ``router_fn`` — keep both names in mind when iterating).
-        self.expert_mlps = initialize_moe_module(
-            config=config,
-            num_experts=config.num_experts,
-            top_k=config.top_k_experts,
-            hidden_size=config.hidden_size,
-            intermediate_size=config.moe_intermediate_size or config.intermediate_size,
-            hidden_act=config.hidden_activation,
-            normalize_top_k_affinities=True,
-        )
-
-    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
-        """Args: ``hidden_states`` of shape [B, S, H]. Returns same shape."""
-
-        bsz, seqlen, hsz = hidden_states.shape
-        flat = hidden_states.reshape(-1, hsz)
-
-        _probs, top_k_weights, top_k_index = self.router(flat)
-
-        # NxDI's MoE module signature varies by version; the common one
-        # accepts (hidden, top_k_index, top_k_weights). We forward in the
-        # canonical shape.
-        out = self.expert_mlps(flat, top_k_index, top_k_weights)
-
-        return out.reshape(bsz, seqlen, hsz)
+    def forward(self, hidden_states_flat: torch.Tensor) -> torch.Tensor:
+        _probs, top_k_weights, top_k_index = self.router(hidden_states_flat)
+        return self.experts(hidden_states_flat, top_k_index, top_k_weights)
 
 
-# ---------------------------------------------------------------------------
-# 5. Attention (Gemma4TextAttention) — fused class for sliding + full layers.
-# ---------------------------------------------------------------------------
-#
-# Gemma4 has two attention shapes. We allocate **separate** Q/K/V/o linear
-# layers per layer (different head_dim, different num_kv_heads), but reuse a
-# single RotaryEmbedding per layer_type that lives at the model level (passed
-# down through ``position_embeddings``).
-#
-# Why we still inherit from `NeuronAttentionBase`: it gives us KV cache
-# management, flash-attention kernel selection, and the GQA sharding logic
-# for free. We override the parts of ``__init__`` that need per-layer head_dim.
-
-
-class NeuronGemma4Attention_u(NeuronAttentionBase):
-    """Hybrid sliding/full attention. ``_u`` because the K=V case has no 1:1.
-
-    The layer's ``layer_type`` ("sliding_attention" or "full_attention") is
-    read from ``config.layer_types[layer_idx]`` to pick:
-      * head_dim          (256 vs 512)
-      * num_key_value_heads (4 vs 2)
-      * sliding_window    (1024 vs None)
-      * partial RoPE      (full layers rotate first 25 % only)
-      * K=V               (full layers reuse k_proj as v_proj)
-    """
-
-    def __init__(self, config: Any, layer_idx: int) -> None:
-        self.layer_idx = layer_idx
-        layer_types = getattr(config, "layer_types", None) or []
-        self.layer_type = layer_types[layer_idx] if layer_idx < len(layer_types) else "full_attention"
-        self.is_sliding = self.layer_type == "sliding_attention"
-        self.use_alternative_attention = (
-            getattr(config, "attention_k_eq_v", False) and not self.is_sliding
-        )
-
-        # Per-layer-type head sizing
-        if self.is_sliding:
-            head_dim = config.head_dim
-            num_kv_heads = config.num_key_value_heads
-            sliding_window = config.sliding_window
-        else:
-            head_dim = getattr(config, "global_head_dim", None) or config.head_dim
-            num_kv_heads = getattr(config, "num_global_key_value_heads", None) or config.num_key_value_heads
-            sliding_window = None
-
-        rope_params = config.rope_parameters[self.layer_type]
-        rope_theta = rope_params.get("rope_theta", 10_000.0)
-        partial_rotary_factor = rope_params.get("partial_rotary_factor", 1.0)
-
-        # NxDI's RotaryEmbedding takes the rotated dimension directly. For
-        # partial RoPE, that's ``head_dim * partial_rotary_factor``.
-        rotated_dim = int(head_dim * partial_rotary_factor)
-        # Ensure even (rotate-half requires this)
-        rotated_dim = (rotated_dim // 2) * 2
-
-        rotary_emb = RotaryEmbedding(
-            dim=rotated_dim,
-            max_position_embeddings=config.max_position_embeddings,
-            base=rope_theta,
-        )
-
-        super().__init__(
-            config=config,
-            hidden_size=config.hidden_size,
-            num_attention_heads=config.num_attention_heads,
-            num_key_value_heads=num_kv_heads,
-            head_dim=head_dim,
-            rotary_emb=rotary_emb,
-            num_cores_per_group=getattr(config, "num_cores_per_group", 1),
-            qkv_bias=getattr(config, "attention_bias", False),
-            o_bias=getattr(config, "attention_bias", False),
-            sliding_window=sliding_window,
-        )
-
-        # Q/K RMSNorm (Qwen3-style; gemma4 source line 1210, 1214)
-        self.q_norm = _inner_norm(head_dim, config.rms_norm_eps, with_scale=True)
-        self.k_norm = _inner_norm(head_dim, config.rms_norm_eps, with_scale=True)
-        # V RMSNorm without scale (centring only)
-        self.v_norm = _inner_norm(head_dim, config.rms_norm_eps, with_scale=False)
-
-        # Sentinel so the state-dict converter knows whether to fold v_proj
-        self._k_eq_v = self.use_alternative_attention
-
-        # The base class does not know about per-layer rotated_dim for
-        # partial RoPE; stash it for our forward override.
-        self._rotated_dim = rotated_dim
-        self._head_dim = head_dim
-
-    # NOTE: For NxDI, the `forward` is mostly inherited from
-    # ``NeuronAttentionBase``. We only override the *Q/K post-projection*
-    # path so that q_norm / k_norm and partial-RoPE land in the right place.
-    #
-    # NxDI's base attention exposes hooks (in 2.27+: ``_apply_qk_norm`` and
-    # ``_apply_rotary_pos_emb``) that we can override; if a future SDK
-    # drops them we will need a full-forward override. See
-    # ``OVERRIDING_FORWARD_GUIDANCE.md``.
-
-    def _apply_qk_norm(self, q: torch.Tensor, k: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Apply per-head RMSNorm to Q and K *before* RoPE.
-
-        Hooks into NxDI's NeuronAttentionBase post-projection step.
-        """
-
-        return self.q_norm(q), self.k_norm(k)
-
-    def _apply_v_norm(self, v: torch.Tensor) -> torch.Tensor:
-        """Apply v_norm (gemma4 source line 1265)."""
-
-        return self.v_norm(v)
-
-
-# ---------------------------------------------------------------------------
-# 6. Per-Layer-Embeddings (PLE) helper
-# ---------------------------------------------------------------------------
-#
-# Gemma4 maintains a *second* embedding table that contributes a residual
-# signal at every decoder layer. There is no NxDI module that does this; we
-# implement it fresh.
-
-
-class Gemma4PLE_u(nn.Module):
-    """Computes per-layer input residuals from input_ids + inputs_embeds.
-
-    Returns a tensor of shape [B, S, num_hidden_layers, hidden_size_per_layer_input].
-    """
-
-    def __init__(self, config: Any) -> None:
-        super().__init__()
-        self.config = config
-        self.hidden_size = config.hidden_size
-        self.num_hidden_layers = config.num_hidden_layers
-        self.hidden_size_per_layer_input = config.hidden_size_per_layer_input
-        self.vocab_size_per_layer_input = config.vocab_size_per_layer_input
-
-        # The packed embedding ``[V_ple, L * D_ple]``. Replicated across TP for
-        # v0; in a follow-up we may shard along the packed dim.
-        self.embed_tokens_per_layer = nn.Embedding(
-            self.vocab_size_per_layer_input,
-            self.num_hidden_layers * self.hidden_size_per_layer_input,
-            padding_idx=config.pad_token_id,
-            dtype=config.neuron_config.torch_dtype,
-        )
-        self._embed_scale = self.hidden_size_per_layer_input**0.5
-
-        # Context-aware projection from the main residual stream
-        self.per_layer_model_projection = nn.Linear(
-            self.hidden_size,
-            self.num_hidden_layers * self.hidden_size_per_layer_input,
-            bias=False,
-            dtype=config.neuron_config.torch_dtype,
-        )
-        self._projection_scale = self.hidden_size**-0.5
-        self.per_layer_projection_norm = _inner_norm(
-            self.hidden_size_per_layer_input, config.rms_norm_eps, with_scale=True
-        )
-        self.per_layer_input_scale = 2.0**-0.5
-
-    def forward(
-        self,
-        input_ids: torch.Tensor,
-        inputs_embeds: torch.Tensor,
-    ) -> torch.Tensor:
-        # Token-identity component
-        ple_tokens = self.embed_tokens_per_layer(input_ids) * self._embed_scale
-        ple_tokens = ple_tokens.reshape(
-            *input_ids.shape, self.num_hidden_layers, self.hidden_size_per_layer_input
-        )
-
-        # Context component
-        proj = self.per_layer_model_projection(inputs_embeds) * self._projection_scale
-        proj = proj.reshape(
-            *inputs_embeds.shape[:-1], self.num_hidden_layers, self.hidden_size_per_layer_input
-        )
-        proj = self.per_layer_projection_norm(proj)
-
-        return (proj + ple_tokens) * self.per_layer_input_scale
-
-
-# ---------------------------------------------------------------------------
-# 7. Decoder layer (Gemma4TextDecoderLayer)
-# ---------------------------------------------------------------------------
+# ====================================================================================
+# Decoder layer (dense MLP + parallel MoE branch)
+# ====================================================================================
 
 
 class NeuronGemma4DecoderLayer(nn.Module):
-    """One Gemma4 decoder layer (dense MLP + optional MoE branch + optional PLE)."""
+    """Gemma4 decoder layer with optional parallel MoE branch and layer_scalar."""
 
-    def __init__(self, config: Any, layer_idx: int) -> None:
+    def __init__(self, config: Gemma4InferenceConfig, layer_idx: int):
         super().__init__()
-        self.config = config
-        self.layer_idx = layer_idx
         self.hidden_size = config.hidden_size
+        self.layer_idx = layer_idx
+        self.is_sliding_window_attention = config._layer_is_sliding
 
-        self.self_attn = NeuronGemma4Attention_u(config=config, layer_idx=layer_idx)
-        self.mlp = NeuronGemma4MLP(config, layer_idx)
+        self.self_attn = NeuronGemma4Attention(config)
+        self.mlp = NeuronGemma4MLP(config)
 
-        # Outer norms: LayerNorm (KB-driven; see _outer_norm docstring).
-        self.input_layernorm = _outer_norm(self.hidden_size, config.rms_norm_eps)
-        self.post_attention_layernorm = _outer_norm(self.hidden_size, config.rms_norm_eps)
-        self.pre_feedforward_layernorm = _outer_norm(self.hidden_size, config.rms_norm_eps)
-        self.post_feedforward_layernorm = _outer_norm(self.hidden_size, config.rms_norm_eps)
+        norm_cls = get_rmsnorm_cls()
+        self.input_layernorm = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
+        self.post_attention_layernorm = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
+        self.pre_feedforward_layernorm = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
+        self.post_feedforward_layernorm = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.register_buffer("layer_scalar", torch.ones(1))
+        # Per-layer learned scaling factor (must be Parameter, not buffer, so
+        # NxDI's weight loader populates it from the checkpoint).
+        self.layer_scalar = nn.Parameter(torch.ones(1), requires_grad=False)
 
-        self.enable_moe_block = bool(getattr(config, "enable_moe_block", False))
+        # MoE branch can be disabled for smoke compile — see README. The
+        # NxDI moe_v2 module ties the MoE intermediate_size to the layer
+        # config's `intermediate_size`, which collides with the dense MLP's
+        # 2112 dim. The full MoE wiring (separate config, router process
+        # group, etc.) is left as follow-up work; turning the MoE branch
+        # off lets us validate the rest of the architecture end-to-end.
+        self.enable_moe_block = bool(getattr(config, "enable_moe_block", False)) and not bool(
+            getattr(config, "disable_moe_for_smoke_compile", False)
+        )
         if self.enable_moe_block:
-            self.moe_block = NeuronGemma4MoEBlock_u(config)
-            # Extra norms specific to the MoE branch (gemma4 source 1395-1397)
-            self.post_feedforward_layernorm_1 = _outer_norm(self.hidden_size, config.rms_norm_eps)
-            self.post_feedforward_layernorm_2 = _outer_norm(self.hidden_size, config.rms_norm_eps)
-            self.pre_feedforward_layernorm_2 = _outer_norm(self.hidden_size, config.rms_norm_eps)
-
-        self.use_per_layer = bool(getattr(config, "hidden_size_per_layer_input", 0))
-        if self.use_per_layer:
-            if config.hidden_activation == "gelu_pytorch_tanh":
-                self._ple_act = lambda x: F.gelu(x, approximate="tanh")
-            else:
-                self._ple_act = F.gelu
-            self.per_layer_input_gate = nn.Linear(
-                self.hidden_size,
-                config.hidden_size_per_layer_input,
-                bias=False,
-                dtype=config.neuron_config.torch_dtype,
-            )
-            self.per_layer_projection = nn.Linear(
-                config.hidden_size_per_layer_input,
-                self.hidden_size,
-                bias=False,
-                dtype=config.neuron_config.torch_dtype,
-            )
-            self.post_per_layer_input_norm = _outer_norm(self.hidden_size, config.rms_norm_eps)
+            # Build a separate config view for MoE: NxDI's MoE module reads
+            # `intermediate_size` for the expert intermediate dim, which on
+            # 26B-A4B is the moe_intermediate_size (704), not the dense MLP's
+            # `intermediate_size` (2112). We clone the layer config and swap
+            # the field on the clone so the dense MLP and MoE block see the
+            # right values.
+            moe_config = copy.deepcopy(config)
+            moe_config.intermediate_size = config.moe_intermediate_size
+            moe_config.num_local_experts = config.num_experts
+            moe_config.num_experts_per_tok = config.top_k_experts
+            self.router = NeuronGemma4Router(config)
+            self.experts = initialize_moe_module(config=moe_config)
+            self.post_feedforward_layernorm_1 = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
+            self.post_feedforward_layernorm_2 = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
+            self.pre_feedforward_layernorm_2 = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
-        position_ids: Optional[torch.Tensor] = None,
-        past_key_values: Any = None,
-        per_layer_input: Optional[torch.Tensor] = None,
-        **kwargs: Any,
-    ) -> torch.Tensor:
-        residual = hidden_states
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_value: Optional[Tuple[torch.Tensor]] = None,
+        **kwargs,
+    ) -> Tuple[torch.FloatTensor, ...]:
+        # Heterogeneous RoPE: drop cached cos/sin from the previous layer.
+        kwargs.pop("cos_cache", None)
+        kwargs.pop("sin_cache", None)
 
-        # ---- attention block (post-norm style: norm-attn-norm-residual) ----
-        h = self.input_layernorm(hidden_states)
-        h, _ = self.self_attn(
-            hidden_states=h,
-            attention_mask=attention_mask,
+        # SWA layers use local_mask; global layers use attention_mask.
+        local_mask = kwargs.pop("local_mask", None)
+        mask = (
+            local_mask
+            if (self.is_sliding_window_attention and local_mask is not None)
+            else attention_mask
+        )
+
+        # Attention block
+        residual = hidden_states
+        hidden_states = self.input_layernorm(hidden_states)
+        hidden_states, present_key_value, cos_cache, sin_cache = self.self_attn(
+            hidden_states=hidden_states,
+            attention_mask=mask,
             position_ids=position_ids,
-            past_key_value=past_key_values,
+            past_key_value=past_key_value,
             **kwargs,
         )
-        h = self.post_attention_layernorm(h)
-        hidden_states = residual + h
+        hidden_states = self.post_attention_layernorm(hidden_states)
+        hidden_states = residual + hidden_states
 
-        # ---- feed-forward block (dense MLP + optional MoE in parallel) ----
+        # Feed-forward block
         residual = hidden_states
-        h_pre = self.pre_feedforward_layernorm(hidden_states)
-        mlp_out = self.mlp(h_pre)
+        hidden_states_pre = self.pre_feedforward_layernorm(hidden_states)
+        hidden_states_dense = self.mlp(hidden_states_pre)[0]
 
         if self.enable_moe_block:
-            mlp_branch = self.post_feedforward_layernorm_1(mlp_out)
+            hidden_states_1 = self.post_feedforward_layernorm_1(hidden_states_dense)
 
-            # MoE branch reads the *pre-MLP residual* (gemma4 source 1433)
-            moe_in = self.pre_feedforward_layernorm_2(residual)
-            moe_out = self.moe_block(moe_in)
-            moe_branch = self.post_feedforward_layernorm_2(moe_out)
+            # Router reads the *pre-MLP residual* (HF source 1433).
+            hidden_states_flat = residual.reshape(-1, residual.shape[-1])
+            _probs, top_k_weights, top_k_index = self.router(hidden_states_flat)
+            hidden_states_2 = self.pre_feedforward_layernorm_2(hidden_states_flat)
+            hidden_states_2 = self.experts(hidden_states_2, top_k_index, top_k_weights)
+            hidden_states_2 = hidden_states_2.reshape(residual.shape)
+            hidden_states_2 = self.post_feedforward_layernorm_2(hidden_states_2)
 
-            ff = mlp_branch + moe_branch
+            hidden_states = hidden_states_1 + hidden_states_2
         else:
-            ff = mlp_out
+            hidden_states = hidden_states_dense
 
-        ff = self.post_feedforward_layernorm(ff)
-        hidden_states = residual + ff
+        hidden_states = self.post_feedforward_layernorm(hidden_states)
+        hidden_states = residual + hidden_states
 
-        # ---- per-layer-embedding residual ----
-        if self.use_per_layer and per_layer_input is not None:
-            residual = hidden_states
-            g = self.per_layer_input_gate(hidden_states)
-            g = self._ple_act(g)
-            g = g * per_layer_input
-            g = self.per_layer_projection(g)
-            g = self.post_per_layer_input_norm(g)
-            hidden_states = residual + g
-
-        # Final per-layer scalar (learned)
+        # Per-layer scalar
         hidden_states = hidden_states * self.layer_scalar
-        return hidden_states
+
+        return (hidden_states, present_key_value, cos_cache, sin_cache, None)
 
 
-# ---------------------------------------------------------------------------
-# 8. Top-level model
-# ---------------------------------------------------------------------------
+# ====================================================================================
+# KV cache manager (PR #106 verbatim — handles heterogeneous SWA/global shapes)
+# ====================================================================================
 
 
-class NeuronGemma4Model(NeuronBaseModel):
-    """The Gemma4 text decoder backbone."""
+class Gemma4KVCacheManager(KVCacheManager):
+    """KV cache manager with per-layer heterogeneous shapes.
 
-    def setup_attr_for_model(self, config: Any) -> None:
-        # Standard NxDI attributes
-        self.on_device_sampling = getattr(config.neuron_config, "on_device_sampling_config", None) is not None
+    26B-A4B layer kv configs (per rank, after TP sharding):
+      - SWA layers:    num_kv_heads=8 / TP, head_dim=256
+      - Global layers: num_kv_heads=2 / TP, head_dim=512
+    """
+
+    def __init__(
+        self,
+        config,
+        layer_kv_configs,
+        global_rank=None,
+        attention_chunk_size=None,
+        sliding_window=None,
+        windowed_context_encoding_size=None,
+        layer_to_cache_size_mapping=None,
+    ):
+        self._layer_kv_configs = layer_kv_configs
+
+        if layer_to_cache_size_mapping is None:
+            max_len = config.neuron_config.max_length
+            layer_to_cache_size_mapping = [max_len] * len(layer_kv_configs)
+
+        max_kv_heads = max(c[0] for c in layer_kv_configs)
+        super().__init__(
+            config,
+            num_kv_head=max_kv_heads,
+            global_rank=global_rank,
+            attention_chunk_size=attention_chunk_size,
+            sliding_window=sliding_window,
+            windowed_context_encoding_size=windowed_context_encoding_size,
+            layer_to_cache_size_mapping=layer_to_cache_size_mapping,
+        )
+
+    def _init_kv_shape(self, config, layer_to_cache_size_mapping=None):
+        max_batch_size = (
+            config.neuron_config.kv_cache_batch_size
+            + config.neuron_config.kv_cache_padding_size
+        )
+        max_len = config.neuron_config.max_length
+
+        if (
+            self.attention_chunk_size
+            and self.attention_chunk_size < max_len
+            and not layer_to_cache_size_mapping
+        ):
+            max_len = self.attention_chunk_size
+        elif self.sliding_window:
+            max_len = self.sliding_window
+
+        if layer_to_cache_size_mapping:
+            layer_seq_lens = list(layer_to_cache_size_mapping)
+        else:
+            layer_seq_lens = [max_len] * len(self._layer_kv_configs)
+
+        self.k_shapes = []
+        self.v_shapes = []
+        self.padded_layer_ids = []
+        for idx, (kv_heads_per_rank, head_dim) in enumerate(self._layer_kv_configs):
+            cache_len = layer_seq_lens[idx]
+            k_shape, v_shape = get_kv_shapes(
+                cache_len,
+                max_batch_size,
+                kv_heads_per_rank,
+                head_dim,
+                self.k_cache_transposed,
+                self.is_kv_cache_tiled,
+            )
+            self.k_shapes.append(k_shape)
+            self.v_shapes.append(v_shape)
+
+        max_kv_heads = max(c[0] for c in self._layer_kv_configs)
+        max_head_dim = max(c[1] for c in self._layer_kv_configs)
+        self.k_shape, self.v_shape = get_kv_shapes(
+            max_len,
+            max_batch_size,
+            max_kv_heads,
+            max_head_dim,
+            self.k_cache_transposed,
+            self.is_kv_cache_tiled,
+        )
+
+
+# ====================================================================================
+# Top-level model
+# ====================================================================================
+
+
+class NeuronGemma4TextModel(NeuronBaseModel):
+    """Gemma4 text decoder: scaled embeds + decoder layers + final norm + softcapped lm_head."""
+
+    def setup_attr_for_model(self, config: Gemma4InferenceConfig):
+        self.on_device_sampling = (
+            config.neuron_config.on_device_sampling_config is not None
+        )
         self.tp_degree = config.neuron_config.tp_degree
         self.hidden_size = config.hidden_size
         self.num_attention_heads = config.num_attention_heads
+        # Use the maximum KV head count (SWA = 8 on 26B-A4B) for base class.
         self.num_key_value_heads = config.num_key_value_heads
-        self.max_position_embeddings = config.max_position_embeddings
-        self.vocab_size = config.vocab_size
+        self.max_batch_size = config.neuron_config.max_batch_size
+        self.buckets = config.neuron_config.buckets
+
+    def init_model(self, config: Gemma4InferenceConfig):
         self.padding_idx = config.pad_token_id
-        self.num_hidden_layers = config.num_hidden_layers
+        self.vocab_size = config.vocab_size
 
-    def init_inference_optimization(self, config: Any) -> None:
-        # No-op for v0; placeholder for sampling head, etc.
-        return
-
-    def __init__(self, config: Any) -> None:
-        super().__init__(config)
-        self.config = config
-
-        dtype = config.neuron_config.torch_dtype
-
-        # Embedding (scaled by sqrt(hidden_size) — see Gemma4TextScaledWordEmbedding)
-        self.embed_tokens = ParallelEmbedding(
-            num_embeddings=config.vocab_size,
-            embedding_dim=config.hidden_size,
-            padding_idx=config.pad_token_id,
-            dtype=dtype,
-        )
-        self.register_buffer(
-            "embed_scale",
-            torch.tensor(config.hidden_size**0.5, dtype=dtype),
-            persistent=False,
+        self.embed_tokens = Gemma4ScaledEmbedding(
+            config.vocab_size,
+            config.hidden_size,
+            self.padding_idx,
+            dtype=config.neuron_config.torch_dtype,
+            shard_across_embedding=True,
+            pad=True,
+            sequence_parallel_enabled=config.neuron_config.sequence_parallel_enabled,
         )
 
-        # Per-Layer-Embeddings (PLE) — optional
-        self.use_per_layer = bool(getattr(config, "hidden_size_per_layer_input", 0))
-        if self.use_per_layer:
-            self.ple = Gemma4PLE_u(config)
-
-        # Decoder layers
+        updated_configs = get_updated_configs(config)
         self.layers = nn.ModuleList(
-            [NeuronGemma4DecoderLayer(config, i) for i in range(config.num_hidden_layers)]
+            [NeuronGemma4DecoderLayer(conf, idx) for idx, conf in enumerate(updated_configs)]
         )
 
-        # Final norm (LayerNorm per the KB)
-        self.norm = _outer_norm(config.hidden_size, config.rms_norm_eps)
+        self.norm = get_rmsnorm_cls()(config.hidden_size, eps=config.rms_norm_eps)
 
-        # LM head
-        self.lm_head = ColumnParallelLinear(
+        lm_head_linear = ColumnParallelLinear(
             config.hidden_size,
             config.vocab_size,
             bias=False,
+            pad=True,
             gather_output=not self.on_device_sampling,
-            dtype=dtype,
+            dtype=config.neuron_config.torch_dtype,
         )
 
-    def forward(
-        self,
-        input_ids: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        position_ids: Optional[torch.Tensor] = None,
-        past_key_values: Any = None,
-        **kwargs: Any,
-    ) -> torch.Tensor:
-        # 1. Token embedding (scale by sqrt(hidden_size))
-        inputs_embeds = self.embed_tokens(input_ids) * self.embed_scale
+        self.final_logit_softcapping = getattr(config, "final_logit_softcapping", None)
+        if (
+            self.final_logit_softcapping is not None
+            and self.final_logit_softcapping > 0
+        ):
+            self.lm_head = SoftcappedLMHead(lm_head_linear, self.final_logit_softcapping)
+        else:
+            self.lm_head = lm_head_linear
 
-        # 2. Per-layer-input precomputation (PLE)
-        per_layer_inputs = None
-        if self.use_per_layer:
-            per_layer_inputs = self.ple(input_ids=input_ids, inputs_embeds=inputs_embeds)
+        self.has_mixed_attn = True
+        self.sliding_window = config.sliding_window
 
-        hidden_states = inputs_embeds
+        max_length = config.neuron_config.max_length
+        sw = config.sliding_window or max_length
+        self._uniform_cache_len = max(sw, max_length)
+        self.layer_to_cache_size_mapping = [self._uniform_cache_len] * config.num_hidden_layers
 
-        # 3. Decoder stack
-        for i, layer in enumerate(self.layers):
-            per_layer_input_i = (
-                per_layer_inputs[..., i, :] if per_layer_inputs is not None else None
-            )
-            hidden_states = layer(
-                hidden_states,
-                attention_mask=attention_mask,
-                position_ids=position_ids,
-                past_key_values=past_key_values,
-                per_layer_input=per_layer_input_i,
-                **kwargs,
+    def _create_windowed_attn_mask_tkg(self, attention_mask, window_size, position_ids):
+        """SWA TKG mask must match uniform KV cache size (PR #106 fix)."""
+        batch_size, _ = attention_mask.shape
+        cache_len = self._uniform_cache_len
+
+        if cache_len == window_size:
+            return super()._create_windowed_attn_mask_tkg(
+                attention_mask, window_size, position_ids
             )
 
-        # 4. Final norm + LM head
-        hidden_states = self.norm(hidden_states)
-        logits = self.lm_head(hidden_states)
-        return logits
+        pos = position_ids[:, 0]
+        idx = torch.arange(window_size, device=attention_mask.device).unsqueeze(0)
+        base_mask = (idx < pos.unsqueeze(1)) & (idx < window_size - 1)
+
+        full_mask = torch.ones(
+            (batch_size, window_size), dtype=torch.bool, device=attention_mask.device
+        )
+        full_mask[:, -1] = False
+        seq_less_than_window = pos < window_size - 1
+        window_mask = torch.where(
+            seq_less_than_window.unsqueeze(1), base_mask, full_mask
+        )
+        pad_len = cache_len - window_size
+        padded_mask = F.pad(window_mask, (0, pad_len), value=False)
+        return padded_mask[:, None, None, :]
+
+    def _create_simple_attn_mask(self, attention_mask):
+        """Global mask must match uniform KV cache size (PR #106 fix)."""
+        batch_size = attention_mask.shape[0]
+        pad_len = self._uniform_cache_len - self.n_positions
+        if pad_len > 0:
+            attention_mask = F.pad(attention_mask, (0, pad_len), value=0)
+        return (
+            attention_mask[:, None, None, :]
+            .expand(batch_size, 1, 1, self._uniform_cache_len)
+            .to(torch.bool)
+        )
+
+    def init_inference_optimization(self, config: Gemma4InferenceConfig):
+        if self.on_device_sampling:
+            try:
+                from neuronx_distributed_inference.modules.generation.sampling import (
+                    create_sampler,
+                )
+            except ImportError:
+                from neuronx_distributed_inference.modules.sampling.utils import (
+                    create_sampler,
+                )
+
+            lm_head_tp_degree = None
+            if hasattr(self, "lm_head") and hasattr(
+                self.lm_head, "tensor_parallel_group"
+            ):
+                lm_head_tp_degree = self.lm_head.tensor_parallel_group.size()
+            self.sampler = create_sampler(config.neuron_config, lm_head_tp_degree)
+
+        tp_degree = config.neuron_config.tp_degree
+        layer_kv_configs = []
+        for i in range(config.num_hidden_layers):
+            layer_type = config.layer_types[i]
+            if layer_type == "sliding_attention":
+                kv_heads = config.num_key_value_heads
+                hd = config.head_dim
+            else:
+                kv_heads = config.num_global_key_value_heads
+                hd = config.global_head_dim
+            gqa_strategy = determine_sharding_strategy(tp_degree, kv_heads)
+            _, shardable_kv_heads = get_shardable_head_counts(
+                tp_degree, config.num_attention_heads, kv_heads, gqa_strategy
+            )
+            kv_heads_per_rank = max(1, shardable_kv_heads // tp_degree)
+            layer_kv_configs.append((kv_heads_per_rank, hd))
+
+        self._layer_kv_configs = layer_kv_configs
+        self._max_kv_heads_per_rank = max(c[0] for c in layer_kv_configs)
+        self._max_head_dim = max(c[1] for c in layer_kv_configs)
+
+        self.kv_mgr = Gemma4KVCacheManager(
+            config,
+            layer_kv_configs=layer_kv_configs,
+            global_rank=self.rank_util,
+            attention_chunk_size=self.attention_chunk_size,
+            sliding_window=self.sliding_window,
+            windowed_context_encoding_size=self.windowed_context_encoding_size,
+            layer_to_cache_size_mapping=self.layer_to_cache_size_mapping,
+        )
 
 
-# ---------------------------------------------------------------------------
-# 9. Causal-LM wrapper (entrypoint for compile / inference tools)
-# ---------------------------------------------------------------------------
+# ====================================================================================
+# Causal-LM wrapper + state-dict converter
+# ====================================================================================
 
 
 class NeuronGemma4ForCausalLM(NeuronBaseForCausalLM):
-    """Top-level model class — the one passed to ``compile_neuron_model``."""
+    """Gemma4 causal LM for NeuronX inference.
 
-    _model_cls = NeuronGemma4Model
+    Handles weight conversion from HF checkpoint to NxDI naming, including:
+      * stripping `language_model.`, `model.` prefixes
+      * embed_tokens -> embed_tokens.embedding (ScaledEmbedding wrapper)
+      * q/k_norm -> q_layernorm/k_layernorm
+      * QK scaling correction (cancel NxDI's automatic 1/sqrt(head_dim))
+      * `attention_k_eq_v` -> copy k_proj weights into v_proj for global layers
+      * tied lm_head (handle SoftcappedLMHead path)
+      * rank_util tensors for TP
+
+    Plus the 26B-A4B-specific MoE keys (router.proj, router.scale,
+    router.per_expert_scale, experts.gate_up_proj, experts.down_proj) which
+    pass through the prefix-strip without further modification — the names
+    already match HF.
+    """
+
+    _model_cls = NeuronGemma4TextModel
+
+    @staticmethod
+    def load_hf_model(model_path, **kwargs):
+        from transformers import Gemma4ForConditionalGeneration  # type: ignore[import-not-found]
+
+        return Gemma4ForConditionalGeneration.from_pretrained(model_path, **kwargs)
+
+    @staticmethod
+    def convert_hf_to_neuron_state_dict(
+        state_dict: Dict[str, torch.Tensor],
+        config: Gemma4InferenceConfig,
+    ) -> Dict[str, torch.Tensor]:
+        neuron_config = config.neuron_config
+        tp_degree = neuron_config.tp_degree
+        new_state_dict = {}
+
+        for key, weight in state_dict.items():
+            new_key = key
+
+            if new_key.startswith("language_model.model."):
+                new_key = new_key[len("language_model.model."):]
+            elif new_key.startswith("language_model."):
+                new_key = new_key[len("language_model."):]
+            elif new_key.startswith("model.language_model.model."):
+                new_key = new_key[len("model.language_model.model."):]
+            elif new_key.startswith("model.language_model."):
+                new_key = new_key[len("model.language_model."):]
+            elif new_key.startswith("model."):
+                new_key = new_key[len("model."):]
+
+            # Skip vision/audio/multimodal weights — text-only port for now.
+            if (
+                "vision_tower." in new_key
+                or "multi_modal_projector." in new_key
+                or "embed_vision." in new_key
+                or "audio_tower." in new_key
+                or "embed_audio." in new_key
+            ):
+                continue
+
+            if new_key == "embed_tokens.weight":
+                new_key = "embed_tokens.embedding.weight"
+
+            new_key = new_key.replace(".self_attn.q_norm.", ".self_attn.q_layernorm.")
+            new_key = new_key.replace(".self_attn.k_norm.", ".self_attn.k_layernorm.")
+
+            new_state_dict[new_key] = weight.detach().clone()
+
+        # Per-layer transformations
+        for i in range(config.num_hidden_layers):
+            layer_type = config.layer_types[i]
+            is_global = layer_type == "full_attention"
+
+            if is_global:
+                hd = config.global_head_dim
+            else:
+                hd = config.head_dim
+
+            prefix = f"layers.{i}.self_attn"
+
+            # QK scaling: gemma4 uses scaling=1.0 (no 1/sqrt(head_dim)). NxDI
+            # always applies 1/sqrt(head_dim). Pre-scale q_layernorm.weight by
+            # sqrt(head_dim) so the effects cancel after RMSNorm scale-invariance.
+            q_norm_key = f"{prefix}.q_layernorm.weight"
+            if q_norm_key in new_state_dict:
+                scaling_factor = math.sqrt(float(hd))
+                orig_dtype = new_state_dict[q_norm_key].dtype
+                new_state_dict[q_norm_key] = (
+                    new_state_dict[q_norm_key].to(torch.float32) * scaling_factor
+                ).to(orig_dtype)
+
+            # attention_k_eq_v: copy K weights to V for global layers (no v_proj in HF).
+            if is_global and getattr(config, "attention_k_eq_v", False):
+                k_key = f"{prefix}.k_proj.weight"
+                v_key = f"{prefix}.v_proj.weight"
+                if k_key in new_state_dict and v_key not in new_state_dict:
+                    new_state_dict[v_key] = new_state_dict[k_key].detach().clone()
+
+            new_state_dict[f"{prefix}.rank_util.rank"] = torch.arange(
+                0, tp_degree, dtype=torch.int32
+            )
+
+        if neuron_config.vocab_parallel:
+            new_state_dict["embed_tokens.embedding.rank_util.rank"] = torch.arange(
+                0, neuron_config.local_ranks_size
+            )
+
+        new_state_dict["rank_util.rank"] = torch.arange(0, tp_degree, dtype=torch.int32)
+        return new_state_dict
+
+    @staticmethod
+    def update_state_dict_for_tied_weights(state_dict):
+        """Tied weights: embed_tokens -> lm_head (handle SoftcappedLMHead path)."""
+        embed_key = None
+        if "embed_tokens.embedding.weight" in state_dict:
+            embed_key = "embed_tokens.embedding.weight"
+        elif "embed_tokens.weight" in state_dict:
+            embed_key = "embed_tokens.weight"
+
+        if embed_key is not None:
+            weight = state_dict[embed_key].clone()
+            state_dict["lm_head.weight"] = weight
+            state_dict["lm_head.linear.weight"] = weight.clone()
 
     @classmethod
-    def get_config_cls(cls):  # type: ignore[override]
+    def get_config_cls(cls):
         return Gemma4InferenceConfig
-
-    @staticmethod
-    def load_hf_model(model_path: str):  # pragma: no cover - hardware path
-        # Standard pattern: defer to AutoModelForCausalLM. Used by NxDI's
-        # weight-conversion utilities. Listed here so the inference runner
-        # can find it.
-        from transformers import AutoModelForCausalLM  # noqa: PLC0415
-
-        return AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
-
-    @staticmethod
-    def update_state_dict_for_tied_weights(state_dict: dict, config: Any) -> dict:
-        """Mirror lm_head.weight from embed_tokens.weight (gemma4 ties them)."""
-
-        if getattr(config, "tie_word_embeddings", False):
-            embed_key = None
-            for candidate in ("model.embed_tokens.weight", "embed_tokens.weight"):
-                if candidate in state_dict:
-                    embed_key = candidate
-                    break
-            if embed_key is not None and "lm_head.weight" not in state_dict:
-                state_dict["lm_head.weight"] = state_dict[embed_key]
-        return state_dict
-
-    @staticmethod
-    def convert_hf_to_neuron_state_dict(state_dict: dict, config: Any) -> dict:
-        """Adapt the HuggingFace gemma4 checkpoint to NxDI key naming.
-
-        The transformations are:
-          1. Strip ``model.`` prefix where NxDI expects bare keys.
-          2. For full-attention layers with ``attention_k_eq_v=True``, copy
-             ``k_proj.weight`` into ``v_proj.weight`` (NxDI's base attention
-             always allocates a v_proj; the K=V trick is implemented at the
-             weight-loading level for v0).
-          3. For MoE layers, the gemma4 source already stores the experts as
-             packed tensors ``gate_up_proj`` (E, 2I, H) and ``down_proj``
-             (E, H, I). NxDI's MoE module reads those names directly when
-             initialised from ``initialize_moe_module`` — nothing to do.
-          4. Drop ``v_norm.weight`` keys for layers where ``with_scale=False``
-             (the param doesn't exist in HF either; defensive).
-          5. Apply tied-weight expansion (delegated to
-             ``update_state_dict_for_tied_weights``).
-        """
-
-        new_sd = {}
-        for k, v in state_dict.items():
-            new_k = k[len("model.") :] if k.startswith("model.") else k
-            new_sd[new_k] = v
-
-        layer_types = getattr(config, "layer_types", None) or []
-        attention_k_eq_v = getattr(config, "attention_k_eq_v", False)
-
-        if attention_k_eq_v:
-            # For each full-attention layer that has no v_proj in HF, copy k_proj.
-            # gemma4 source line 1220-1224: ``v_proj = ... if not use_alternative_attention else None``
-            for i, lt in enumerate(layer_types):
-                if lt != "full_attention":
-                    continue
-                k_key = f"layers.{i}.self_attn.k_proj.weight"
-                v_key = f"layers.{i}.self_attn.v_proj.weight"
-                if k_key in new_sd and v_key not in new_sd:
-                    new_sd[v_key] = new_sd[k_key].clone()
-
-        # Tied lm_head
-        new_sd = NeuronGemma4ForCausalLM.update_state_dict_for_tied_weights(new_sd, config)
-        return new_sd
 
 
 __all__ = [
     "Gemma4InferenceConfig",
     "Gemma4NeuronConfig",
-    "NeuronGemma4Attention_u",
+    "Gemma4KVCacheManager",
+    "Gemma4RMSNorm",
+    "Gemma4ScaledEmbedding",
+    "Gemma4VNorm",
+    "NeuronGemma4Attention",
     "NeuronGemma4DecoderLayer",
     "NeuronGemma4ForCausalLM",
     "NeuronGemma4MLP",
-    "NeuronGemma4Model",
-    "NeuronGemma4MoEBlock_u",
-    "NeuronGemma4Router_u",
-    "Gemma4PLE_u",
+    "NeuronGemma4MoEBlock",
+    "NeuronGemma4Router",
+    "NeuronGemma4TextModel",
+    "SoftcappedLMHead",
+    "get_updated_configs",
 ]

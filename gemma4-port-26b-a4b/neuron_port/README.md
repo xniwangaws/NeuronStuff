@@ -1,131 +1,110 @@
-# Gemma-4-26B-A4B-it - NeuronX Distributed Inference port (dry-run)
+# Gemma-4-26B-A4B-it - NeuronX Distributed Inference port
 
-This directory contains a **dry-run** port of `google/gemma-4-26B-A4B-it` to NxDI for AWS
-Trainium. No code in this directory has run on hardware. It is structured so a follow-up
-session on a trn2 instance can compile + smoke-test it without rewriting anything.
+NxDI port of `google/gemma-4-26B-A4B-it` for AWS Trainium 2.
+
+**Lineage**: round 2. Architecture and weight conversion borrow heavily from
+Jim Burtoft's PR #106 (`gemma-4-31B-IT`); MoE block + router are
+26B-A4B-specific (the 31B model is dense). NKI flash-attention kernels
+copied verbatim from PR #106 — head dimensions match (256 sliding /
+512 global) so they apply unchanged.
 
 ## Files
 
 | File | Role |
 |---|---|
-| `configuration_gemma4_neuron.py` | Adapter classes that wrap HF `Gemma4TextConfig` for NxDI's `InferenceConfig` and `MoENeuronConfig`. Factories defer NxDI imports so the file is laptop-importable. |
-| `modeling_gemma4_neuron.py` | Full NxDI implementation: attention, dense MLP, MoE block + router, decoder layer, model, causal-LM head, and HF→Neuron state-dict converter. |
-| `__init__.py` | Lazy package init (avoids eager-importing NxDI on a laptop). |
+| `modeling_gemma4_neuron.py` | NxDI implementation: attention, dense MLP, MoE block + router, decoder layer, KV cache manager, model, causal-LM head, HF→Neuron state-dict converter. |
+| `configuration_gemma4_neuron.py` | Lightweight HF config shim for static parsing. The real config classes live in `modeling_gemma4_neuron.py`. |
+| `nki_flash_attn_d256_swa.py` | NKI sliding-window flash attention kernel for `head_dim=256` (used on SWA layers). Verbatim from PR #106. |
+| `nki_flash_attn_large_d.py` | NKI flash attention kernel for `head_dim > 128` (used on global `head_dim=512` layers). Verbatim from PR #106. |
+| `ndxi_patch.py` | Runtime monkey-patches: `get_last_kv_window` LongTensor fix, NKI kernel hooks for `head_dim > 128`, multimodal forward bypass. Verbatim from PR #106. |
+| `__init__.py` | Package init. |
 | `README.md` | This file. |
 
 ## What was reused from existing NxDI
 
-- **`NeuronAttentionBase`** — Q/K/V/o projections via `ColumnParallelLinear` /
-  `RowParallelLinear`, KV-cache management, flash-attention kernel selection, GQA
-  sharding, sliding-window mask. We override `_apply_qk_norm` / `_apply_v_norm` so
-  Gemma4's per-head RMSNorm + V centring lands in the right place.
-- **`RotaryEmbedding`** — instantiated twice, once per layer_type. Partial RoPE on full-
-  attention layers is supported via a smaller rotated dim (computed from
-  `partial_rotary_factor`).
-- **`ColumnParallelLinear` / `RowParallelLinear` / `ParallelEmbedding`** — used for the
-  dense MLP, lm_head, and token embedding.
-- **`MoE` v2 (`initialize_moe_module`)** — handles expert dispatch, sharded
-  `gate_up_proj` / `down_proj`, and (potential) all-to-all routing. We feed it
-  pre-computed `top_k_index` / `top_k_weights` from our own router so the gemma4-specific
-  `scale` / `per_expert_scale` parameters keep working.
-- **`CustomRMSNorm`** — used for the *inner* norms (q_norm, k_norm, router norm). NxDI's
-  Neuron-optimised RMSNorm is correct for these.
-- **`NeuronBaseForCausalLM` / `NeuronBaseModel`** — the generation loop, sampling, weight
-  loading, and `setup_attr_for_model` plumbing.
+- `NeuronAttentionBase` — Q/K/V/o projections, KV cache, GQA sharding, mask
+  builders. We override `apply_rotary_embedding` (partial RoPE), `prep_qkv_tensors`
+  (post-projection v_norm), and `perform_prefill` (NKI d=256 SWA kernel).
+- `RotaryEmbedding` — instantiated per-layer with the right `dim` for partial
+  RoPE on global layers.
+- `ColumnParallelLinear` / `RowParallelLinear` / `ParallelEmbedding` — for dense
+  MLP, lm_head, token embedding.
+- `initialize_moe_module` (NxDI MoE v2) — handles expert dispatch and sharded
+  `gate_up_proj` / `down_proj`. We feed it our own `top_k_index` /
+  `top_k_weights` from the gemma4 router.
+- `KVCacheManager` — subclassed to support per-layer heterogeneous shapes
+  (8×256 SWA vs 2×512 global, after TP sharding).
+- `NeuronBaseForCausalLM` / `NeuronBaseModel` — generation loop, sampling,
+  weight loading.
 
-## What had to be ported fresh (and why)
+## What was ported fresh (and why)
 
-| New class / function | Why no 1:1 reuse |
+| Class | Reason |
 |---|---|
-| `NeuronGemma4Router_u` | Gemma4 router has two extra learnable tensors (`scale` per-hidden-dim and `per_expert_scale` per-expert) plus an internal RMSNorm-without-scale. NxDI's `RouterTopK` does not carry these. |
-| `NeuronGemma4MoEBlock_u` | Wraps the gemma4 router + NxDI experts so the *input to routing* can be the pre-MLP residual (gemma4-specific) rather than the MLP input. |
-| `Gemma4PLE_u` | Per-Layer-Embeddings pipeline (extra packed embedding + projection + per-layer slicing) has no NxDI equivalent. |
-| `_RMSNormNoScale_u` | Centring-only RMSNorm (gemma4's `with_scale=False`). |
-| `NeuronGemma4Attention_u` | Two-mode head sizing (sliding 256-d / full 512-d), partial-RoPE on full layers only, K=V tying on full layers, Q/K/V per-head RMSNorm. The base class doesn't ship this combo, so we subclass and override the QK-norm / V-norm hooks. |
-| `NeuronGemma4DecoderLayer` | Composes dense MLP + MoE branch + PLE residual + `layer_scalar` — gemma4-specific layout with norms in unusual positions (post-attention norm before residual; mlp/moe parallel branches). |
-| `convert_hf_to_neuron_state_dict` | Strip `model.` prefix, expand K-into-V on full-attention layers (because `v_proj` is `None` in HF for K=V layers), tie lm_head. |
+| `Gemma4RMSNorm` | gemma4 RMSNorm with weight (init to 1), not the `(1 + weight)` style of earlier Gemma. |
+| `Gemma4VNorm` | gemma4 v_norm (RMSNorm with `with_scale=False`). |
+| `Gemma4ScaledEmbedding` | Token embedding scaled by `sqrt(hidden_size)` (gemma4 source line 1459). |
+| `SoftcappedLMHead` | Wraps lm_head and applies `cap * tanh(x / cap)` with `cap=30.0` in fp32. |
+| `Gemma4KVCacheManager` | Per-layer KV cache shapes for the heterogeneous SWA/global head dims. |
+| `NeuronGemma4Attention` | Per-layer head_dim/kv_heads, partial RoPE for global, K=V handled at weight level, NKI d=256 SWA prefill. |
+| `NeuronGemma4Router` | gemma4 router with `scale` and `per_expert_scale` learned tensors, FP32 routing, soft+top-k+normalise+per-expert-scale. **26B-A4B-specific**: PR #106 has no router. |
+| `NeuronGemma4DecoderLayer` | Dense MLP + parallel MoE branch (router reads pre-MLP residual; outputs combined as `mlp_branch + moe_branch`), then `layer_scalar` multiply. |
+| `convert_hf_to_neuron_state_dict` | Prefix stripping, `embed_tokens` → `embed_tokens.embedding` rename, q/k_norm → q/k_layernorm rename, q_layernorm.weight pre-scaling by `sqrt(head_dim)` (cancels NxDI's automatic 1/sqrt-scale), `attention_k_eq_v` weight copy, tied lm_head, `rank_util` tensors. |
+
+## Round 2 corrections vs round 1
+
+The HF model was gated; round 1 inferred shapes from documentation. The real
+`config.json` differs significantly:
+
+| Field | Round 1 guess | Real | Note |
+|---|---|---|---|
+| `hidden_size` | 2304 | **2816** | – |
+| `num_attention_heads` | 8 | **16** | TP plan changes |
+| `num_key_value_heads` | 4 | **8** | KV cache shape changes |
+| `intermediate_size` | 9216 | **2112** | dense MLP much smaller |
+| `final_logit_softcapping` | none | **30.0** | softcap on output logits |
+| `hidden_size_per_layer_input` | 256 | **0** | **no PLE on 26B-A4B** |
+
+Round 1 also lacked: NKI flash kernels, KV cache manager, softcapping,
+QK-scaling-via-norm-weight trick, attention partial RoPE override, vnorm
+in `prep_qkv_tensors`. All of those came over from PR #106 in round 2.
 
 ## Tensor-parallel / sharding strategy
 
-- Dense MLP: column-parallel `gate_proj` + `up_proj`, row-parallel `down_proj`. Standard
-  SwiGLU sharding (matches Llama / Mistral pattern).
-- MoE experts: `moe_tp_experts` plan — expert intermediate dim sharded across TP ranks,
-  experts replicated. Expert-parallelism (EP) is **not** enabled in v0 (token
-  generation does not yet support EP > 1 in NxDI; see the genericmoe port notes).
-- Attention: separate Q/K/V for each layer (different head_dim per layer-type), so no
-  fused QKV. Q/K/V column-parallel along head dim; O row-parallel.
-- Router projection: kept replicated across TP (every rank must agree on routing).
-- LM head: column-parallel with gather (or sampled on-device when configured).
+- Dense MLP: column-parallel `gate_proj` + `up_proj`, row-parallel `down_proj`.
+- MoE experts: TP-sharded along intermediate dim (NxDI moe_v2 default).
+- Attention: per-layer Q/K/V/o (different head_dim per layer-type, so no
+  fused QKV); Q/K/V column-parallel along head dim; O row-parallel.
+- Router: replicated across TP (identical routing on every rank).
+- LM head: column-parallel with gather (or on-device sampling).
 
-## TP recommendation
+**Recommended first compile**: TP=8, seq_len=256, batch_size=1, LNC=2,
+bfloat16. On trn2.3xlarge with `NEURON_LOGICAL_NC_CONFIG=2` you get 4
+logical cores; for TP=8 use `LNC=1` (8 logical cores) or move to
+trn2.48xlarge.
 
-| Constraint | Implication |
-|---|---|
-| `num_attention_heads = 8` | Max TP across attention without head replication is 8. Above 8 you get the safe-to-ignore `GQA.CONVERT_TO_MHA` warning, but it costs memory. |
-| `intermediate_size = 9216` | Cleanly divisible by 1, 2, 4, 6, 8, 9, 12, 16, 18, ... Most TP values are fine. |
-| `num_experts = 128`, `top_k = 8` | Plenty of routing diversity even at TP=8; experts naturally shard along the intermediate dim. |
-| 26B params @ bf16 = 52 GB | Needs at least 4 NeuronCores worth of HBM (16 GB each → 64 GB usable). Recommend TP=8 minimum. |
+## How to compile (on trn2)
 
-**Recommended first compile**: `TP=8`, `seq_len=4096`, `batch_size=1`, `LNC=2`,
-`use_fp16=True` (bfloat16). On a trn2.3xlarge this maps to one chip in LNC=1 mode or
-both NeuronCores of the chip in LNC=2; on trn2.48xlarge you have headroom for TP=16 or 32.
+```bash
+source /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/activate
+cd ~/gemma4-port
+
+# Apply ndxi_patch + run smoke compile (256 seq_len for first pass)
+python scripts/smoke_compile.py 2>&1 | tee ~/compile.log
+```
+
+For longer compiles, set `GEMMA4_SEQ_LEN=4096` and `GEMMA4_TP_DEGREE=8`.
 
 ## Known limitations / TODOs
 
-- **Multimodal towers** (vision, audio) are **not ported**. Customer's first goal is
-  text inference; the vision/audio encoders + multimodal embedder live in HF source
-  but we omit them in v0.
-- **K=V tying** is implemented at the **state-dict level** by copying `k_proj` weights
-  into `v_proj`. This wastes a small amount of HBM (~2 % of weights for full-attn layers
-  only) but stays inside the NxDI base class. If memory becomes tight a forward override
-  is the next step.
-- **PLE v0 keeps `embed_tokens_per_layer` replicated**. At 262 144 × 30 × 256 ≈ 2 GB in
-  bf16 this is significant; a future version should shard along the packed dim.
-- **Compiled with `--verify-hlo=false`**. MoE compilations need this flag (per the
-  genericmoe v16 success summary) — make sure the compile script passes it via
-  `compiler_args`.
-- **NxDI 2.27+** required for the `get_last_kv_window` padding fix that makes
-  sliding-window attention safe with prompts shorter than `sliding_window`.
-
-## How to compile (when you have hardware)
-
-```bash
-# On a trn2 instance with SDK 2.29 DLAMI
-source /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/activate
-
-# (a) Make this directory importable
-export PYTHONPATH="/path/to/gemma4-port-26b-a4b:$PYTHONPATH"
-
-# (b) Use the validation config template at
-#     agent_artifacts/tmp/validation_config.json (paths are pre-filled)
-
-# (c) Compile script — follow the pattern in
-#     skills/.../assets/example_phimoe_usage.py, with:
-#       model_class       = neuron_port.modeling_gemma4_neuron:NeuronGemma4ForCausalLM
-#       config_class      = neuron_port.modeling_gemma4_neuron:Gemma4InferenceConfig
-#       neuron_config_class = neuron_port.modeling_gemma4_neuron:Gemma4NeuronConfig
-#       use_fp16          = True
-#       tp_degree         = 8
-#       seq_len           = 4096
-#       batch_size        = 1
-#       compiler_args     = "--auto-cast=matmult \
-#                            --internal-hlo2tensorizer-options='--verify-hlo=false'"
-
-rm -rf /var/tmp/neuron-compile-cache  # safety
-```
-
-## How to validate
-
-After compilation, point the validation tool at
-`agent_artifacts/tmp/validation_config.json` (already templated):
-
-```bash
-python scripts/validate_model.py \
-    --config agent_artifacts/tmp/validation_config.json \
-    --mode token \
-    --batch-size 1 \
-    --seq-len 4096 \
-    2>&1 | tee agent_artifacts/tmp/validation.log
-```
-
-Pass criterion: `>= 95 %` greedy token match against the HF golden reference.
+- **Multimodal towers** (vision, audio) are **not ported**. Text-only.
+- **K=V tying** done at state-dict level (k_proj cloned into v_proj for
+  global layers). Wastes ~2 % HBM on global layers only.
+- **MoE compile time**: 30 layers × 128 experts × bf16 — expect 30-60 min for
+  the first compile. MoE compilations require
+  `--internal-hlo2tensorizer-options='--verify-hlo=false'` per the genericmoe
+  v16 KB.
+- **NxDI ≥ 0.10** required (for `get_last_kv_window` patch and per-layer
+  `layer_to_cache_size_mapping`).
+- **Apply `ndxi_patch.apply_patch()` once at process start** before
+  constructing the model class — see `scripts/smoke_compile.py`.

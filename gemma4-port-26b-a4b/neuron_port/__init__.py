@@ -1,33 +1,12 @@
-# NeuronX Distributed Inference port of Google's Gemma-4-26B-A4B-it.
+# NeuronX Distributed Inference port of google/gemma-4-26B-A4B-it.
 # See README.md for status and usage.
+#
+# This package requires NxDI / NxD installed (e.g. trn2 host with the
+# `aws_neuronx_venv_pytorch_2_9_nxd_inference` venv). The configuration shim
+# is parseable without NxDI; modeling is not.
 
-from .configuration_gemma4_neuron import (  # noqa: F401
-    Gemma4TextConfig,
-    make_gemma4_inference_config_class,
-    make_gemma4_neuron_config_class,
-)
-
-# The modeling file imports NxDI / NxD at module-load time, so it can only be
-# imported on a machine that has those packages installed (e.g. the trn2
-# instance during compilation). We therefore expose the modeling symbols
-# lazily — importing this package on a laptop without NxDI keeps working.
+from .configuration_gemma4_neuron import Gemma4TextConfig  # noqa: F401
 
 __all__ = [
     "Gemma4TextConfig",
-    "make_gemma4_inference_config_class",
-    "make_gemma4_neuron_config_class",
 ]
-
-
-def _load_modeling():
-    """Lazy import of the NxDI-dependent modeling module.
-
-    Call ``neuron_port._load_modeling()`` (or simply
-    ``from neuron_port.modeling_gemma4_neuron import ...``) on a host with
-    NxDI installed. We keep this out of the eager import path so the package
-    parses cleanly on a dev laptop.
-    """
-
-    from . import modeling_gemma4_neuron  # noqa: PLC0415
-
-    return modeling_gemma4_neuron
