@@ -49,7 +49,11 @@ from neuronx_distributed.parallel_layers.layers import (
     RowParallelLinear,
 )
 
-from neuronx_distributed_inference.models.config import InferenceConfig, NeuronConfig
+from neuronx_distributed_inference.models.config import (
+    InferenceConfig,
+    MoENeuronConfig,
+    NeuronConfig,
+)
 from neuronx_distributed_inference.models.model_base import (
     NeuronBaseForCausalLM,
     NeuronBaseModel,
@@ -183,10 +187,25 @@ class Gemma4ScaledEmbedding(nn.Module):
 # ====================================================================================
 
 
-class Gemma4NeuronConfig(NeuronConfig):
-    """NeuronConfig hard-pinning the gemma4 attention class."""
+class Gemma4NeuronConfig(MoENeuronConfig):
+    """NeuronConfig hard-pinning the gemma4 attention class.
+
+    Extends `MoENeuronConfig` (not plain `NeuronConfig`) so the MoE-specific
+    attributes that `initialize_moe_module` reads off `config.neuron_config`
+    -- `router_config`, `blockwise_matmul_config`, `moe_ep_degree`,
+    `moe_tp_degree`, `glu_mlp`, `glu_type`, `normalize_top_k_affinities`,
+    `early_expert_affinity_modulation`, `is_prefill_stage`, etc. -- exist
+    even on dense smoke-compile runs (default values are harmless when MoE
+    is disabled).
+    """
 
     def __init__(self, **kwargs):
+        # Gemma-4-26B-A4B keeps the routed top-k weights AS GIVEN by the router
+        # (the router itself already renormalizes to sum=1 and applies the
+        # per-expert scale). We do NOT want NxDI to renormalize again, so set
+        # the disable flag (NeuronGemma4MoEBlock pre-builds the (T,E)
+        # expert_affinities tensor with zeros outside top-k).
+        kwargs.setdefault("disable_normalize_top_k_affinities", True)
         super().__init__(**kwargs)
         # attn_cls is set per-layer in get_updated_configs(); this default is
         # used for the framework-level introspection only.
@@ -555,18 +574,50 @@ class NeuronGemma4MLP(nn.Module):
 class NeuronGemma4Router(nn.Module):
     """Top-K router with gemma4's `scale` and `per_expert_scale` learned tensors.
 
-    Mirrors HF `Gemma4TextRouter` (modeling_gemma4.py:1334). Routing is FP32
-    for numerical stability across experts.
+    Mirrors HF `Gemma4TextRouter` (modeling_gemma4.py:1334) and exposes the
+    contract that NxDI's `MoE` wrapper expects from its `router` member:
+
+        forward(hidden_states) -> (router_logits, expert_affinities, expert_index)
+
+    where
+        router_logits      : (T, E)   raw projection (used for aux losses; we
+                                      return it for compatibility, never used
+                                      at inference)
+        expert_affinities  : (T, E)   sparse tensor with the FINAL post-softmax
+                                      / post-renormalize / post-per-expert-scale
+                                      weights at top-k indices, zero elsewhere.
+                                      With `normalize_top_k_affinities=False`
+                                      on the MoE config, NxDI's expert dispatch
+                                      uses these values directly.
+        expert_index       : (T, K)   top-k expert indices.
+
+    Routing math is FP32 for numerical stability across 128 experts.
+
+    Replicated across TP (no parallel layer): every rank computes the same
+    routing decisions, so no all-reduce is needed for the indices.
     """
+
+    REQUIRED_ATTRS = ("num_experts", "top_k", "hidden_size", "sequence_parallel_enabled", "sequence_dimension")
 
     def __init__(self, config: Gemma4InferenceConfig):
         super().__init__()
         self.config = config
         self.hidden_size = config.hidden_size
-        self.scalar_root_size = self.hidden_size**-0.5
+        self.scalar_root_size = self.hidden_size ** -0.5
         self.eps = config.rms_norm_eps
         self.top_k = config.top_k_experts
         self.num_experts = config.num_experts
+
+        # NxDI's `MoE.__init__` cross-checks (`router.num_experts`,
+        # `router.top_k`, `router.hidden_size`) against the expert_mlps
+        # config -- the names above already match.
+
+        # NxDI also reads `router.sequence_parallel_enabled` and
+        # `router.sequence_dimension` to decide whether to gather
+        # hidden_states before / after routing. We replicate the router
+        # weights across TP, so SP-on-router is False.
+        self.sequence_parallel_enabled = False
+        self.sequence_dimension = 1
 
         # No-scale RMSNorm (gemma4 source line 1342: with_scale=False).
         self.norm = Gemma4VNorm(self.hidden_size, eps=self.eps)
@@ -581,36 +632,80 @@ class NeuronGemma4Router(nn.Module):
         )
 
     def forward(self, hidden_states: torch.Tensor):
-        h = hidden_states.float()
+        # Accept either (B, S, H) or (T, H). NxDI's MoE wrapper passes the
+        # full / SP-gathered hidden states; we flatten to (T, H) for routing.
+        original_shape = hidden_states.shape
+        h = hidden_states.float().reshape(-1, original_shape[-1])  # (T, H)
+
         h = self.norm(h)
         h = h * self.scale * self.scalar_root_size
 
-        scores = self.proj(h)  # [N, E]
-        probs = F.softmax(scores, dim=-1)
+        router_logits = self.proj(h)  # (T, E) FP32
+        probs = F.softmax(router_logits, dim=-1)
+
         top_k_weights, top_k_index = torch.topk(probs, k=self.top_k, dim=-1)
         # Per-token re-normalisation (gemma4 source line 1362).
         top_k_weights = top_k_weights / top_k_weights.sum(dim=-1, keepdim=True)
         # Apply per-expert scale (gemma4 source line 1365).
         top_k_weights = top_k_weights * self.per_expert_scale[top_k_index]
-        return probs, top_k_weights, top_k_index
+
+        # Build sparse (T, E) expert_affinities: zero everywhere except the
+        # top-k positions, which carry the post-renormalize, post-per-expert
+        # scaled weights. With MoE config `normalize_top_k_affinities=False`,
+        # the downstream ExpertMLPsV2 will use these values verbatim.
+        expert_affinities = torch.zeros_like(probs)
+        expert_affinities = expert_affinities.scatter(
+            1, top_k_index, top_k_weights.to(expert_affinities.dtype)
+        )
+
+        # Cast to hidden_states dtype so downstream matmuls stay in bf16.
+        expert_affinities = expert_affinities.to(dtype=hidden_states.dtype)
+        expert_index = expert_index.detach().to(dtype=torch.long)
+        # router_logits stays in FP32; NxDI doesn't actually use it at
+        # inference (return_router_logits is False by default).
+        return router_logits, expert_affinities, expert_index
 
 
 class NeuronGemma4MoEBlock(nn.Module):
-    """Combines the gemma4 router with NxDI's expert dispatch."""
+    """Wraps NxDI's `initialize_moe_module` and substitutes our gemma4 router.
+
+    NxDI's MoE wrapper builds its own `RouterTopK` (a simple Linear+softmax
+    +topk), but Gemma-4 needs a custom router with no-scale RMSNorm,
+    `scalar_root_size`, learned `scale` + `per_expert_scale`, and top-k
+    re-normalization. After `initialize_moe_module` returns, we swap the
+    wrapper's `.router` for `NeuronGemma4Router`. The swap is safe because
+    `MoE.__init__` already validated `router.{num_experts,top_k,hidden_size}`
+    against the expert MLPs at construction time.
+
+    Note on the +1 "shared" expert in Gemma-4: HF's source actually keeps
+    the dense MLP and the routed-MoE in PARALLEL (modeling_gemma4.py
+    1427-1441 — `mlp(x) + experts(x)`), then sums the two. There is no
+    NxDI-style shared expert inside the MoE block, so we DO NOT pass
+    `n_shared_experts > 0`. The dense MLP lives at the decoder-layer
+    level (`self.mlp`) and is summed in `NeuronGemma4DecoderLayer.forward`.
+    """
 
     def __init__(self, config: Gemma4InferenceConfig):
         super().__init__()
         self.config = config
-        self.router = NeuronGemma4Router(config)
-        moe_config = copy.deepcopy(config)
-        moe_config.intermediate_size = config.moe_intermediate_size
-        moe_config.num_local_experts = config.num_experts
-        moe_config.num_experts_per_tok = config.top_k_experts
-        self.experts = initialize_moe_module(config=moe_config)
+        # initialize_moe_module reads `n_shared_experts` (Llama4 sets =1, we
+        # set =0 because Gemma's "shared" path is the dense MLP outside this
+        # module). Setting on the config the wrapper sees:
+        if not hasattr(config, "n_shared_experts"):
+            config.n_shared_experts = 0
+        # Build the underlying NxDI MoE (router + expert_mlps) and then
+        # substitute our custom router. The default NxDI router constructed
+        # inside is correctly sized but uses the wrong math for Gemma-4.
+        self.moe = initialize_moe_module(config=config)
+        self.moe.router = NeuronGemma4Router(config)
+        # `MoE.__init__` set up ep_enabled / sequence_parallel_enabled based
+        # on the freshly-built RouterTopK; flipping `router` after the fact
+        # is fine because the new router is also non-SP and the cross-checks
+        # are only at __init__.
 
-    def forward(self, hidden_states_flat: torch.Tensor) -> torch.Tensor:
-        _probs, top_k_weights, top_k_index = self.router(hidden_states_flat)
-        return self.experts(hidden_states_flat, top_k_index, top_k_weights)
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        """Returns (output,) per the NxDI MoE return-tuple convention."""
+        return self.moe(hidden_states)[0]
 
 
 # ====================================================================================
@@ -640,28 +735,40 @@ class NeuronGemma4DecoderLayer(nn.Module):
         # NxDI's weight loader populates it from the checkpoint).
         self.layer_scalar = nn.Parameter(torch.ones(1), requires_grad=False)
 
-        # MoE branch can be disabled for smoke compile — see README. The
-        # NxDI moe_v2 module ties the MoE intermediate_size to the layer
-        # config's `intermediate_size`, which collides with the dense MLP's
-        # 2112 dim. The full MoE wiring (separate config, router process
-        # group, etc.) is left as follow-up work; turning the MoE branch
-        # off lets us validate the rest of the architecture end-to-end.
+        # MoE branch can be disabled for smoke compile (set
+        # `disable_moe_for_smoke_compile=True` on the InferenceConfig) to
+        # validate the rest of the architecture without the routed experts.
+        # When enabled, the dense MLP and the MoE block run in PARALLEL and
+        # their outputs are summed (HF source 1427-1441).
         self.enable_moe_block = bool(getattr(config, "enable_moe_block", False)) and not bool(
             getattr(config, "disable_moe_for_smoke_compile", False)
         )
         if self.enable_moe_block:
-            # Build a separate config view for MoE: NxDI's MoE module reads
-            # `intermediate_size` for the expert intermediate dim, which on
-            # 26B-A4B is the moe_intermediate_size (704), not the dense MLP's
-            # `intermediate_size` (2112). We clone the layer config and swap
-            # the field on the clone so the dense MLP and MoE block see the
-            # right values.
+            # Build a separate config view for MoE. Two things must change
+            # vs the per-layer attention config:
+            #   1. `intermediate_size` -> `moe_intermediate_size` (704 not
+            #      2112). NxDI's `ExpertMLPsV2` reads `config.intermediate_size`
+            #      for the expert intermediate dim.
+            #   2. `num_local_experts` / `num_experts_per_tok` aliases for
+            #      Gemma's `num_experts` / `top_k_experts` (already set at
+            #      the per-layer level by `get_updated_configs`, but we set
+            #      again for explicitness on the deepcopy).
+            #   3. `n_shared_experts = 0` — the dense MLP plays the role of
+            #      "shared expert" but lives OUTSIDE the MoE block (parallel
+            #      branch summed with experts output, per HF source).
             moe_config = copy.deepcopy(config)
             moe_config.intermediate_size = config.moe_intermediate_size
             moe_config.num_local_experts = config.num_experts
             moe_config.num_experts_per_tok = config.top_k_experts
-            self.router = NeuronGemma4Router(config)
-            self.experts = initialize_moe_module(config=moe_config)
+            moe_config.n_shared_experts = 0
+            # `hidden_act` must be set for ExpertMLPsV2; gemma4 uses
+            # gelu_pytorch_tanh which is in HF ACT2FN.
+            if not hasattr(moe_config, "hidden_act"):
+                moe_config.hidden_act = getattr(
+                    config, "hidden_activation", "gelu_pytorch_tanh"
+                )
+
+            self.moe_block = NeuronGemma4MoEBlock(moe_config)
             self.post_feedforward_layernorm_1 = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
             self.post_feedforward_layernorm_2 = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
             self.pre_feedforward_layernorm_2 = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
@@ -707,12 +814,13 @@ class NeuronGemma4DecoderLayer(nn.Module):
         if self.enable_moe_block:
             hidden_states_1 = self.post_feedforward_layernorm_1(hidden_states_dense)
 
-            # Router reads the *pre-MLP residual* (HF source 1433).
-            hidden_states_flat = residual.reshape(-1, residual.shape[-1])
-            _probs, top_k_weights, top_k_index = self.router(hidden_states_flat)
-            hidden_states_2 = self.pre_feedforward_layernorm_2(hidden_states_flat)
-            hidden_states_2 = self.experts(hidden_states_2, top_k_index, top_k_weights)
-            hidden_states_2 = hidden_states_2.reshape(residual.shape)
+            # Both branches read the *pre-MLP residual* (HF source 1433):
+            # the router and the routed experts both consume the same
+            # `residual` (the input to the dense MLP), not `hidden_states_dense`.
+            # The wrapper MoE module's router will internally flatten
+            # (B,S,H) -> (T,H), so we pass the residual in (B,S,H) layout.
+            hidden_states_2 = self.pre_feedforward_layernorm_2(residual)
+            hidden_states_2 = self.moe_block(hidden_states_2)
             hidden_states_2 = self.post_feedforward_layernorm_2(hidden_states_2)
 
             hidden_states = hidden_states_1 + hidden_states_2
