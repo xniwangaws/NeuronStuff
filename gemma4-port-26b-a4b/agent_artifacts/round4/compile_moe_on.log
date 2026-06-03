@@ -1,0 +1,177 @@
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:100: DeprecationWarning: torch_neuronx.nki_jit is deprecated, use nki.jit instead.
+  component, error = import_nki(config)
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+WARNING:root:NeuronConfig init: Unexpected keyword arguments: {'router_act_fn': 'softmax', 'router_dtype': 'float32'}
+INFO:Neuron:Saving the neuron_config to /home/ubuntu/gemma4-compiled/
+INFO:Neuron:Generating HLOs for the following models: ['context_encoding_model', 'token_generation_model']
+================================================================================
+Gemma-4-26B-A4B-it smoke compile
+  model_path:     /home/ubuntu/gemma4-26b-a4b
+  compiled_path:  /home/ubuntu/gemma4-compiled
+  tp_degree:      8
+  batch_size:     1
+  seq_len:        256
+================================================================================
+Config loaded: hidden_size=2816, num_layers=30, num_experts=128, top_k=8
+
+Compiling to /home/ubuntu/gemma4-compiled ...
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:638] > initializing tensor model parallel with size 8
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:639] > initializing pipeline model parallel with size 1
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:640] > initializing context model parallel with size 1
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:641] > initializing data parallel with size 1
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:642] > initializing world size to 8
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:387] [rank_0_pp-1_tp-1_dp-1_cp-1] Chosen Logic for replica groups ret_logic=<PG_Group_Logic.LOGIC1: (<function ascending_ring_PG_group at 0x7a7fe947bec0>, 'Ascending Ring PG Group')>
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:666] [rank_0_pp-1_tp-1_dp-1_cp-1] tp_groups: replica_groups.tp_groups=[[0, 1, 2, 3, 4, 5, 6, 7]]
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:667] [rank_0_pp-1_tp-1_dp-1_cp-1] dp_groups: replica_groups.dp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:668] [rank_0_pp-1_tp-1_dp-1_cp-1] pp_groups: replica_groups.pp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:669] [rank_0_pp-1_tp-1_dp-1_cp-1] cp_groups: replica_groups.cp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:670] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_model_groups: replica_groups.ep_model_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 05:49:00.085: I neuronx_distributed/parallel_layers/parallel_state.py:671] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_data_groups: replica_groups.ep_data_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+INFO:Neuron:Generating 1 hlos for key: context_encoding_model
+INFO:Neuron:Minimal metadata will be added to HLO
+INFO:Neuron:Started loading module context_encoding_model
+INFO:Neuron:Finished loading module context_encoding_model in 0.20439624786376953 seconds
+INFO:Neuron:generating HLO: context_encoding_model, input example shape = torch.Size([1, 256])
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/parallel_layers/layers.py:531: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:794: UserWarning: Blockwise kernel not compatible with model config. Reason: Hidden dim size must be multiples of 512, found 2816 
+  warnings.warn(f"Blockwise kernel not compatible with model config. Reason: {str(e)}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch_neuronx/xla_impl/hlo_conversion.py:470: UserWarning: Received an input tensor that was unused or used in a non-static way when traced so the tensor will be ignored. (index=1, shape=torch.Size([1, 256]), dtype=torch.int32). The non-static usage could happen when the traced function expects the input tensor's shape to change (i.e., using the shape to do index slicing), which is not allowed by inference trace expecting static input shapes.
+  warnings.warn(
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch_neuronx/xla_impl/hlo_conversion.py:470: UserWarning: Received an input tensor that was unused or used in a non-static way when traced so the tensor will be ignored. (index=3, shape=torch.Size([1]), dtype=torch.int32). The non-static usage could happen when the traced function expects the input tensor's shape to change (i.e., using the shape to do index slicing), which is not allowed by inference trace expecting static input shapes.
+  warnings.warn(
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch_neuronx/xla_impl/hlo_conversion.py:470: UserWarning: Received an input tensor that was unused or used in a non-static way when traced so the tensor will be ignored. (index=4, shape=torch.Size([1, 3]), dtype=torch.float32). The non-static usage could happen when the traced function expects the input tensor's shape to change (i.e., using the shape to do index slicing), which is not allowed by inference trace expecting static input shapes.
+  warnings.warn(
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch_neuronx/xla_impl/hlo_conversion.py:470: UserWarning: Received an input tensor that was unused or used in a non-static way when traced so the tensor will be ignored. (index=5, shape=torch.Size([1]), dtype=torch.int32). The non-static usage could happen when the traced function expects the input tensor's shape to change (i.e., using the shape to do index slicing), which is not allowed by inference trace expecting static input shapes.
+  warnings.warn(
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch_neuronx/xla_impl/hlo_conversion.py:470: UserWarning: Received an input tensor that was unused or used in a non-static way when traced so the tensor will be ignored. (index=6, shape=torch.Size([1]), dtype=torch.int32). The non-static usage could happen when the traced function expects the input tensor's shape to change (i.e., using the shape to do index slicing), which is not allowed by inference trace expecting static input shapes.
+  warnings.warn(
+INFO:Neuron:Finished generating HLO for context_encoding_model in 62.59646511077881 seconds, input example shape = torch.Size([1, 256])
+INFO:Neuron:Generating 1 hlos for key: token_generation_model
+INFO:Neuron:Minimal metadata will be added to HLO
+INFO:Neuron:Started loading module token_generation_model
+INFO:Neuron:Finished loading module token_generation_model in 0.20795106887817383 seconds
+INFO:Neuron:generating HLO: token_generation_model, input example shape = torch.Size([1, 1])
+INFO:Neuron:Finished generating HLO for token_generation_model in 2.4087648391723633 seconds, input example shape = torch.Size([1, 1])
+INFO:Neuron:Generated all HLOs in 70.31056499481201 seconds
+INFO:Neuron:Starting compilation for the priority HLO
+INFO:Neuron:'token_generation_model' is the priority model with bucket rank 0
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/libneuronxla/neuron_cc_wrapper.py:287: SyntaxWarning: str format compiler_flags is discouraged as its handling involves repeated joining and splitting, which can easily make mistakes if something is quoted or escaped. Use list[str] instead. Refer to documentation of the Python subprocess module for details.
+  warnings.warn(SyntaxWarning(
+......
+Compiler status PASS
+Neuron NKI - Kernel call: flash_attn_large_d(q = Tensor(shape: (2, 256, 512), dtype: bfloat16), k = Tensor(shape: (1, 256, 512), dtype: bfloat16), v = Tensor(shape: (1, 256, 512), dtype: bfloat16), scale = 1.0, use_causal_mask = True, sliding_window = 0)
+2026-06-03 05:51:56.000391:  12051  [INFO]: Compilation Successfully Completed for model.MODULE_98ecce56d63e2f2f9505+8f34053f.hlo_module.pb
+INFO:Neuron:Done compilation for the priority HLO in 106.00861358642578 seconds
+2026-06-03 05:51:57.245234: W hilo/hlo_passes/neuron_collective_permute_to_all_gather.cc:30] Platform Version: . Defaulting to 32 cores
+INFO:Neuron:Updating the hlo module with optimized layout
+INFO:Neuron:Done optimizing weight layout for all HLOs in 10.015644788742065 seconds
+INFO:Neuron:Starting compilation for all HLOs
+INFO:Neuron:Neuron compiler flags: --auto-cast=none --model-type=transformer  --tensorizer-options='--enable-ccop-compute-overlap --cc-pipeline-tiling-factor=2 --vectorize-strided-dma ' --lnc=2 -O1  --internal-hlo2tensorizer-options=' --modular-flow-mac-threshold=10  --verify-hlo=true'  --verbose=35 --logfile=/tmp/nxd_model/context_encoding_model/_tp0_bk0/log-neuron-cc.txt
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/libneuronxla/neuron_cc_wrapper.py:249: SyntaxWarning: str format compiler_flags is discouraged as its handling involves repeated joining and splitting, which can easily make mistakes if something is quoted or escaped. Use list[str] instead. Refer to documentation of the Python subprocess module for details.
+  warnings.warn(SyntaxWarning(
+..............................................
+Compiler status PASS
+2026-06-03 06:07:31.000752:  12051  [INFO]: Compilation Successfully Completed for model.MODULE_e926ada96a28e79d66fb+b35fee7e.hlo_module.pb
+INFO:Neuron:Finished Compilation for all HLOs in 925.4684216976166 seconds
+....
+Compiler status PASS
+INFO:Neuron:Done preparing weight layout transformation
+INFO:Neuron:Finished building model in 1183.2642312049866 seconds
+INFO:Neuron:SKIPPING pre-sharding the checkpoints. The checkpoints will be sharded during load time.
+INFO:Neuron:Sharding weights on load...
+INFO:Neuron:Sharding weights for ranks: 0...7
+
+Compile finished in 19.7 min
+
+Loading compiled model ...
+[2026-06-03 06:08:44.809: I neuronx_distributed/parallel_layers/parallel_state.py:638] > initializing tensor model parallel with size 8
+[2026-06-03 06:08:44.809: I neuronx_distributed/parallel_layers/parallel_state.py:639] > initializing pipeline model parallel with size 1
+[2026-06-03 06:08:44.809: I neuronx_distributed/parallel_layers/parallel_state.py:640] > initializing context model parallel with size 1
+[2026-06-03 06:08:44.809: I neuronx_distributed/parallel_layers/parallel_state.py:641] > initializing data parallel with size 1
+[2026-06-03 06:08:44.809: I neuronx_distributed/parallel_layers/parallel_state.py:642] > initializing world size to 8
+[2026-06-03 06:08:44.809: I neuronx_distributed/parallel_layers/parallel_state.py:387] [rank_0_pp-1_tp-1_dp-1_cp-1] Chosen Logic for replica groups ret_logic=<PG_Group_Logic.LOGIC1: (<function ascending_ring_PG_group at 0x7a7fe947bec0>, 'Ascending Ring PG Group')>
+[2026-06-03 06:08:44.809: I neuronx_distributed/parallel_layers/parallel_state.py:666] [rank_0_pp-1_tp-1_dp-1_cp-1] tp_groups: replica_groups.tp_groups=[[0, 1, 2, 3, 4, 5, 6, 7]]
+[2026-06-03 06:08:44.809: I neuronx_distributed/parallel_layers/parallel_state.py:667] [rank_0_pp-1_tp-1_dp-1_cp-1] dp_groups: replica_groups.dp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 06:08:44.809: I neuronx_distributed/parallel_layers/parallel_state.py:668] [rank_0_pp-1_tp-1_dp-1_cp-1] pp_groups: replica_groups.pp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 06:08:44.810: I neuronx_distributed/parallel_layers/parallel_state.py:669] [rank_0_pp-1_tp-1_dp-1_cp-1] cp_groups: replica_groups.cp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 06:08:44.810: I neuronx_distributed/parallel_layers/parallel_state.py:670] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_model_groups: replica_groups.ep_model_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 06:08:44.810: I neuronx_distributed/parallel_layers/parallel_state.py:671] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_data_groups: replica_groups.ep_data_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed_inference/models/application_base.py:651: UserWarning: Found torch.bfloat16 scales, skip converting to torch.bfloat16
+  warnings.warn(
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/trace/trace.py:642: UserWarning: Removing redundant keys from checkpoint: ['layers.0.self_attn.k_proj.weight', 'layers.0.self_attn.o_proj.weight', 'layers.0.self_attn.q_proj.weight', 'layers.0.self_attn.v_proj.weight', 'layers.1.self_attn.k_proj.weight', 'layers.1.self_attn.o_proj.weight', 'layers.1.self_attn.q_proj.weight', 'layers.1.self_attn.v_proj.weight', 'layers.10.self_attn.k_proj.weight', 'layers.10.self_attn.o_proj.weight', 'layers.10.self_attn.q_proj.weight', 'layers.10.self_attn.v_proj.weight', 'layers.11.self_attn.k_proj.weight', 'layers.11.self_attn.o_proj.weight', 'layers.11.self_attn.q_proj.weight', 'layers.12.self_attn.k_proj.weight', 'layers.12.self_attn.o_proj.weight', 'layers.12.self_attn.q_proj.weight', 'layers.12.self_attn.v_proj.weight', 'layers.13.self_attn.k_proj.weight', 'layers.13.self_attn.o_proj.weight', 'layers.13.self_attn.q_proj.weight', 'layers.13.self_attn.v_proj.weight', 'layers.14.self_attn.k_proj.weight', 'layers.14.self_attn.o_proj.weight', 'layers.14.self_attn.q_proj.weight', 'layers.14.self_attn.v_proj.weight', 'layers.15.self_attn.k_proj.weight', 'layers.15.self_attn.o_proj.weight', 'layers.15.self_attn.q_proj.weight', 'layers.15.self_attn.v_proj.weight', 'layers.16.self_attn.k_proj.weight', 'layers.16.self_attn.o_proj.weight', 'layers.16.self_attn.q_proj.weight', 'layers.16.self_attn.v_proj.weight', 'layers.17.self_attn.k_proj.weight', 'layers.17.self_attn.o_proj.weight', 'layers.17.self_attn.q_proj.weight', 'layers.18.self_attn.k_proj.weight', 'layers.18.self_attn.o_proj.weight', 'layers.18.self_attn.q_proj.weight', 'layers.18.self_attn.v_proj.weight', 'layers.19.self_attn.k_proj.weight', 'layers.19.self_attn.o_proj.weight', 'layers.19.self_attn.q_proj.weight', 'layers.19.self_attn.v_proj.weight', 'layers.2.self_attn.k_proj.weight', 'layers.2.self_attn.o_proj.weight', 'layers.2.self_attn.q_proj.weight', 'layers.2.self_attn.v_proj.weight', 'layers.20.self_attn.k_proj.weight', 'layers.20.self_attn.o_proj.weight', 'layers.20.self_attn.q_proj.weight', 'layers.20.self_attn.v_proj.weight', 'layers.21.self_attn.k_proj.weight', 'layers.21.self_attn.o_proj.weight', 'layers.21.self_attn.q_proj.weight', 'layers.21.self_attn.v_proj.weight', 'layers.22.self_attn.k_proj.weight', 'layers.22.self_attn.o_proj.weight', 'layers.22.self_attn.q_proj.weight', 'layers.22.self_attn.v_proj.weight', 'layers.23.self_attn.k_proj.weight', 'layers.23.self_attn.o_proj.weight', 'layers.23.self_attn.q_proj.weight', 'layers.24.self_attn.k_proj.weight', 'layers.24.self_attn.o_proj.weight', 'layers.24.self_attn.q_proj.weight', 'layers.24.self_attn.v_proj.weight', 'layers.25.self_attn.k_proj.weight', 'layers.25.self_attn.o_proj.weight', 'layers.25.self_attn.q_proj.weight', 'layers.25.self_attn.v_proj.weight', 'layers.26.self_attn.k_proj.weight', 'layers.26.self_attn.o_proj.weight', 'layers.26.self_attn.q_proj.weight', 'layers.26.self_attn.v_proj.weight', 'layers.27.self_attn.k_proj.weight', 'layers.27.self_attn.o_proj.weight', 'layers.27.self_attn.q_proj.weight', 'layers.27.self_attn.v_proj.weight', 'layers.28.self_attn.k_proj.weight', 'layers.28.self_attn.o_proj.weight', 'layers.28.self_attn.q_proj.weight', 'layers.28.self_attn.v_proj.weight', 'layers.29.self_attn.k_proj.weight', 'layers.29.self_attn.o_proj.weight', 'layers.29.self_attn.q_proj.weight', 'layers.3.self_attn.k_proj.weight', 'layers.3.self_attn.o_proj.weight', 'layers.3.self_attn.q_proj.weight', 'layers.3.self_attn.v_proj.weight', 'layers.4.self_attn.k_proj.weight', 'layers.4.self_attn.o_proj.weight', 'layers.4.self_attn.q_proj.weight', 'layers.4.self_attn.v_proj.weight', 'layers.5.self_attn.k_proj.weight', 'layers.5.self_attn.o_proj.weight', 'layers.5.self_attn.q_proj.weight', 'layers.6.self_attn.k_proj.weight', 'layers.6.self_attn.o_proj.weight', 'layers.6.self_attn.q_proj.weight', 'layers.6.self_attn.v_proj.weight', 'layers.7.self_attn.k_proj.weight', 'layers.7.self_attn.o_proj.weight', 'layers.7.self_attn.q_proj.weight', 'layers.7.self_attn.v_proj.weight', 'layers.8.self_attn.k_proj.weight', 'layers.8.self_attn.o_proj.weight', 'layers.8.self_attn.q_proj.weight', 'layers.8.self_attn.v_proj.weight', 'layers.9.self_attn.k_proj.weight', 'layers.9.self_attn.o_proj.weight', 'layers.9.self_attn.q_proj.weight', 'layers.9.self_attn.v_proj.weight', 'layers.5.self_attn.v_proj.weight', 'layers.11.self_attn.v_proj.weight', 'layers.17.self_attn.v_proj.weight', 'layers.23.self_attn.v_proj.weight', 'layers.29.self_attn.v_proj.weight', 'lm_head.weight']
+  warnings.warn(f"Removing redundant keys from checkpoint: {keys_to_delete}")
+WARNING:Neuron:casting layers.0.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.0.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.1.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.1.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.2.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.2.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.3.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.3.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.4.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.4.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.5.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.5.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.6.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.6.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.7.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.7.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.8.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.8.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.9.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.9.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.10.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.10.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.11.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.11.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.12.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.12.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.13.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.13.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.14.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.14.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.15.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.15.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.16.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.16.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.17.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.17.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.18.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.18.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.19.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.19.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.20.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.20.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.21.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.21.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.22.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.22.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.23.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.23.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.24.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.24.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.25.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.25.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.26.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.26.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.27.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.27.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.28.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.28.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.29.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.29.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+INFO:Neuron:Done Sharding weights in 12.46647689700012
+INFO:Neuron:Finished weights loading in 29.116277286999775 seconds
+INFO:Neuron:Warming up the model.
+2026-Jun-03 06:09:15.0440 12051:15381 [6] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):232 CCOM WARN NET/OFI Failed to initialize rdma protocol
+2026-Jun-03 06:09:15.0442 12051:15381 [6] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):376 CCOM WARN NET/OFI aws-ofi-nccl initialization failed
+2026-Jun-03 06:09:15.0444 12051:15381 [6] ncclResult_t nccl_net_ofi_init(ncclDebugLogger_t):78 CCOM WARN NET/OFI Initializing plugin failed
+2026-Jun-03 06:09:15.0446 12051:15381 [6] net_plugin.cc:97 CCOM WARN OFI plugin initNet() failed is EFA enabled?
+INFO:Neuron:Warmup completed in 0.6624093055725098 seconds.
+Smoke compile + load OK

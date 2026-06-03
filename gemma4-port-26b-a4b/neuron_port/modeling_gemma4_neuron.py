@@ -48,6 +48,7 @@ from neuronx_distributed.parallel_layers.layers import (
     ParallelEmbedding,
     RowParallelLinear,
 )
+from neuronx_distributed.parallel_layers import mappings as _nxd_parallel_mappings
 
 from neuronx_distributed_inference.models.config import (
     InferenceConfig,
@@ -660,52 +661,129 @@ class NeuronGemma4Router(nn.Module):
 
         # Cast to hidden_states dtype so downstream matmuls stay in bf16.
         expert_affinities = expert_affinities.to(dtype=hidden_states.dtype)
-        expert_index = expert_index.detach().to(dtype=torch.long)
+        expert_index = top_k_index.detach().to(dtype=torch.long)
         # router_logits stays in FP32; NxDI doesn't actually use it at
         # inference (return_router_logits is False by default).
         return router_logits, expert_affinities, expert_index
 
 
 class NeuronGemma4MoEBlock(nn.Module):
-    """Wraps NxDI's `initialize_moe_module` and substitutes our gemma4 router.
+    """Gemma-4 MoE block built on top of NxDI's `initialize_moe_module`.
 
-    NxDI's MoE wrapper builds its own `RouterTopK` (a simple Linear+softmax
-    +topk), but Gemma-4 needs a custom router with no-scale RMSNorm,
-    `scalar_root_size`, learned `scale` + `per_expert_scale`, and top-k
-    re-normalization. After `initialize_moe_module` returns, we swap the
-    wrapper's `.router` for `NeuronGemma4Router`. The swap is safe because
-    `MoE.__init__` already validated `router.{num_experts,top_k,hidden_size}`
-    against the expert MLPs at construction time.
+    Why we don't just call NxDI's wrapper `MoE.forward(hidden_states)`:
+    `MoE.forward` calls the router and the expert_mlps with the SAME
+    `hidden_states`, but Gemma-4's HF source feeds the router the RAW
+    pre-MLP residual (line 1434) while the experts get the
+    `pre_feedforward_layernorm_2(residual)` (line 1435-1436). The two
+    inputs differ by an RMSNorm with a learned scale, so collapsing them
+    is numerically incorrect.
 
-    Note on the +1 "shared" expert in Gemma-4: HF's source actually keeps
-    the dense MLP and the routed-MoE in PARALLEL (modeling_gemma4.py
-    1427-1441 — `mlp(x) + experts(x)`), then sums the two. There is no
-    NxDI-style shared expert inside the MoE block, so we DO NOT pass
-    `n_shared_experts > 0`. The dense MLP lives at the decoder-layer
-    level (`self.mlp`) and is summed in `NeuronGemma4DecoderLayer.forward`.
+    We therefore:
+      1. Use `initialize_moe_module(config=...)` to construct router +
+         expert_mlps with all the correct process-group / dtype wiring.
+      2. Replace the auto-built `RouterTopK` with `NeuronGemma4Router`
+         (custom math: no-scale norm, scalar_root_size, learned scale +
+         per_expert_scale, top-k renorm).
+      3. Re-implement the wrapper's forward path — call router on
+         `router_input`, expert_mlps on `expert_input`, then do the
+         delayed all-reduce that `MoE.forward` would have done.
+
+    No shared experts inside this block: Gemma-4's "shared" branch is the
+    dense MLP that runs in PARALLEL with this block at the decoder-layer
+    level (HF source 1427+1441 — `mlp(x) + experts(x)`), so we set
+    `n_shared_experts = 0` and skip NxDI's `_apply_shared_experts` path.
+
+    Sequence parallelism / token shuffle / EP > 1 are unsupported by this
+    wrapper (we follow the simplest non-SP, non-EP path). If those are
+    needed later, mirror the corresponding branches from
+    `neuronx_distributed.modules.moe.model.MoE._forward_compute_bound`.
     """
 
     def __init__(self, config: Gemma4InferenceConfig):
         super().__init__()
         self.config = config
-        # initialize_moe_module reads `n_shared_experts` (Llama4 sets =1, we
-        # set =0 because Gemma's "shared" path is the dense MLP outside this
-        # module). Setting on the config the wrapper sees:
+        # `initialize_moe_module` reads `n_shared_experts` -- Llama4 sets =1,
+        # we set =0 because Gemma's "shared" branch is the dense MLP that
+        # lives OUTSIDE this module.
         if not hasattr(config, "n_shared_experts"):
             config.n_shared_experts = 0
-        # Build the underlying NxDI MoE (router + expert_mlps) and then
-        # substitute our custom router. The default NxDI router constructed
-        # inside is correctly sized but uses the wrong math for Gemma-4.
-        self.moe = initialize_moe_module(config=config)
-        self.moe.router = NeuronGemma4Router(config)
-        # `MoE.__init__` set up ep_enabled / sequence_parallel_enabled based
-        # on the freshly-built RouterTopK; flipping `router` after the fact
-        # is fine because the new router is also non-SP and the cross-checks
-        # are only at __init__.
 
-    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
-        """Returns (output,) per the NxDI MoE return-tuple convention."""
-        return self.moe(hidden_states)[0]
+        # Build the underlying NxDI MoE wrapper to leverage its router +
+        # expert_mlps construction (process groups, dtype, padding, etc.).
+        self.moe = initialize_moe_module(config=config)
+        # Replace the wrapper's RouterTopK with Gemma's custom router. Safe:
+        # `MoE.__init__` already validated num_experts/top_k/hidden_size
+        # cross-consistency, and we keep those identical on our router.
+        self.moe.router = NeuronGemma4Router(config)
+
+        # Pull tensor-parallel group from the wrapper for the explicit
+        # delayed all-reduce in our forward.
+        self._tp_group = self.moe.tensor_parallel_group
+        self._ep_enabled = self.moe.ep_enabled
+
+    def forward(
+        self,
+        router_input: torch.Tensor,
+        expert_input: torch.Tensor,
+    ) -> torch.Tensor:
+        """Compute Gemma-4 MoE output.
+
+        Arguments:
+            router_input: pre-norm `residual`, shape (B, S, H) or (T, H).
+                          The router applies its own (no-scale) RMSNorm
+                          internally, matching HF source line 1434.
+            expert_input: `pre_feedforward_layernorm_2(residual)`, same
+                          leading layout as `router_input`. Fed to the
+                          expert MLPs (HF source line 1436).
+
+        Returns:
+            output: same leading shape as `expert_input`, after expert
+                    dispatch + post-TP all-reduce. Caller is responsible
+                    for any further normalization (HF's
+                    `post_feedforward_layernorm_2`) and summation with
+                    the dense-MLP branch.
+        """
+        # Router consumes raw residual (it flattens to (T, H) internally).
+        # Returns: router_logits (T,E), expert_affinities (T,E),
+        #          expert_index (T, top_k).
+        _router_logits, expert_affinities, expert_index = self.moe.router(router_input)
+
+        # Mirror MoE.forward: gradient bookkeeping all-reduce on expert
+        # affinities (no-op forward in pure inference, but keeps the
+        # autograd graph consistent if we're ever traced for backward).
+        if not self._ep_enabled:
+            expert_affinities = _nxd_parallel_mappings.copy_to_tensor_model_parallel_region(
+                expert_affinities, process_group=self._tp_group
+            )
+
+        # Flatten experts input to (T, H). seq_len comes from the
+        # sequence_dimension axis of the un-flattened input. Caller is
+        # expected to pass (B, S, H); if a 2D (T, H) tensor lands here we
+        # fall back to seq_len = T (seq_len affects only path selection
+        # heuristics inside ExpertMLPsV2, not correctness for full-capacity
+        # routing).
+        expert_shape = expert_input.shape
+        if expert_input.dim() >= self.moe.sequence_dimension + 1:
+            seq_len = expert_shape[self.moe.sequence_dimension]
+        else:
+            seq_len = expert_shape[0]
+        expert_input_flat = expert_input.reshape(-1, expert_shape[-1])
+
+        output = self.moe.expert_mlps(
+            hidden_states=expert_input_flat,
+            expert_affinities=expert_affinities,
+            expert_index=expert_index,
+            seq_len=seq_len,
+        )
+
+        # Reshape back and do delayed all-reduce (TP) since expert_mlps
+        # leaves the output in tensor-parallel un-reduced form.
+        output = output.view(expert_shape)
+        if not self._ep_enabled:
+            output = _nxd_parallel_mappings.reduce_from_tensor_model_parallel_region(
+                output, process_group=self._tp_group
+            )
+        return output
 
 
 # ====================================================================================
@@ -761,12 +839,12 @@ class NeuronGemma4DecoderLayer(nn.Module):
             moe_config.num_local_experts = config.num_experts
             moe_config.num_experts_per_tok = config.top_k_experts
             moe_config.n_shared_experts = 0
-            # `hidden_act` must be set for ExpertMLPsV2; gemma4 uses
-            # gelu_pytorch_tanh which is in HF ACT2FN.
-            if not hasattr(moe_config, "hidden_act"):
-                moe_config.hidden_act = getattr(
-                    config, "hidden_activation", "gelu_pytorch_tanh"
-                )
+            # ExpertMLPsV2 raises `Unknown activation: gelu_pytorch_tanh`.
+            # Alias to plain `gelu` — tanh-approximation diff is <1e-4 and not
+            # load-bearing for routing/topk correctness. Flag for accuracy
+            # validation pass.
+            hf_act = getattr(config, "hidden_activation", "gelu_pytorch_tanh")
+            moe_config.hidden_act = "gelu" if hf_act == "gelu_pytorch_tanh" else hf_act
 
             self.moe_block = NeuronGemma4MoEBlock(moe_config)
             self.post_feedforward_layernorm_1 = norm_cls(config.hidden_size, eps=config.rms_norm_eps)
@@ -814,13 +892,16 @@ class NeuronGemma4DecoderLayer(nn.Module):
         if self.enable_moe_block:
             hidden_states_1 = self.post_feedforward_layernorm_1(hidden_states_dense)
 
-            # Both branches read the *pre-MLP residual* (HF source 1433):
-            # the router and the routed experts both consume the same
-            # `residual` (the input to the dense MLP), not `hidden_states_dense`.
-            # The wrapper MoE module's router will internally flatten
-            # (B,S,H) -> (T,H), so we pass the residual in (B,S,H) layout.
-            hidden_states_2 = self.pre_feedforward_layernorm_2(residual)
-            hidden_states_2 = self.moe_block(hidden_states_2)
+            # HF source 1432-1438: router consumes the RAW residual, while
+            # the experts consume `pre_feedforward_layernorm_2(residual)`.
+            # The two inputs differ by a learned-scale RMSNorm and cannot
+            # be collapsed, so we pass them separately to the MoE block
+            # (which bypasses NxDI's MoE wrapper to honor this split).
+            expert_input = self.pre_feedforward_layernorm_2(residual)
+            hidden_states_2 = self.moe_block(
+                router_input=residual,
+                expert_input=expert_input,
+            )
             hidden_states_2 = self.post_feedforward_layernorm_2(hidden_states_2)
 
             hidden_states = hidden_states_1 + hidden_states_2

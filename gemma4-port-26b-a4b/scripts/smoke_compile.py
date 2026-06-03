@@ -7,12 +7,16 @@ host with the NxDI venv activated.
 Usage:
     source /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/activate
     cd ~/gemma4-port
-    python scripts/smoke_compile.py 2>&1 | tee ~/compile.log
+    # IMPORTANT: trn2.3xlarge defaults to LNC=2 (4 logical cores). If you
+    # want TP=8 you MUST set NEURON_LOGICAL_NC_CONFIG=1 first; otherwise
+    # the runtime fails with c10::Error inside NeuronAllocators::Get when
+    # the spmd state initializer tries to copy zeros to ranks 4..7.
+    NEURON_LOGICAL_NC_CONFIG=1 PYTHONPATH=. python scripts/smoke_compile.py 2>&1 | tee ~/compile.log
 
 Environment overrides:
     GEMMA4_MODEL_PATH       (default: /home/ubuntu/gemma4-26b-a4b)
     GEMMA4_COMPILED_PATH    (default: /home/ubuntu/gemma4-compiled)
-    GEMMA4_TP_DEGREE        (default: 8)
+    GEMMA4_TP_DEGREE        (default: 8; set to 4 if you do not want to set LNC=1)
     GEMMA4_BATCH_SIZE       (default: 1)
     GEMMA4_SEQ_LEN          (default: 256, kept short for first compile)
     GEMMA4_DISABLE_MOE      (default: 0; set to 1 for dense-only smoke)
