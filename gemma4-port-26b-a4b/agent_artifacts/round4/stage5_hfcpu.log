@@ -1,0 +1,85 @@
+================================================================================
+Stage 5 canonical validation -- mode=hf-cpu
+  model path:    /home/ubuntu/gemma4-26b-a4b
+  chat template: /home/ubuntu/gemma4_chat_template.jinja
+  out:           /home/ubuntu/stage5_hfcpu_results.json
+  max_new_tok:   32
+================================================================================
+  tokenizer: GemmaTokenizer, chat_template=17466 chars, has parse_response=True
+Loading Gemma4ForConditionalGeneration (bf16 CPU) from /home/ubuntu/gemma4-26b-a4b ...
+Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:  97%|█████████▋| 987/1013 [00:00<00:00, 9864.44it/s]Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 9944.55it/s]
+  load took 0.3s
+
+----- [hf-cpu] [joke] thinking=False -----
+  user: 'Write a short joke about saving RAM.'
+  rendered (32 tok) tail: '<bos><|turn>system\nYou are a helpful assistant.<turn|>\n<|turn>user\nWrite a short joke about saving RAM.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+  GREEDY ids[:16]=[11355, 1602, 506, 5194, 817, 531, 11682, 236881, 108, 17574, 625, 1053, 2311, 1551, 1932, 42364]
+  GREEDY text   ="Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop obsessing over its past... and its **RAM**"
+  GREEDY parsed ={'role': 'assistant', 'content': "Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop obsessing over its past... and its **RAM**"}
+  GREEDY timing ={'wall_s': 9.055686624999908, 'total_tokens': 32, 'tpot_ms': 282.9902070312471}
+  SAMPLE ids[:16]=[11355, 1602, 506, 5194, 817, 531, 11682, 236881, 108, 17574, 625, 1053, 2311, 1551, 1932, 42364]
+  SAMPLE text   ="Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop overthinking everything."
+  SAMPLE parsed ={'role': 'assistant', 'content': "Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop overthinking everything."}
+  SAMPLE timing ={'wall_s': 7.324618683000153, 'total_tokens': 26, 'tpot_ms': 281.7161031923136}
+
+----- [hf-cpu] [joke] thinking=True -----
+  user: 'Write a short joke about saving RAM.'
+  rendered (30 tok) tail: '<bos><|turn>system\n<|think|>\nYou are a helpful assistant.<turn|>\n<|turn>user\nWrite a short joke about saving RAM.<turn|>\n<|turn>model\n'
+  GREEDY ids[:16]=[100, 45518, 107, 236829, 139, 47589, 236787, 70391, 24051, 568, 19095, 13863, 29179, 769, 107, 140]
+  GREEDY text   ='thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n    *   Goal: Be helpful and'
+  GREEDY parsed ={'role': 'assistant', 'content': '<|channel>thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n    *   Goal: Be helpful and'}
+  GREEDY timing ={'wall_s': 8.874805403999744, 'total_tokens': 32, 'tpot_ms': 277.337668874992}
+  SAMPLE ids[:16]=[100, 45518, 107, 236829, 139, 47589, 236787, 70391, 24051, 568, 19095, 13863, 29179, 769, 107, 140]
+  SAMPLE text   ='thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n\n    *   RAM is volatile (l'
+  SAMPLE parsed ={'role': 'assistant', 'content': '<|channel>thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n\n    *   RAM is volatile (l'}
+  SAMPLE timing ={'wall_s': 9.555632331000197, 'total_tokens': 32, 'tpot_ms': 298.61351034375616}
+
+----- [hf-cpu] [capital] thinking=False -----
+  user: 'What is the capital of France?'
+  rendered (31 tok) tail: '<bos><|turn>system\nYou are a helpful assistant.<turn|>\n<|turn>user\nWhat is the capital of France?<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+  GREEDY ids[:16]=[818, 5279, 529, 7001, 563, 5213, 50429, 84750, 106]
+  GREEDY text   ='The capital of France is **Paris**.'
+  GREEDY parsed ={'role': 'assistant', 'content': 'The capital of France is **Paris**.'}
+  GREEDY timing ={'wall_s': 3.1739613589998044, 'total_tokens': 9, 'tpot_ms': 352.66237322220053}
+  SAMPLE ids[:16]=[818, 5279, 529, 7001, 563, 5213, 50429, 84750, 106]
+  SAMPLE text   ='The capital of France is **Paris**.'
+  SAMPLE parsed ={'role': 'assistant', 'content': 'The capital of France is **Paris**.'}
+  SAMPLE timing ={'wall_s': 3.2333772580004734, 'total_tokens': 9, 'tpot_ms': 359.2641397778304}
+
+----- [hf-cpu] [capital] thinking=True -----
+  user: 'What is the capital of France?'
+  rendered (29 tok) tail: '<bos><|turn>system\n<|think|>\nYou are a helpful assistant.<turn|>\n<|turn>user\nWhat is the capital of France?<turn|>\n<|turn>model\n'
+  GREEDY ids[:16]=[100, 45518, 107, 818, 2430, 563, 10980, 573, 506, 5279, 529, 7001, 236761, 107, 818, 5279]
+  GREEDY text   ='thought\nThe user is asking for the capital of France.\nThe capital of France is Paris.\nState the answer clearly.The capital of France'
+  GREEDY parsed ={'role': 'assistant', 'thinking': 'The user is asking for the capital of France.\nThe capital of France is Paris.\nState the answer clearly.', 'content': 'The capital of France'}
+  GREEDY timing ={'wall_s': 8.596701578000648, 'total_tokens': 32, 'tpot_ms': 268.64692431252024}
+  SAMPLE ids[:16]=[100, 45518, 107, 818, 2430, 563, 10980, 573, 506, 5279, 529, 7001, 236761, 107, 31756, 236761]
+  SAMPLE text   ='thought\nThe user is asking for the capital of France.\nFrance.\nParis.\nState the capital clearly.The capital of France is **'
+  SAMPLE parsed ={'role': 'assistant', 'thinking': 'The user is asking for the capital of France.\nFrance.\nParis.\nState the capital clearly.', 'content': 'The capital of France is **'}
+  SAMPLE timing ={'wall_s': 8.848418295999181, 'total_tokens': 32, 'tpot_ms': 276.5130717499744}
+
+----- [hf-cpu] [quantum] thinking=False -----
+  user: 'Explain quantum entanglement in two sentences.'
+  rendered (31 tok) tail: 'os><|turn>system\nYou are a helpful assistant.<turn|>\n<|turn>user\nExplain quantum entanglement in two sentences.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+  GREEDY ids[:16]=[102093, 115991, 563, 496, 20284, 1298, 1156, 653, 919, 10390, 3291, 12809, 1288, 600, 506, 1883]
+  GREEDY text   ='Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them'
+  GREEDY parsed ={'role': 'assistant', 'content': 'Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them'}
+  GREEDY timing ={'wall_s': 8.459659019000355, 'total_tokens': 32, 'tpot_ms': 264.3643443437611}
+  SAMPLE ids[:16]=[102093, 115991, 563, 496, 20284, 1298, 1156, 653, 919, 10390, 3291, 12809, 1288, 600, 506, 1883]
+  SAMPLE text   ='Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them'
+  SAMPLE parsed ={'role': 'assistant', 'content': 'Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them'}
+  SAMPLE timing ={'wall_s': 11.369597728999906, 'total_tokens': 32, 'tpot_ms': 355.2999290312471}
+
+----- [hf-cpu] [quantum] thinking=True -----
+  user: 'Explain quantum entanglement in two sentences.'
+  rendered (29 tok) tail: '<bos><|turn>system\n<|think|>\nYou are a helpful assistant.<turn|>\n<|turn>user\nExplain quantum entanglement in two sentences.<turn|>\n<|turn>model\n'
+  GREEDY ids[:16]=[100, 45518, 107, 236829, 139, 47589, 236787, 27825, 115991, 236761, 107, 140, 236829, 139, 52240, 236787]
+  GREEDY text   ='thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and concisely.'
+  GREEDY parsed ={'role': 'assistant', 'content': '<|channel>thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and concisely.'}
+  GREEDY timing ={'wall_s': 8.851086439000028, 'total_tokens': 32, 'tpot_ms': 276.5964512187509}
+  SAMPLE ids[:16]=[100, 45518, 107, 236829, 139, 47589, 236787, 27825, 115991, 236761, 107, 140, 236829, 139, 52240, 236787]
+  SAMPLE text   ='thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and concisely.'
+  SAMPLE parsed ={'role': 'assistant', 'content': '<|channel>thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and concisely.'}
+  SAMPLE timing ={'wall_s': 9.463089620000574, 'total_tokens': 32, 'tpot_ms': 295.7215506250179}
+
+Wrote /home/ubuntu/stage5_hfcpu_results.json

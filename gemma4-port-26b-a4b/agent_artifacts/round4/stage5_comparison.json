@@ -1,0 +1,267 @@
+{
+  "match_n": 16,
+  "rows": [
+    {
+      "prompt": "joke",
+      "thinking": "thinking_off",
+      "kind": "greedy",
+      "match": "16/16",
+      "pct": 100.0,
+      "neuron_text": "Why did the computer go to therapy?\n\nBecause it had too many open tabs and could",
+      "hf_text": "Why did the computer go to therapy?\n\nBecause it had too many open tabs and could",
+      "parsed_match": {
+        "content": {
+          "neuron": "Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop obsessing over its past... and it just couldn't free up any space to process its feelings.",
+          "hf": "Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop obsessing over its past... and its **RAM**",
+          "equal": false
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "joke",
+      "thinking": "thinking_off",
+      "kind": "sample",
+      "match": "16/16",
+      "pct": 100.0,
+      "neuron_text": "Why did the computer go to therapy?\n\nBecause it had too many open tabs and could",
+      "hf_text": "Why did the computer go to therapy?\n\nBecause it had too many open tabs and could",
+      "parsed_match": {
+        "content": {
+          "neuron": "Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop overthinking everything.",
+          "hf": "Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop overthinking everything.",
+          "equal": true
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "joke",
+      "thinking": "thinking_on",
+      "kind": "greedy",
+      "match": "16/16",
+      "pct": 100.0,
+      "neuron_text": "thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke",
+      "hf_text": "thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke",
+      "parsed_match": {
+        "content": {
+          "neuron": "<|channel>thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n    *   Goal: Be helpful and funny.\n\n    *   RAM is volatile (loses data when power is off).\n    0.  RAM is expensive.\n    *   Chrome",
+          "hf": "<|channel>thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n    *   Goal: Be helpful and",
+          "equal": false
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "joke",
+      "thinking": "thinking_on",
+      "kind": "sample",
+      "match": "16/16",
+      "pct": 100.0,
+      "neuron_text": "thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke",
+      "hf_text": "thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke",
+      "parsed_match": {
+        "content": {
+          "neuron": "<|channel>thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n\n    *   RAM is volatile (loses data when power goes out).\n    *   RAM is limited (low memory errors, \"out of memory\").\n     even if you have a lot",
+          "hf": "<|channel>thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n\n    *   RAM is volatile (l",
+          "equal": false
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "capital",
+      "thinking": "thinking_off",
+      "kind": "greedy",
+      "match": "9/9",
+      "pct": 100.0,
+      "neuron_text": "The capital of France is **Paris**.",
+      "hf_text": "The capital of France is **Paris**.",
+      "parsed_match": {
+        "content": {
+          "neuron": "The capital of France is **Paris**.",
+          "hf": "The capital of France is **Paris**.",
+          "equal": true
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "capital",
+      "thinking": "thinking_off",
+      "kind": "sample",
+      "match": "9/9",
+      "pct": 100.0,
+      "neuron_text": "The capital of France is **Paris**.",
+      "hf_text": "The capital of France is **Paris**.",
+      "parsed_match": {
+        "content": {
+          "neuron": "The capital of France is **Paris**.",
+          "hf": "The capital of France is **Paris**.",
+          "equal": true
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "capital",
+      "thinking": "thinking_on",
+      "kind": "greedy",
+      "match": "16/16",
+      "pct": 100.0,
+      "neuron_text": "thought\nThe user is asking for the capital of France.\nThe capital of France is P",
+      "hf_text": "thought\nThe user is asking for the capital of France.\nThe capital of France is P",
+      "parsed_match": {
+        "content": {
+          "neuron": "The capital of France is **Paris**.",
+          "hf": "The capital of France",
+          "equal": false
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        },
+        "thinking": {
+          "neuron": "The user is asking for the capital of France.\nThe capital of France is Paris.\nState the answer clearly.",
+          "hf": "The user is asking for the capital of France.\nThe capital of France is Paris.\nState the answer clearly.",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "capital",
+      "thinking": "thinking_on",
+      "kind": "sample",
+      "match": "14/16",
+      "pct": 87.5,
+      "neuron_text": "thought\nThe user is asking for the capital of France.\nThe capital of France is P",
+      "hf_text": "thought\nThe user is asking for the capital of France.\nFrance.\nParis.\nState the c",
+      "parsed_match": {
+        "content": {
+          "neuron": "The capital of France is **Paris**.",
+          "hf": "The capital of France is **",
+          "equal": false
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        },
+        "thinking": {
+          "neuron": "The user is asking for the capital of France.\nThe capital of France is Paris.\nProvide the answer clearly.",
+          "hf": "The user is asking for the capital of France.\nFrance.\nParis.\nState the capital clearly.",
+          "equal": false
+        }
+      }
+    },
+    {
+      "prompt": "quantum",
+      "thinking": "thinking_off",
+      "kind": "greedy",
+      "match": "16/16",
+      "pct": 100.0,
+      "neuron_text": "Quantum entanglement is a phenomenon where two or more particles become linked s",
+      "hf_text": "Quantum entanglement is a phenomenon where two or more particles become linked s",
+      "parsed_match": {
+        "content": {
+          "neuron": "Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them. This connection occurs even if the particles are light-years apart, defying classical intuitions about how information and physical properties travel through space.",
+          "hf": "Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them",
+          "equal": false
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "quantum",
+      "thinking": "thinking_off",
+      "kind": "sample",
+      "match": "16/16",
+      "pct": 100.0,
+      "neuron_text": "Quantum entanglement is a phenomenon where two or more particles become linked s",
+      "hf_text": "Quantum entanglement is a phenomenon where two or more particles become linked s",
+      "parsed_match": {
+        "content": {
+          "neuron": "Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them. This connection persists even across vast reaches of space, meaning a measurement performed on one particle immediately determines the properties of its partner.",
+          "hf": "Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them",
+          "equal": false
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "quantum",
+      "thinking": "thinking_on",
+      "kind": "greedy",
+      "match": "16/16",
+      "pct": 100.0,
+      "neuron_text": "thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentenc",
+      "hf_text": "thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentenc",
+      "parsed_match": {
+        "content": {
+          "neuron": "<|channel>thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and accurately.\n\n    *   Quantum entanglement is a phenomenon where two or more particles become connected in such a way that the state of one particle instantly influences the state of the",
+          "hf": "<|channel>thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and concisely.",
+          "equal": false
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    },
+    {
+      "prompt": "quantum",
+      "thinking": "thinking_on",
+      "kind": "sample",
+      "match": "16/16",
+      "pct": 100.0,
+      "neuron_text": "thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentenc",
+      "hf_text": "thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentenc",
+      "parsed_match": {
+        "content": {
+          "neuron": "<|channel>thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and accurately.\n\n    *   Particles become linked.\n    *   The state of one particle instantly influences/correlates with the state of the other.\n    ",
+          "hf": "<|channel>thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and concisely.",
+          "equal": false
+        },
+        "role": {
+          "neuron": "assistant",
+          "hf": "assistant",
+          "equal": true
+        }
+      }
+    }
+  ]
+}

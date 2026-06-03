@@ -1,0 +1,181 @@
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:100: DeprecationWarning: torch_neuronx.nki_jit is deprecated, use nki.jit instead.
+  component, error = import_nki(config)
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/modules/moe/blockwise.py:102: UserWarning: Warning: Failed to import blockwise_mm_bwd_baseline_shard_hidden: No module named 'neuronxcc.nki._private.blockwise_mm_bwd'
+  warnings.warn(f"Warning: {error}")
+WARNING:root:NeuronConfig init: Unexpected keyword arguments: {'router_act_fn': 'softmax', 'router_dtype': 'float32'}
+INFO:Neuron:Sharding weights on load...
+INFO:Neuron:Sharding weights for ranks: 0...7
+================================================================================
+Stage 5 canonical validation -- mode=neuron
+  model path:    /home/ubuntu/gemma4-26b-a4b
+  chat template: /home/ubuntu/gemma4_chat_template.jinja
+  out:           /home/ubuntu/stage5_neuron_results.json
+  max_new_tok:   64
+================================================================================
+  Gemma4ChatAdapter: transformers path failed ('list' object has no attribute 'keys'), falling back
+  Gemma4ChatAdapter: using fallback tokenizers + jinja2
+  tokenizer adapter: kind=fallback, chat_template=17466 chars, has parse_response=True (adapter)
+Loading compiled NeuronGemma4ForCausalLM from /home/ubuntu/gemma4-compiled ...
+[2026-06-03 07:02:21.817: I neuronx_distributed/parallel_layers/parallel_state.py:638] > initializing tensor model parallel with size 8
+[2026-06-03 07:02:21.817: I neuronx_distributed/parallel_layers/parallel_state.py:639] > initializing pipeline model parallel with size 1
+[2026-06-03 07:02:21.817: I neuronx_distributed/parallel_layers/parallel_state.py:640] > initializing context model parallel with size 1
+[2026-06-03 07:02:21.817: I neuronx_distributed/parallel_layers/parallel_state.py:641] > initializing data parallel with size 1
+[2026-06-03 07:02:21.817: I neuronx_distributed/parallel_layers/parallel_state.py:642] > initializing world size to 8
+[2026-06-03 07:02:21.817: I neuronx_distributed/parallel_layers/parallel_state.py:387] [rank_0_pp-1_tp-1_dp-1_cp-1] Chosen Logic for replica groups ret_logic=<PG_Group_Logic.LOGIC1: (<function ascending_ring_PG_group at 0x719bf0bacd60>, 'Ascending Ring PG Group')>
+[2026-06-03 07:02:21.818: I neuronx_distributed/parallel_layers/parallel_state.py:666] [rank_0_pp-1_tp-1_dp-1_cp-1] tp_groups: replica_groups.tp_groups=[[0, 1, 2, 3, 4, 5, 6, 7]]
+[2026-06-03 07:02:21.818: I neuronx_distributed/parallel_layers/parallel_state.py:667] [rank_0_pp-1_tp-1_dp-1_cp-1] dp_groups: replica_groups.dp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 07:02:21.818: I neuronx_distributed/parallel_layers/parallel_state.py:668] [rank_0_pp-1_tp-1_dp-1_cp-1] pp_groups: replica_groups.pp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 07:02:21.818: I neuronx_distributed/parallel_layers/parallel_state.py:669] [rank_0_pp-1_tp-1_dp-1_cp-1] cp_groups: replica_groups.cp_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 07:02:21.818: I neuronx_distributed/parallel_layers/parallel_state.py:670] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_model_groups: replica_groups.ep_model_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+[2026-06-03 07:02:21.818: I neuronx_distributed/parallel_layers/parallel_state.py:671] [rank_0_pp-1_tp-1_dp-1_cp-1] ep_data_groups: replica_groups.ep_data_groups=[[0], [1], [2], [3], [4], [5], [6], [7]]
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed_inference/models/application_base.py:651: UserWarning: Found torch.bfloat16 scales, skip converting to torch.bfloat16
+  warnings.warn(
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronx_distributed/trace/trace.py:642: UserWarning: Removing redundant keys from checkpoint: ['layers.0.self_attn.k_proj.weight', 'layers.0.self_attn.o_proj.weight', 'layers.0.self_attn.q_proj.weight', 'layers.0.self_attn.v_proj.weight', 'layers.1.self_attn.k_proj.weight', 'layers.1.self_attn.o_proj.weight', 'layers.1.self_attn.q_proj.weight', 'layers.1.self_attn.v_proj.weight', 'layers.10.self_attn.k_proj.weight', 'layers.10.self_attn.o_proj.weight', 'layers.10.self_attn.q_proj.weight', 'layers.10.self_attn.v_proj.weight', 'layers.11.self_attn.k_proj.weight', 'layers.11.self_attn.o_proj.weight', 'layers.11.self_attn.q_proj.weight', 'layers.12.self_attn.k_proj.weight', 'layers.12.self_attn.o_proj.weight', 'layers.12.self_attn.q_proj.weight', 'layers.12.self_attn.v_proj.weight', 'layers.13.self_attn.k_proj.weight', 'layers.13.self_attn.o_proj.weight', 'layers.13.self_attn.q_proj.weight', 'layers.13.self_attn.v_proj.weight', 'layers.14.self_attn.k_proj.weight', 'layers.14.self_attn.o_proj.weight', 'layers.14.self_attn.q_proj.weight', 'layers.14.self_attn.v_proj.weight', 'layers.15.self_attn.k_proj.weight', 'layers.15.self_attn.o_proj.weight', 'layers.15.self_attn.q_proj.weight', 'layers.15.self_attn.v_proj.weight', 'layers.16.self_attn.k_proj.weight', 'layers.16.self_attn.o_proj.weight', 'layers.16.self_attn.q_proj.weight', 'layers.16.self_attn.v_proj.weight', 'layers.17.self_attn.k_proj.weight', 'layers.17.self_attn.o_proj.weight', 'layers.17.self_attn.q_proj.weight', 'layers.18.self_attn.k_proj.weight', 'layers.18.self_attn.o_proj.weight', 'layers.18.self_attn.q_proj.weight', 'layers.18.self_attn.v_proj.weight', 'layers.19.self_attn.k_proj.weight', 'layers.19.self_attn.o_proj.weight', 'layers.19.self_attn.q_proj.weight', 'layers.19.self_attn.v_proj.weight', 'layers.2.self_attn.k_proj.weight', 'layers.2.self_attn.o_proj.weight', 'layers.2.self_attn.q_proj.weight', 'layers.2.self_attn.v_proj.weight', 'layers.20.self_attn.k_proj.weight', 'layers.20.self_attn.o_proj.weight', 'layers.20.self_attn.q_proj.weight', 'layers.20.self_attn.v_proj.weight', 'layers.21.self_attn.k_proj.weight', 'layers.21.self_attn.o_proj.weight', 'layers.21.self_attn.q_proj.weight', 'layers.21.self_attn.v_proj.weight', 'layers.22.self_attn.k_proj.weight', 'layers.22.self_attn.o_proj.weight', 'layers.22.self_attn.q_proj.weight', 'layers.22.self_attn.v_proj.weight', 'layers.23.self_attn.k_proj.weight', 'layers.23.self_attn.o_proj.weight', 'layers.23.self_attn.q_proj.weight', 'layers.24.self_attn.k_proj.weight', 'layers.24.self_attn.o_proj.weight', 'layers.24.self_attn.q_proj.weight', 'layers.24.self_attn.v_proj.weight', 'layers.25.self_attn.k_proj.weight', 'layers.25.self_attn.o_proj.weight', 'layers.25.self_attn.q_proj.weight', 'layers.25.self_attn.v_proj.weight', 'layers.26.self_attn.k_proj.weight', 'layers.26.self_attn.o_proj.weight', 'layers.26.self_attn.q_proj.weight', 'layers.26.self_attn.v_proj.weight', 'layers.27.self_attn.k_proj.weight', 'layers.27.self_attn.o_proj.weight', 'layers.27.self_attn.q_proj.weight', 'layers.27.self_attn.v_proj.weight', 'layers.28.self_attn.k_proj.weight', 'layers.28.self_attn.o_proj.weight', 'layers.28.self_attn.q_proj.weight', 'layers.28.self_attn.v_proj.weight', 'layers.29.self_attn.k_proj.weight', 'layers.29.self_attn.o_proj.weight', 'layers.29.self_attn.q_proj.weight', 'layers.3.self_attn.k_proj.weight', 'layers.3.self_attn.o_proj.weight', 'layers.3.self_attn.q_proj.weight', 'layers.3.self_attn.v_proj.weight', 'layers.4.self_attn.k_proj.weight', 'layers.4.self_attn.o_proj.weight', 'layers.4.self_attn.q_proj.weight', 'layers.4.self_attn.v_proj.weight', 'layers.5.self_attn.k_proj.weight', 'layers.5.self_attn.o_proj.weight', 'layers.5.self_attn.q_proj.weight', 'layers.6.self_attn.k_proj.weight', 'layers.6.self_attn.o_proj.weight', 'layers.6.self_attn.q_proj.weight', 'layers.6.self_attn.v_proj.weight', 'layers.7.self_attn.k_proj.weight', 'layers.7.self_attn.o_proj.weight', 'layers.7.self_attn.q_proj.weight', 'layers.7.self_attn.v_proj.weight', 'layers.8.self_attn.k_proj.weight', 'layers.8.self_attn.o_proj.weight', 'layers.8.self_attn.q_proj.weight', 'layers.8.self_attn.v_proj.weight', 'layers.9.self_attn.k_proj.weight', 'layers.9.self_attn.o_proj.weight', 'layers.9.self_attn.q_proj.weight', 'layers.9.self_attn.v_proj.weight', 'layers.5.self_attn.v_proj.weight', 'layers.11.self_attn.v_proj.weight', 'layers.17.self_attn.v_proj.weight', 'layers.23.self_attn.v_proj.weight', 'layers.29.self_attn.v_proj.weight', 'lm_head.weight']
+  warnings.warn(f"Removing redundant keys from checkpoint: {keys_to_delete}")
+WARNING:Neuron:casting layers.0.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.0.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.1.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.1.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.2.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.2.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.3.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.3.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.4.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.4.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.5.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.5.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.6.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.6.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.7.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.7.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.8.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.8.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.9.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.9.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.10.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.10.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.11.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.11.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.12.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.12.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.13.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.13.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.14.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.14.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.15.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.15.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.16.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.16.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.17.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.17.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.18.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.18.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.19.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.19.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.20.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.20.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.21.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.21.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.22.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.22.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.23.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.23.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.24.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.24.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.25.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.25.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.26.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.26.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.27.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.27.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.28.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.28.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.29.moe_block.moe.router.scale from torch.bfloat16 to torch.float32
+WARNING:Neuron:casting layers.29.moe_block.moe.router.per_expert_scale from torch.bfloat16 to torch.float32
+INFO:Neuron:Done Sharding weights in 12.471799185000236
+INFO:Neuron:Finished weights loading in 28.814239698000165 seconds
+INFO:Neuron:Warming up the model.
+2026-Jun-03 07:02:52.0152 143079:143207 [0] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):232 CCOM WARN NET/OFI Failed to initialize rdma protocol
+2026-Jun-03 07:02:52.0156 143079:143207 [0] int nccl_net_ofi_create_plugin(nccl_net_ofi_plugin_t**):376 CCOM WARN NET/OFI aws-ofi-nccl initialization failed
+2026-Jun-03 07:02:52.0158 143079:143207 [0] ncclResult_t nccl_net_ofi_init(ncclDebugLogger_t):78 CCOM WARN NET/OFI Initializing plugin failed
+2026-Jun-03 07:02:52.0161 143079:143207 [0] net_plugin.cc:97 CCOM WARN OFI plugin initNet() failed is EFA enabled?
+INFO:Neuron:Warmup completed in 0.6726229190826416 seconds.
+  load took 31.6s
+
+----- [neuron] [joke] thinking=False -----
+  user: 'Write a short joke about saving RAM.'
+  rendered (32 tok) tail: '<bos><|turn>system\nYou are a helpful assistant.<turn|>\n<|turn>user\nWrite a short joke about saving RAM.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+  GREEDY ids[:16]=[11355, 1602, 506, 5194, 817, 531, 11682, 236881, 108, 17574, 625, 1053, 2311, 1551, 1932, 42364]
+  GREEDY text   ="Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop obsessing over its past... and it just couldn't free up any space to process its feelings."
+  GREEDY parsed ={'role': 'assistant', 'content': "Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop obsessing over its past... and it just couldn't free up any space to process its feelings."}
+  GREEDY timing ={'ttft_ms': 307.3971640005766, 'tpot_ms': 8.410182785718504, 'total_tokens': 43}
+  SAMPLE ids[:16]=[11355, 1602, 506, 5194, 817, 531, 11682, 236881, 108, 17574, 625, 1053, 2311, 1551, 1932, 42364]
+  SAMPLE text   ="Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop overthinking everything."
+  SAMPLE parsed ={'role': 'assistant', 'content': "Why did the computer go to therapy?\n\nBecause it had too many open tabs and couldn't stop overthinking everything."}
+  SAMPLE timing ={'ttft_ms': 303.4071910005878, 'tpot_ms': 27.592127839998284, 'total_tokens': 26}
+
+----- [neuron] [joke] thinking=True -----
+  user: 'Write a short joke about saving RAM.'
+  rendered (30 tok) tail: '<bos><|turn>system\n<|think|>\nYou are a helpful assistant.<turn|>\n<|turn>user\nWrite a short joke about saving RAM.<turn|>\n<|turn>model\n'
+  GREEDY ids[:16]=[100, 45518, 107, 236829, 139, 47589, 236787, 70391, 24051, 568, 19095, 13863, 29179, 769, 107, 140]
+  GREEDY text   ='thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n    *   Goal: Be helpful and funny.\n\n    *   RAM is volatile (loses data when power is off).\n    0.  RAM is expensive.\n    *   Chrome'
+  GREEDY parsed ={'role': 'assistant', 'content': '<|channel>thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n    *   Goal: Be helpful and funny.\n\n    *   RAM is volatile (loses data when power is off).\n    0.  RAM is expensive.\n    *   Chrome'}
+  GREEDY timing ={'ttft_ms': 303.43341899970255, 'tpot_ms': 8.217251000002891, 'total_tokens': 64}
+  SAMPLE ids[:16]=[100, 45518, 107, 236829, 139, 47589, 236787, 70391, 24051, 568, 19095, 13863, 29179, 769, 107, 140]
+  SAMPLE text   ='thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n\n    *   RAM is volatile (loses data when power goes out).\n    *   RAM is limited (low memory errors, "out of memory").\n     even if you have a lot'
+  SAMPLE parsed ={'role': 'assistant', 'content': '<|channel>thought\n*   Topic: Saving RAM (Random Access Memory).\n    *   Format: Short joke.\n\n    *   RAM is volatile (loses data when power goes out).\n    *   RAM is limited (low memory errors, "out of memory").\n     even if you have a lot'}
+  SAMPLE timing ={'ttft_ms': 303.20954699982394, 'tpot_ms': 27.404603714280203, 'total_tokens': 64}
+
+----- [neuron] [capital] thinking=False -----
+  user: 'What is the capital of France?'
+  rendered (31 tok) tail: '<bos><|turn>system\nYou are a helpful assistant.<turn|>\n<|turn>user\nWhat is the capital of France?<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+  GREEDY ids[:16]=[818, 5279, 529, 7001, 563, 5213, 50429, 84750, 106]
+  GREEDY text   ='The capital of France is **Paris**.'
+  GREEDY parsed ={'role': 'assistant', 'content': 'The capital of France is **Paris**.'}
+  GREEDY timing ={'ttft_ms': 303.43622399959713, 'tpot_ms': 8.345496499941873, 'total_tokens': 9}
+  SAMPLE ids[:16]=[818, 5279, 529, 7001, 563, 5213, 50429, 84750, 106]
+  SAMPLE text   ='The capital of France is **Paris**.'
+  SAMPLE parsed ={'role': 'assistant', 'content': 'The capital of France is **Paris**.'}
+  SAMPLE timing ={'ttft_ms': 303.6817880001763, 'tpot_ms': 27.572962875069607, 'total_tokens': 9}
+
+----- [neuron] [capital] thinking=True -----
+  user: 'What is the capital of France?'
+  rendered (29 tok) tail: '<bos><|turn>system\n<|think|>\nYou are a helpful assistant.<turn|>\n<|turn>user\nWhat is the capital of France?<turn|>\n<|turn>model\n'
+  GREEDY ids[:16]=[100, 45518, 107, 818, 2430, 563, 10980, 573, 506, 5279, 529, 7001, 236761, 107, 818, 5279]
+  GREEDY text   ='thought\nThe user is asking for the capital of France.\nThe capital of France is Paris.\nState the answer clearly.The capital of France is **Paris**.'
+  GREEDY parsed ={'role': 'assistant', 'thinking': 'The user is asking for the capital of France.\nThe capital of France is Paris.\nState the answer clearly.', 'content': 'The capital of France is **Paris**.'}
+  GREEDY timing ={'ttft_ms': 303.3045490001314, 'tpot_ms': 8.332410472222465, 'total_tokens': 37}
+  SAMPLE ids[:16]=[100, 45518, 107, 818, 2430, 563, 10980, 573, 506, 5279, 529, 7001, 236761, 107, 818, 5279]
+  SAMPLE text   ='thought\nThe user is asking for the capital of France.\nThe capital of France is Paris.\nProvide the answer clearly.The capital of France is **Paris**.'
+  SAMPLE parsed ={'role': 'assistant', 'thinking': 'The user is asking for the capital of France.\nThe capital of France is Paris.\nProvide the answer clearly.', 'content': 'The capital of France is **Paris**.'}
+  SAMPLE timing ={'ttft_ms': 303.385285999866, 'tpot_ms': 27.489349138881554, 'total_tokens': 37}
+
+----- [neuron] [quantum] thinking=False -----
+  user: 'Explain quantum entanglement in two sentences.'
+  rendered (31 tok) tail: 'os><|turn>system\nYou are a helpful assistant.<turn|>\n<|turn>user\nExplain quantum entanglement in two sentences.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+  GREEDY ids[:16]=[102093, 115991, 563, 496, 20284, 1298, 1156, 653, 919, 10390, 3291, 12809, 1288, 600, 506, 1883]
+  GREEDY text   ='Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them. This connection occurs even if the particles are light-years apart, defying classical intuitions about how information and physical properties travel through space.'
+  GREEDY parsed ={'role': 'assistant', 'content': 'Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them. This connection occurs even if the particles are light-years apart, defying classical intuitions about how information and physical properties travel through space.'}
+  GREEDY timing ={'ttft_ms': 303.34699699960765, 'tpot_ms': 8.290270150003684, 'total_tokens': 61}
+  SAMPLE ids[:16]=[102093, 115991, 563, 496, 20284, 1298, 1156, 653, 919, 10390, 3291, 12809, 1288, 600, 506, 1883]
+  SAMPLE text   ='Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them. This connection persists even across vast reaches of space, meaning a measurement performed on one particle immediately determines the properties of its partner.'
+  SAMPLE parsed ={'role': 'assistant', 'content': 'Quantum entanglement is a phenomenon where two or more particles become linked such that the state of one instantly influences the state of the other, regardless of the distance separating them. This connection persists even across vast reaches of space, meaning a measurement performed on one particle immediately determines the properties of its partner.'}
+  SAMPLE timing ={'ttft_ms': 303.34870899969246, 'tpot_ms': 27.54919610344649, 'total_tokens': 59}
+
+----- [neuron] [quantum] thinking=True -----
+  user: 'Explain quantum entanglement in two sentences.'
+  rendered (29 tok) tail: '<bos><|turn>system\n<|think|>\nYou are a helpful assistant.<turn|>\n<|turn>user\nExplain quantum entanglement in two sentences.<turn|>\n<|turn>model\n'
+  GREEDY ids[:16]=[100, 45518, 107, 236829, 139, 47589, 236787, 27825, 115991, 236761, 107, 140, 236829, 139, 52240, 236787]
+  GREEDY text   ='thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and accurately.\n\n    *   Quantum entanglement is a phenomenon where two or more particles become connected in such a way that the state of one particle instantly influences the state of the'
+  GREEDY parsed ={'role': 'assistant', 'content': '<|channel>thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and accurately.\n\n    *   Quantum entanglement is a phenomenon where two or more particles become connected in such a way that the state of one particle instantly influences the state of the'}
+  GREEDY timing ={'ttft_ms': 303.359807000561, 'tpot_ms': 8.32206682539508, 'total_tokens': 64}
+  SAMPLE ids[:16]=[100, 45518, 107, 236829, 139, 47589, 236787, 27825, 115991, 236761, 107, 140, 236829, 139, 52240, 236787]
+  SAMPLE text   ='thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and accurately.\n\n    *   Particles become linked.\n    *   The state of one particle instantly influences/correlates with the state of the other.\n    '
+  SAMPLE parsed ={'role': 'assistant', 'content': '<|channel>thought\n*   Topic: Quantum entanglement.\n    *   Constraint: Exactly two sentences.\n    *   Goal: Explain it clearly and accurately.\n\n    *   Particles become linked.\n    *   The state of one particle instantly influences/correlates with the state of the other.\n    '}
+  SAMPLE timing ={'ttft_ms': 303.3690000002025, 'tpot_ms': 27.391142095237026, 'total_tokens': 64}
+
+Wrote /home/ubuntu/stage5_neuron_results.json
