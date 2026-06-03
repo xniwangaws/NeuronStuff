@@ -1,0 +1,29 @@
+{
+    "_comment": "Validation config for gemma-4-26B-A4B-it on Neuron. NOT RUN YET (dry-run port). Update model_path / compiled_model_path before invoking scripts/validate_model.py on hardware.",
+
+    "model_name": "gemma-4-26B-A4B-it",
+    "hf_model_id": "google/gemma-4-26B-A4B-it",
+    "model_class": "neuron_port/modeling_gemma4_neuron.py:NeuronGemma4ForCausalLM",
+    "config_class": "neuron_port/modeling_gemma4_neuron.py:Gemma4InferenceConfig",
+    "neuron_config_class": "neuron_port/modeling_gemma4_neuron.py:Gemma4NeuronConfig",
+    "model_path": "agent_artifacts/data/gemma-4-26B-A4B-it",
+    "compiled_model_path": "agent_artifacts/data/gemma4_compiled",
+    "results_dir": "agent_artifacts/results",
+    "tp_degree": 8,
+    "num_tokens_to_check": 64,
+
+    "test_parameters": [
+        {
+            "_description": "First-pass smoke test: short prompt, modest seq_len. Use the same batch_size and seq_len you compiled with.",
+            "batch_size": 1,
+            "seq_len": 4096,
+            "ttft_threshold": 2000.0,
+            "throughput_threshold": 3.0
+        }
+    ],
+
+    "compiler_args": "--auto-cast=matmult --internal-hlo2tensorizer-options='--verify-hlo=false'",
+    "torch_dtype": "bfloat16",
+    "logical_neuron_core_config": 2,
+    "notes": "MoE compilation requires --verify-hlo=false. NxDI >= 2.27 required for sliding-window short-prompt fix."
+}

@@ -1,0 +1,14 @@
+# Don't commit the upstream HF transformers source — it's large and read-only.
+transformers_src/
+
+# Don't commit reference PRs (large external materials).
+reference_prs/
+
+# Don't commit any model weights / compiled artifacts.
+agent_artifacts/data/
+agent_artifacts/results/
+
+# OS junk
+.DS_Store
+*.pyc
+__pycache__/
