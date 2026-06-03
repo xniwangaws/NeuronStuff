@@ -1097,10 +1097,16 @@ class NeuronGemma4ForCausalLM(NeuronBaseForCausalLM):
       * tied lm_head (handle SoftcappedLMHead path)
       * rank_util tensors for TP
 
-    Plus the 26B-A4B-specific MoE keys (router.proj, router.scale,
-    router.per_expert_scale, experts.gate_up_proj, experts.down_proj) which
-    pass through the prefix-strip without further modification — the names
-    already match HF.
+    Plus the 26B-A4B-specific MoE keys:
+      * `layers.{i}.router.{proj.weight,scale,per_expert_scale}` ->
+        `layers.{i}.moe_block.moe.router.{...}` (router lives inside our
+        wrapper module after `initialize_moe_module`).
+      * `layers.{i}.experts.gate_up_proj` (HF shape `(E, 2*I, H)`) ->
+        `layers.{i}.moe_block.moe.expert_mlps.mlp_op.gate_up_proj.weight`
+        (NxDI shape `(E, H, 2*I)` — last two dims transposed).
+      * `layers.{i}.experts.down_proj` (HF shape `(E, H, I)`) ->
+        `layers.{i}.moe_block.moe.expert_mlps.mlp_op.down_proj.weight`
+        (NxDI shape `(E, I, H)` — last two dims transposed).
     """
 
     _model_cls = NeuronGemma4TextModel
@@ -1185,6 +1191,39 @@ class NeuronGemma4ForCausalLM(NeuronBaseForCausalLM):
             new_state_dict[f"{prefix}.rank_util.rank"] = torch.arange(
                 0, tp_degree, dtype=torch.int32
             )
+
+            # MoE remap: HF stores router/experts directly under the
+            # decoder layer. Our `NeuronGemma4DecoderLayer` nests them as
+            # `moe_block.moe.{router,expert_mlps.mlp_op}`. Skip silently
+            # if the layer has no MoE keys (e.g. dense smoke-compile run
+            # or a future variant that toggles MoE per-layer).
+            moe_src_prefix = f"layers.{i}."
+            moe_dst_prefix = f"layers.{i}.moe_block.moe."
+            router_keys = [
+                ("router.proj.weight", "router.proj.weight"),
+                ("router.scale", "router.scale"),
+                ("router.per_expert_scale", "router.per_expert_scale"),
+            ]
+            for src_suffix, dst_suffix in router_keys:
+                src_key = moe_src_prefix + src_suffix
+                if src_key in new_state_dict:
+                    new_state_dict[moe_dst_prefix + dst_suffix] = new_state_dict.pop(
+                        src_key
+                    )
+
+            gate_up_src = moe_src_prefix + "experts.gate_up_proj"
+            gate_up_dst = moe_dst_prefix + "expert_mlps.mlp_op.gate_up_proj.weight"
+            if gate_up_src in new_state_dict:
+                # HF shape: (E, 2*I, H); NxDI shape: (E, H, 2*I).
+                w = new_state_dict.pop(gate_up_src)
+                new_state_dict[gate_up_dst] = w.transpose(1, 2).contiguous()
+
+            down_src = moe_src_prefix + "experts.down_proj"
+            down_dst = moe_dst_prefix + "expert_mlps.mlp_op.down_proj.weight"
+            if down_src in new_state_dict:
+                # HF shape: (E, H, I); NxDI shape: (E, I, H).
+                w = new_state_dict.pop(down_src)
+                new_state_dict[down_dst] = w.transpose(1, 2).contiguous()
 
         if neuron_config.vocab_parallel:
             new_state_dict["embed_tokens.embedding.rank_util.rank"] = torch.arange(

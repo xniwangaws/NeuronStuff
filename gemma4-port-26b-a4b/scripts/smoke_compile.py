@@ -10,11 +10,14 @@ Usage:
     python scripts/smoke_compile.py 2>&1 | tee ~/compile.log
 
 Environment overrides:
-    GEMMA4_MODEL_PATH    (default: /home/ubuntu/gemma4-26b-a4b)
-    GEMMA4_COMPILED_PATH (default: /home/ubuntu/gemma4-compiled)
-    GEMMA4_TP_DEGREE     (default: 8)
-    GEMMA4_BATCH_SIZE    (default: 1)
-    GEMMA4_SEQ_LEN       (default: 256, kept short for first compile)
+    GEMMA4_MODEL_PATH       (default: /home/ubuntu/gemma4-26b-a4b)
+    GEMMA4_COMPILED_PATH    (default: /home/ubuntu/gemma4-compiled)
+    GEMMA4_TP_DEGREE        (default: 8)
+    GEMMA4_BATCH_SIZE       (default: 1)
+    GEMMA4_SEQ_LEN          (default: 256, kept short for first compile)
+    GEMMA4_DISABLE_MOE      (default: 0; set to 1 for dense-only smoke)
+    GEMMA4_MOE_EP_DEGREE    (default: 1)
+    GEMMA4_MOE_TP_DEGREE    (default: <TP_DEGREE>)
 """
 
 import json
@@ -42,6 +45,8 @@ COMPILED_PATH = os.environ.get("GEMMA4_COMPILED_PATH", "/home/ubuntu/gemma4-comp
 TP_DEGREE = int(os.environ.get("GEMMA4_TP_DEGREE", "8"))
 BATCH_SIZE = int(os.environ.get("GEMMA4_BATCH_SIZE", "1"))
 SEQ_LEN = int(os.environ.get("GEMMA4_SEQ_LEN", "256"))
+MOE_EP_DEGREE = int(os.environ.get("GEMMA4_MOE_EP_DEGREE", "1"))
+MOE_TP_DEGREE = int(os.environ.get("GEMMA4_MOE_TP_DEGREE", str(TP_DEGREE)))
 
 
 def create_config(model_path: str) -> Gemma4InferenceConfig:
@@ -54,6 +59,21 @@ def create_config(model_path: str) -> Gemma4InferenceConfig:
         torch_dtype=torch.bfloat16,
         fused_qkv=False,
         attn_kernel_enabled=False,
+        # MoE knobs (consumed by MoENeuronConfig __init__):
+        moe_ep_degree=MOE_EP_DEGREE,
+        moe_tp_degree=MOE_TP_DEGREE,
+        glu_mlp=True,
+        glu_type="glu",
+        # Gemma's router runs softmax in FP32. We fold this into the
+        # custom NeuronGemma4Router, but the underlying NxDI RouterConfig
+        # is still consulted by `initialize_moe_module` for typing of any
+        # internal router-state buffers, so set sensible values here.
+        router_act_fn="softmax",
+        router_dtype="float32",
+        # Gemma renormalizes top-k weights INSIDE the custom router and
+        # bakes per_expert_scale in there. Disable NxDI's renorm so it
+        # uses our pre-computed expert_affinities verbatim.
+        disable_normalize_top_k_affinities=True,
     )
 
     def load_config_fn(config_obj):
