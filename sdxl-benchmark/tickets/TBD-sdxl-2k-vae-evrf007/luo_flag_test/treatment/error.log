@@ -1,0 +1,403 @@
+[09:32:17] Loading SDXL VAE from /home/ubuntu/sdxl-base
+Cannot initialize model with low cpu memory usage because `accelerate` was not found in the environment. Defaulting to `low_cpu_mem_usage=False`. It is strongly recommended to install `accelerate` for faster and less memory-intense model loading. You can do so with: 
+```
+pip install accelerate
+```
+.
+[09:32:17] Input latent shape: (1, 4, 256, 256) bf16 -> output expected 2048x2048
+[09:32:17] Sanity CPU forward...
+[09:33:01] CPU output shape: (1, 3, 2048, 2048)
+[09:33:01] Tracing VAE decoder with compiler_args=['--model-type=unet-inference', '--lnc=2', '-O1', '--internal-hlo2tensorizer-options=--tiled-inst-limit 10000000', '--verbose=DEBUG']
+[09:33:01] compiler_workdir=/tmp/sdxl_2k_treatment_workdir
+2026-06-05T09:33:01Z INFO 3226 [root]: /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/bin/neuronx-cc compile /tmp/sdxl_2k_treatment_workdir/model --framework XLA --target trn2 --output /tmp/sdxl_2k_treatment_workdir/graph.neff --model-type=unet-inference --lnc=2 -O1 '--internal-hlo2tensorizer-options=--tiled-inst-limit 10000000' --verbose=DEBUG
+2026-06-05T09:33:01Z DEBUG 3226 [urllib3.connectionpool]: Starting new HTTP connection (1): 169.254.169.254:80
+2026-06-05T09:33:01Z DEBUG 3226 [urllib3.connectionpool]: http://169.254.169.254:80 "PUT /latest/api/token HTTP/1.1" 200 56
+2026-06-05T09:33:01Z DEBUG 3226 [urllib3.connectionpool]: Resetting dropped connection: 169.254.169.254
+2026-06-05T09:33:01Z DEBUG 3226 [urllib3.connectionpool]: http://169.254.169.254:80 "GET /latest/meta-data/ami-id HTTP/1.1" 200 21
+2026-06-05T09:33:01Z DEBUG 3226 [urllib3.connectionpool]: Resetting dropped connection: 169.254.169.254
+2026-06-05T09:33:01Z DEBUG 3226 [urllib3.connectionpool]: http://169.254.169.254:80 "GET /latest/meta-data/kernel-id HTTP/1.1" 404 339
+2026-06-05T09:33:01Z DEBUG 3226 [urllib3.connectionpool]: Resetting dropped connection: 169.254.169.254
+2026-06-05T09:33:01Z DEBUG 3226 [urllib3.connectionpool]: http://169.254.169.254:80 "GET /latest/meta-data/placement/availability-zone-id HTTP/1.1" 200 8
+2026-06-05T09:33:01Z INFO 3226 [root]: NeuronX Compiler version 2.25.3371.0+f524f7f8 Python version 3.12.3 HWM version 2.25.0.3371++f524f7f8 NumPy version 2.4.6 Running on AMI ami-0cf4a9836c7e41459 Running in region sae1-az2
+2026-06-05T09:33:01Z DEBUG 3238 [root]: Fast-math: ['none']
+2026-06-05T09:33:01Z INFO 3238 [root]: XLA detected
+2026-06-05T09:33:01Z INFO 3238 [root]: Pipeline: HLOToTensorizer Frontend StaticIOTranspose WalrusDriver NeffWrapper
+2026-06-05T09:33:01Z DEBUG 3238 [root]: Found neuronxcc.driver.jobs.HLOToTensorizer at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/HLOToTensorizer.cpython-312-x86_64-linux-gnu.so
+2026-06-05T09:33:01Z DEBUG 3238 [root]: Found neuronxcc.driver.jobs.Frontend at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/Frontend.cpython-312-x86_64-linux-gnu.so
+2026-06-05T09:33:01Z DEBUG 3238 [root]: Found neuronxcc.driver.jobs.StaticIOTranspose at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/StaticIOTranspose.cpython-312-x86_64-linux-gnu.so
+2026-06-05T09:33:01Z DEBUG 3238 [root]: Found neuronxcc.driver.jobs.WalrusDriver at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/WalrusDriver.cpython-312-x86_64-linux-gnu.so
+2026-06-05T09:33:01Z DEBUG 3238 [root]: Found neuronxcc.driver.jobs.NeffWrapper at /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/driver/jobs/NeffWrapper.cpython-312-x86_64-linux-gnu.so
+2026-06-05T09:33:01Z DEBUG 3238 [root]: job_specific_args=['/tmp/sdxl_2k_treatment_workdir/model']
+2026-06-05T09:33:01Z INFO 3238 [root]: Intermediate files stored in /home/ubuntu/neuronxcc-8rklxhka, output in /home/ubuntu
+2026-06-05T09:33:01Z INFO 3238 [pipeline.Pipeline.0]: Job Pipeline len(in_states) 1
+2026-06-05T09:33:01Z INFO 3238 [pipeline.Pipeline.0]: Processing input #0
+2026-06-05T09:33:01Z INFO 3238 [pipeline.Pipeline.0]: Running pipeline Pipeline.0
+2026-06-05T09:33:01Z INFO 3238 [pipeline.Pipeline.0]: Starting job job.HLOToTensorizer.0
+2026-06-05T09:33:01Z INFO 3238 [job.HLOToTensorizer.0]: Job HLOToTensorizer len(in_states) 1
+2026-06-05T09:33:01Z INFO 3238 [job.HLOToTensorizer.0]: Processing input #0
+2026-06-05T09:33:01Z DEBUG 3238 [job.HLOToTensorizer.0]: hlo2tensorizer: /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/starfish/bin/hlo2penguin
+2026-06-05T09:33:01Z INFO 3238 [job.HLOToTensorizer.0]: Executing: /opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxcc/starfish/bin/hlo2penguin --input /tmp/sdxl_2k_treatment_workdir/model --out-dir ./ --output penguin.py --target-instance=trn2 --logical-nc-config=2 --verbose=debug --logfile=/home/ubuntu/log-neuron-cc.txt --ml-dtypes-version=0.5.4 --logfile-verbose=info --modular-flow-mac-target=200000000000 --partition --emit-tensor-level-dropout-ops --tiled-inst-limit 10000000 --expand-batch-norm-training --enable-native-kernel --native-kernel-auto-cast=none-to-bf16
+2026-06-05T09:33:02Z INFO 3238 [job.HLOToTensorizer.0]: WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1780651981.778036    3250 main.cc:689] IR signature: 9a5d40355b8e0c9f39412d437f0142998f31833690abd1735fdbb4fcadd5fb8c for model
+2026-06-05 09:33:01.828124: I hilo/hlo2penguin/lowering_utils/FrontendDriver.cc:1187] [INFO] Found compute bound graph
+2026-06-05 09:33:01.828183: I hilo/hlo_passes/InstructionHistogram.cc:100] [INFO] 
+Post-Partition Histogram before graph level optimizations - Total HLO instructions: 1321
+             reshape       335  25.36% ################################################################
+           broadcast       300  22.71% #########################################################
+            constant       272  20.59% ###################################################
+                 add        85   6.43% ################
+            multiply        81   6.13% ###############
+           transpose        54   4.09% ##########
+         convolution        36   2.73% ######
+             convert        34   2.57% ######
+                call        32   2.42% ######
+   get-tuple-element        30   2.27% #####
+ batch-norm-training        30   2.27% #####
+              divide        16   1.21% ###
+                 dot         6   0.45% #
+              reduce         3   0.23% 
+             compare         2   0.15% 
+         exponential         1   0.08% 
+              select         1   0.08% 
+               tuple         1   0.08% 
+            subtract         1   0.08% 
+           parameter         1   0.08% 
+
+
+2026-06-05 09:33:01.829219: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829630: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829634: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829642: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829643: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829646: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829648: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829651: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829653: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829656: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829657: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829660: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829662: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829665: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829667: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829670: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+2026-06-05 09:33:01.829672: W hilo/hlo_passes/NeuronHloVerifier.cc:233] 
+It is not recommended to use BF16 batch-norm-training, as accuracy loss in BF16 representation gets amplified through inverse operations when the input is small, resulting in significant computational differences.
+...
+[truncated 42879 lines, showing last 300]
+...
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: remain_vectorize_axes [Axis[0x2c252cd0]:i1900=[0:2048:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: 
+
+Trying to optimize matmult I-12911
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: lhs free: [Axis[0x32ebfb10]:i1924_1_0=[0:4:1], Axis[0x2f0acb50]:i1924_0_1=[0:2048:1], Axis[0x3b919fe0]:i_shard_10218=[0:2:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: dst_vectorize_axes []
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: remain_vectorize_axes [Axis[0x3b919fe0]:i_shard_10218=[0:2:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: optimal axes picked:  [Axis[0x32ebfb10]:i1924_1_0=[0:4:1], Axis[0x2f0acb50]:i1924_0_1=[0:2048:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: vec_factors {Axis[0x32ebfb10]:i1924_1_0=[0:4:1]: 4, Axis[0x2f0acb50]:i1924_0_1=[0:2048:1]: 128}
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: Vectorizing by 4 on axis Axis[0x32ebfb10]:i1924_1_0=[0:4:1]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: Vectorizing by 128 on axis Axis[0x2f0acb50]:i1924_0_1=[0:2048:1]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: 
+
+Trying to optimize matmult I-12922
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: lhs free: [Axis[0x32ebfb10]:i1924_1_0=[0:4:1], Axis[0x2f0acb50]:i1924_0_1=[0:2048:1], Axis[0x3b919fe0]:i_shard_10218=[0:2:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: dst_vectorize_axes []
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: remain_vectorize_axes [Axis[0x3b919fe0]:i_shard_10218=[0:2:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: optimal axes picked:  [Axis[0x32ebfb10]:i1924_1_0=[0:4:1], Axis[0x2f0acb50]:i1924_0_1=[0:2048:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: vec_factors {Axis[0x32ebfb10]:i1924_1_0=[0:4:1]: 4, Axis[0x2f0acb50]:i1924_0_1=[0:2048:1]: 128}
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: Vectorizing by 4 on axis Axis[0x32ebfb10]:i1924_1_0=[0:4:1]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: Vectorizing by 128 on axis Axis[0x2f0acb50]:i1924_0_1=[0:2048:1]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: 
+
+Trying to optimize matmult I-12334
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: lhs free: [Axis[0x3286b790]:i1956_0=[0:4:1], Axis[0x2c28d1c0]:i1957=[0:2048:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: dst_vectorize_axes []
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: remain_vectorize_axes [Axis[0x2c28d1c0]:i1957=[0:2048:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: 
+
+Trying to optimize matmult I-12933
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: lhs free: [Axis[0x32eb27f0]:i1981_1_0=[0:4:1], Axis[0x2f0b7370]:i1981_0_1=[0:2048:1], Axis[0x3b921e20]:i_shard_10238=[0:2:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: dst_vectorize_axes []
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: remain_vectorize_axes [Axis[0x3b921e20]:i_shard_10238=[0:2:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: optimal axes picked:  [Axis[0x32eb27f0]:i1981_1_0=[0:4:1], Axis[0x2f0b7370]:i1981_0_1=[0:2048:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: vec_factors {Axis[0x32eb27f0]:i1981_1_0=[0:4:1]: 4, Axis[0x2f0b7370]:i1981_0_1=[0:2048:1]: 128}
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: Vectorizing by 4 on axis Axis[0x32eb27f0]:i1981_1_0=[0:4:1]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: Vectorizing by 128 on axis Axis[0x2f0b7370]:i1981_0_1=[0:2048:1]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: 
+
+Trying to optimize matmult I-12944
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: lhs free: [Axis[0x32eb27f0]:i1981_1_0=[0:4:1], Axis[0x2f0b7370]:i1981_0_1=[0:2048:1], Axis[0x3b921e20]:i_shard_10238=[0:2:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: dst_vectorize_axes []
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: remain_vectorize_axes [Axis[0x3b921e20]:i_shard_10238=[0:2:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: optimal axes picked:  [Axis[0x32eb27f0]:i1981_1_0=[0:4:1], Axis[0x2f0b7370]:i1981_0_1=[0:2048:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: vec_factors {Axis[0x32eb27f0]:i1981_1_0=[0:4:1]: 4, Axis[0x2f0b7370]:i1981_0_1=[0:2048:1]: 128}
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: Vectorizing by 4 on axis Axis[0x32eb27f0]:i1981_1_0=[0:4:1]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: Vectorizing by 128 on axis Axis[0x2f0b7370]:i1981_0_1=[0:2048:1]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: 
+
+Trying to optimize matmult I-12368
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: lhs free: [Axis[0x32ec0bd0]:i2001_0=[0:4:1], Axis[0x2c2ba320]:i2002=[0:2048:1]]
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: dst_vectorize_axes []
+2026-06-05T09:33:45Z DEBUG 3238 [sg0000/Tensorizer/VectorizeMatMult]: remain_vectorize_axes [Axis[0x2c2ba320]:i2002=[0:2048:1]]
+2026-06-05T09:33:45Z INFO 3238 [sg0000/Tensorizer/VectorizeMatMult]: Finished (changed=False)
+2026-06-05T09:33:45Z INFO 3238 [sg0000/Tensorizer/VectorizeMatMult]: hash=54a30bb0db596b8b8480221945b7e1071c05349da27369a025935bbd148229f9
+2026-06-05T09:33:45Z INFO 3238 [sg0000/Tensorizer/VectorizeMatMult]: VectorizeMatMult finished after 0.278 seconds
+2026-06-05T09:33:45Z INFO 3238 [sg0000/Tensorizer/InferSharedMemLoc]: Running InferSharedMemLoc
+2026-06-05T09:33:45Z INFO 3238 [sg0000/Tensorizer/InferSharedMemLoc]: Finished (changed=True #instances=10585704)
+2026-06-05T09:33:45Z INFO 3238 [sg0000/Tensorizer/InferSharedMemLoc]: hash=54a30bb0db596b8b8480221945b7e1071c05349da27369a025935bbd148229f9
+2026-06-05T09:33:45Z INFO 3238 [sg0000/Tensorizer/InferSharedMemLoc]: InferSharedMemLoc finished after 0.142 seconds
+2026-06-05T09:33:45Z INFO 3238 [sg0000/Tensorizer/VectorizeDMA]: Running VectorizeDMA
+2026-06-05T09:33:45Z INFO 3238 [sg0000/Tensorizer/VectorizeDMA]: Running VectorizeDMA_iteration_0
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/VectorizeDMA]: VectorizeDMA_iteration_0 finished after 0.115 seconds
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/VectorizeDMA]: Running VectorizeDMA_iteration_1
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/VectorizeDMA]: VectorizeDMA_iteration_1 finished after 0.102 seconds
+2026-06-05T09:33:46Z DEBUG 3238 [sg0000/Tensorizer/VectorizeDMA]: VectorizeDMA completed after 2 iterations
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/VectorizeDMA]: Finished (changed=True #instances=10519636)
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/VectorizeDMA]: hash=36d22bcdec78011805edfcfcf9895eb7e163d091866f52c0ff527fcd72f27f1b
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/VectorizeDMA]: VectorizeDMA finished after 0.254 seconds
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/NeuronSimplifyPredicates]: Running NeuronSimplifyPredicates
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/NeuronSimplifyPredicates]: Finished (changed=False)
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/NeuronSimplifyPredicates]: hash=36d22bcdec78011805edfcfcf9895eb7e163d091866f52c0ff527fcd72f27f1b
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/NeuronSimplifyPredicates]: NeuronSimplifyPredicates finished after 0.177 seconds
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/LegalizePartitionReduce]: Running LegalizePartitionReduce
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/LegalizePartitionReduce]: Finished (changed=False instance_count_change=+0)
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/LegalizePartitionReduce]: hash=36d22bcdec78011805edfcfcf9895eb7e163d091866f52c0ff527fcd72f27f1b
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/LegalizePartitionReduce]: LegalizePartitionReduce finished after 0.142 seconds
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/PartialLoopFusion]: Running PartialLoopFusion
+2026-06-05T09:33:46Z INFO 3238 [sg0000/Tensorizer/PartialLoopFusion]: Running PartialLoopFusion_iteration_0
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/PartialLoopFusion]: PartialLoopFusion_iteration_0 finished after 0.677 seconds
+2026-06-05T09:33:47Z DEBUG 3238 [sg0000/Tensorizer/PartialLoopFusion]: PartialLoopFusion completed after 1 iterations
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/PartialLoopFusion]: Finished (changed=True #instances=10519636)
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/PartialLoopFusion]: hash=778733fe4e3b1f00fd1b7519cb5467810f0409cf7d4cacd7a53b0234dc4a925d
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/PartialLoopFusion]: PartialLoopFusion finished after 0.719 seconds
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/NeuronLICM]: Running NeuronLICM
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/NeuronLICM]: Finished (changed=True #instances=10389588)
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/NeuronLICM]: hash=44ccd3b19d6798097ce675e2ff6971600a2ad8748370b8ecec14c3ee8b5fba5a
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/NeuronLICM]: NeuronLICM finished after 0.161 seconds
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LowerTranspose]: Running LowerTranspose
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LowerTranspose]: Finished (changed=True #instances=10915938)
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LowerTranspose]: hash=3528e3a11fa9b2f94b71fb963de65b0e5ddc67de7395dfa487e27ac389f0137b
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LowerTranspose]: LowerTranspose finished after 0.177 seconds
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LowerBroadcast]: Running LowerBroadcast
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LowerBroadcast]: Finished (changed=True #instances=10915982)
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LowerBroadcast]: hash=ef5f1a8d667e528515d484f14adfb4233243c179a846b421ba6c362626e8aa3c
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LowerBroadcast]: LowerBroadcast finished after 0.155 seconds
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LateNeuronInstComb]: Running LateNeuronInstComb
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LateNeuronInstComb]: Running LateNeuronInstComb_iteration_0
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LateNeuronInstComb]: LateNeuronInstComb_iteration_0 finished after 0.138 seconds
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LateNeuronInstComb]: Running LateNeuronInstComb_iteration_1
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LateNeuronInstComb]: LateNeuronInstComb_iteration_1 finished after 0.131 seconds
+2026-06-05T09:33:47Z DEBUG 3238 [sg0000/Tensorizer/LateNeuronInstComb]: LateNeuronInstComb completed after 2 iterations
+2026-06-05T09:33:47Z INFO 3238 [sg0000/Tensorizer/LateNeuronInstComb]: Finished (changed=True #instances=10915976)
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/LateNeuronInstComb]: hash=d9cef18acb9c02a55e0fb741c016abc31ce38c1e4bede868b6bb6502466a356e
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/LateNeuronInstComb]: LateNeuronInstComb finished after 0.310 seconds
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/SplitAccGrp]: Running SplitAccGrp
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/SplitAccGrp]: Finished (changed=False)
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/SplitAccGrp]: hash=d9cef18acb9c02a55e0fb741c016abc31ce38c1e4bede868b6bb6502466a356e
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/SplitAccGrp]: SplitAccGrp finished after 0.140 seconds
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/SpillPSum]: Running SpillPSum
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/SpillPSum]: Finished (changed=True #instances=10916296)
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/SpillPSum]: hash=b4742e3b02e6769269bad1d4147c437795944141a83d23ef76ad2f50f42a54e5
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/SpillPSum]: SpillPSum finished after 0.240 seconds
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/LowerIntrinsics]: Running LowerIntrinsics
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/LowerIntrinsics]: Finished (changed=False)
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/LowerIntrinsics]: hash=b4742e3b02e6769269bad1d4147c437795944141a83d23ef76ad2f50f42a54e5
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/LowerIntrinsics]: LowerIntrinsics finished after 0.276 seconds
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/InlineNativeKernels]: Running InlineNativeKernels
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/InlineNativeKernels]: Finished (changed=False)
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/InlineNativeKernels]: hash=b4742e3b02e6769269bad1d4147c437795944141a83d23ef76ad2f50f42a54e5
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/InlineNativeKernels]: InlineNativeKernels finished after 0.151 seconds
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/NeuronLICM]: Running NeuronLICM
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/NeuronLICM]: Finished (changed=False)
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/NeuronLICM]: hash=b4742e3b02e6769269bad1d4147c437795944141a83d23ef76ad2f50f42a54e5
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/NeuronLICM]: NeuronLICM finished after 0.169 seconds
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/InferPSumTensor]: Running InferPSumTensor
+2026-06-05T09:33:48Z INFO 3238 [sg0000/Tensorizer/InferPSumTensor]: Running InferPSumTensor_iteration_0
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/InferPSumTensor]: InferPSumTensor_iteration_0 finished after 0.203 seconds
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/InferPSumTensor]: Running InferPSumTensor_iteration_1
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/InferPSumTensor]: InferPSumTensor_iteration_1 finished after 0.199 seconds
+2026-06-05T09:33:49Z DEBUG 3238 [sg0000/Tensorizer/InferPSumTensor]: InferPSumTensor completed after 2 iterations
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/InferPSumTensor]: Finished (changed=True #instances=10916296)
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/InferPSumTensor]: hash=2de98f9f4ae936b3c9f49859921504d8300d89bee77c70b961a7c266391c9549
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/InferPSumTensor]: InferPSumTensor finished after 0.441 seconds
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/LegalizeType]: Running LegalizeType
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/LegalizeType]: Finished (changed=True #instances=10965449)
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/LegalizeType]: hash=bdcc23f33a430540beade4038dd0844532d733f0a78f866e7cd3ef36e4b22cf8
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/LegalizeType]: LegalizeType finished after 0.181 seconds
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/WeightCoalescing]: Running WeightCoalescing
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/WeightCoalescing]: Finished (changed=False)
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/WeightCoalescing]: hash=bdcc23f33a430540beade4038dd0844532d733f0a78f866e7cd3ef36e4b22cf8
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/WeightCoalescing]: WeightCoalescing finished after 0.162 seconds
+2026-06-05T09:33:49Z INFO 3238 [sg0000/Tensorizer/LegalizeSundaAccess]: Running LegalizeSundaAccess
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/LegalizeSundaAccess]: Finished (changed=True #instances=10966485 instance_count_change=+1036)
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/LegalizeSundaAccess]: hash=4f5b9978021ba8e11bcbe92970e816dcb2191afdeff702f1f331ba65212fa18f
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/LegalizeSundaAccess]: LegalizeSundaAccess finished after 0.310 seconds
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/RelaxPredicates]: Running RelaxPredicates
+2026-06-05T09:33:50Z DEBUG 3238 [sg0000/Tensorizer/RelaxPredicates]: original predicates:  [<neuronxcc.pelican.ir.AffinePredicate object at 0x7d6df3686a20>, <neuronxcc.pelican.ir.AffinePredicate object at 0x7d6df3686bb0>, <neuronxcc.pelican.ir.AffinePredicate object at 0x7d6df3f6d760>, <neuronxcc.pelican.ir.AffinePredicate object at 0x7d6df3686ac0>]
+2026-06-05T09:33:50Z DEBUG 3238 [sg0000/Tensorizer/RelaxPredicates]: predicates to keep:  [<neuronxcc.pelican.ir.AffinePredicate object at 0x7d6df3712cf0>, <neuronxcc.pelican.ir.AffinePredicate object at 0x7d6df3686bb0>, <neuronxcc.pelican.ir.AffinePredicate object at 0x7d6df5ee69d0>, <neuronxcc.pelican.ir.AffinePredicate object at 0x7d6df3f6d8f0>]
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/RelaxPredicates]: Finished (changed=True #instances=10966485)
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/RelaxPredicates]: hash=4fde644fa5f00b4a56f4a720be7e75e2eb629f7b869eb536e6e90e927f645622
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/RelaxPredicates]: RelaxPredicates finished after 0.220 seconds
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/TensorInitialization]: Running TensorInitialization
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/TensorInitialization]: Finished (changed=True #instances=10970173)
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/TensorInitialization]: hash=5f86b7dc2f91118c2bca3e2cf627efd6a26002c9329ad327601185cb2219d89b
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/TensorInitialization]: TensorInitialization finished after 0.371 seconds
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/NeuronSimplifyPredicates]: Running NeuronSimplifyPredicates
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/NeuronSimplifyPredicates]: Finished (changed=False)
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/NeuronSimplifyPredicates]: hash=5f86b7dc2f91118c2bca3e2cf627efd6a26002c9329ad327601185cb2219d89b
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/NeuronSimplifyPredicates]: NeuronSimplifyPredicates finished after 0.228 seconds
+2026-06-05T09:33:50Z INFO 3238 [sg0000/Tensorizer/ExpandISAMacro]: Running ExpandISAMacro
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/ExpandISAMacro]: Finished (changed=True #instances=10978365)
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/ExpandISAMacro]: hash=d80025658960a8ae42fa76091a91607eb8c6058e92bf279a92a5c23a0322d331
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/ExpandISAMacro]: ExpandISAMacro finished after 0.197 seconds
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/SimplifyNeuronTensor]: Running SimplifyNeuronTensor
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/SimplifyNeuronTensor]: Running DeadCodeElimination_iteration_0
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/SimplifyNeuronTensor]: DeadCodeElimination_iteration_0 finished after 0.144 seconds
+2026-06-05T09:33:51Z DEBUG 3238 [sg0000/Tensorizer/SimplifyNeuronTensor]: DeadCodeElimination completed after 1 iterations
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/SimplifyNeuronTensor]: Finished (changed=True #instances=10978365)
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/SimplifyNeuronTensor]: hash=335acdd12daf6e218b003b87b57ac40039e2b360e3b5b16be9726c1edf195a68
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/SimplifyNeuronTensor]: SimplifyNeuronTensor finished after 0.356 seconds
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/DMALocalityOpt]: Running DMALocalityOpt
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/DMALocalityOpt]: Finished (changed=True #instances=10978365)
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/DMALocalityOpt]: hash=0b8552afcf22dd572bf7be64268e120c3eabf51328c57e3704d28402a437cfe8
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/DMALocalityOpt]: DMALocalityOpt finished after 0.188 seconds
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/DataStreaming]: Running DataStreaming
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/DataStreaming]: Finished (changed=True #instances=10978365)
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/DataStreaming]: hash=71003ca7d0c9b75384644b23b3ddb25083f58711de6fef89aceee436b2d1e320
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/DataStreaming]: DataStreaming finished after 0.202 seconds
+2026-06-05T09:33:51Z INFO 3238 [sg0000/Tensorizer/SFKVectorizer]: Running SFKVectorizer
+2026-06-05T09:33:52Z DEBUG 3238 [sg0000/Tensorizer/SFKVectorizer]: Filtered 62 static tensors from live interval analysis
+2026-06-05T09:33:52Z INFO 3238 [sg0000/Tensorizer/SFKVectorizer]: Running VectorizeLoop_iteration_0
+2026-06-05T09:33:52Z DEBUG 3238 [sg0000/Tensorizer/SFKVectorizer]: lookup i0.128 0x7d6df407aca0 4
+2026-06-05T09:33:52Z DEBUG 3238 [sg0000/Tensorizer/SFKVectorizer]: lookup i2.4 0x7d6e29652020 4
+2026-06-05T09:33:52Z DEBUG 3238 [sg0000/Tensorizer/SFKVectorizer]: lookup c1_7973 0x34e06c90 4
+2026-06-05T09:33:52Z DEBUG 3238 [sg0000/Tensorizer/SFKVectorizer]: lookup i1.256 0x7d6df407ad40 4
+2026-06-05T09:33:52Z INFO 3238 [sg0000/Tensorizer/SFKVectorizer]: VectorizeLoop_iteration_0 finished after 0.291 seconds
+2026-06-05T09:33:52Z INFO 3238 [sg0000/Tensorizer/SFKVectorizer]: Running VectorizeLoop_iteration_1
+2026-06-05T09:33:52Z INFO 3238 [sg0000/Tensorizer/SFKVectorizer]: VectorizeLoop_iteration_1 finished after 0.174 seconds
+2026-06-05T09:33:52Z DEBUG 3238 [sg0000/Tensorizer/SFKVectorizer]: VectorizeLoop completed after 2 iterations
+2026-06-05T09:33:52Z INFO 3238 [sg0000/Tensorizer/SFKVectorizer]: Finished (changed=True #instances=10287087)
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/SFKVectorizer]: hash=76775216381abd31086bddc84bb5963e703b3f79d5c9459b0c312866867c1141
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/SFKVectorizer]: SFKVectorizer finished after 1.192 seconds
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/LateLegalizeInst]: Running LateLegalizeInst
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/LateLegalizeInst]: Finished (changed=False instance_count_change=+0)
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/LateLegalizeInst]: hash=76775216381abd31086bddc84bb5963e703b3f79d5c9459b0c312866867c1141
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/LateLegalizeInst]: LateLegalizeInst finished after 0.220 seconds
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/CoalesceCCOp]: Running CoalesceCCOp
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/CoalesceCCOp]: Finished (changed=False)
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/CoalesceCCOp]: hash=76775216381abd31086bddc84bb5963e703b3f79d5c9459b0c312866867c1141
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/CoalesceCCOp]: CoalesceCCOp finished after 0.206 seconds
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/SimpleAllReduceTiling]: Running SimpleAllReduceTiling
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/SimpleAllReduceTiling]: Finished (changed=False)
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/SimpleAllReduceTiling]: hash=76775216381abd31086bddc84bb5963e703b3f79d5c9459b0c312866867c1141
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/SimpleAllReduceTiling]: SimpleAllReduceTiling finished after 0.205 seconds
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/InsertCoreBarrier]: Running InsertCoreBarrier
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/InsertCoreBarrier]: Finished (changed=False)
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/InsertCoreBarrier]: hash=76775216381abd31086bddc84bb5963e703b3f79d5c9459b0c312866867c1141
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/InsertCoreBarrier]: InsertCoreBarrier finished after 0.209 seconds
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Running DMAProfiler
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Top 10 (estimated) latency DMAs:
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 7.075ms (36.000MiB, est bw: 5.335GB/s, 59.269% of tot. time) for                 bfloat16<4 x 512> TongaSB partitions[3] bfloat16 (2, 64, 2, 36, 512) %'convolution.771.13586'(init=0.0)[i_shard_9666,4i71_0_1_5917_6074_6079_0_0_0+i71_0_1_5917_6074_6079_0_0_1,i71_0_1_5917_6074_6079_0_1,i0.4+4p_14196+12p_14195,i1.256+256i2.2] = load bfloat16<4 x 512> non_local bfloat16 (4, 66050) %'add.1'[i0.4,i1.256+4096i71_0_1_5917_6074_6079_0_0_0+256i2.2+1024i71_0_1_5917_6074_6079_0_0_1+512i71_0_1_5917_6074_6079_0_1+256p_14196+p_14195] # id=11271, src_id=None, , instances=9216 # dl = tensor_op_name: _convolution.771 | hlo_id: 771 |  if -i1.256-p_14195+256 >= 0 and i1.256+p_14195-1 >= 0 and -16i71_0_1_5917_6074_6079_0_0_0-i2.2-4i71_0_1_5917_6074_6079_0_0_1-2i71_0_1_5917_6074_6079_0_1-p_14196+256 >= 0 and 16i71_0_1_5917_6074_6079_0_0_0+i2.2+4i71_0_1_5917_6074_6079_0_0_1+2i71_0_1_5917_6074_6079_0_1+p_14196-1 >= 0 [[i0.4];[i1.256, i2.2]] -> [[i0.4];[i1.256, i2.2]]  
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 3.181ms (48.000MiB, est bw: 15.821GB/s, 26.650% of tot. time) for       bfloat16<3 x 2048> bfloat16 (1, 3, 2048, 2048) %'output0'(init=0.0)[0,i0.3,i2002_7229_9194,i1.2048] = store bfloat16<3 x 2048> TongaSB partitions[2] bfloat16 (2, 2048, 3, 2048) %10825[i_shard_10243,i2002_7229_9194,i0.3,i1.2048] # id=12372, src_id=None, , instances=4096 # dl = tensor_op_name: _add.2010 | hlo_id: 2010 |  [[i0.3];[i1.2048]] -> [[i0.3];[i1.2048]]  
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 98.573us (1.000MiB, est bw: 10.638GB/s, 0.826% of tot. time) for         bfloat16<4 x 2048> TongaSB partitions[2] bfloat16 (2, 32, 4, 2048) %'convolution.767.13076'[i_shard_9600,2i24_6049_0_7796_0_0+i24_6049_0_7796_0_1,i0.4,i1.2048] = load bfloat16<4 x 2048> {'CrossPassTensor': ''}bfloat16 (1, 4, 65536) %'input0'[0,i0.4,4096i24_6049_0_7796_0_0+i1.2048+2048i24_6049_0_7796_0_1] # id=11265, src_id=None, , instances=64 # dl = tensor_op_name: _convolution.767 | hlo_id: 767 |  [[i0.4];[i1.2048]] -> [[i0.4];[i1.2048]]  
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 59.389us (1.000MiB, est bw: 17.656GB/s, 0.497% of tot. time) for         bfloat16<4 x 2048> non_local bfloat16 (4, 66050) %'add.1'[i0.4,4096i24_6049_0_7796_0_0+i1.2048+2048i24_6049_0_7796_0_1+257] = store bfloat16<4 x 2048> TongaSB partitions[2] bfloat16 (2, 32, 4, 2048) %10688[i_shard_9600,2i24_6049_0_7796_0_0+i24_6049_0_7796_0_1,i0.4,i1.2048] # id=11270, src_id=None, , instances=64 # dl = tensor_op_name: _add.770 | hlo_id: 770 |  [[i0.4];[i1.2048]] -> [[i0.4];[i1.2048]]  
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 51.121us (9.000MiB, est bw: 184.607GB/s, 0.428% of tot. time) for         bfloat16<128 x 1536> TongaSB partitions[3] bfloat16 (2, 4, 3, 128, 1536) %'constant.143-7825_local_7836'[i_shard_9666,i116_0_0_6100_0_9216,c1_7828_16693,i0.128,i1.1536] = load bfloat16<128 x 1536> weight bfloat16 (128, 4, 3, 1536) %'constant.143-7825-10939'[i0.128,i116_0_0_6100_0_9216,c1_7828_16693,i1.1536] # id=11305, src_id=None, , instances=24 # dl = tensor_op_name: _convolution.803 | hlo_id: 803 |  [[i0.128];[i1.1536]] -> [[i0.128];[i1.1536]]  
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 51.121us (9.000MiB, est bw: 184.607GB/s, 0.428% of tot. time) for         bfloat16<128 x 1536> TongaSB partitions[3] bfloat16 (2, 4, 3, 128, 1536) %'constant.140-7866_local_7877'[i_shard_9666,i173_0_0_6138_0_9227,c1_7869_16694,i0.128,i1.1536] = load bfloat16<128 x 1536> weight bfloat16 (128, 4, 3, 1536) %'constant.140-7866-10947'[i0.128,i173_0_0_6138_0_9227,c1_7869_16694,i1.1536] # id=11338, src_id=None, , instances=24 # dl = tensor_op_name: _convolution.835 | hlo_id: 835 |  [[i0.128];[i1.1536]] -> [[i0.128];[i1.1536]]  
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 51.121us (9.000MiB, est bw: 184.607GB/s, 0.428% of tot. time) for         bfloat16<128 x 1536> TongaSB partitions[3] bfloat16 (2, 4, 3, 128, 1536) %'constant.123-8009_local_8020'[i_shard_9967,i340_0_0_6230_0_9288,c1_8012_16695,i0.128,i1.1536] = load bfloat16<128 x 1536> weight bfloat16 (128, 4, 3, 1536) %'constant.123-8009-10975'[i0.128,i340_0_0_6230_0_9288,c1_8012_16695,i1.1536] # id=11453, src_id=None, , instances=24 # dl = tensor_op_name: _convolution.1059 | hlo_id: 1059 |  [[i0.128];[i1.1536]] -> [[i0.128];[i1.1536]]  
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 51.121us (9.000MiB, est bw: 184.607GB/s, 0.428% of tot. time) for         bfloat16<128 x 1536> TongaSB partitions[3] bfloat16 (2, 4, 3, 128, 1536) %'constant.120-8050_local_8061'[i_shard_9967,i409_0_0_6268_0_9299,c1_8053_16696,i0.128,i1.1536] = load bfloat16<128 x 1536> weight bfloat16 (128, 4, 3, 1536) %'constant.120-8050-10983'[i0.128,i409_0_0_6268_0_9299,c1_8053_16696,i1.1536] # id=11486, src_id=None, , instances=24 # dl = tensor_op_name: _convolution.1091 | hlo_id: 1091 |  [[i0.128];[i1.1536]] -> [[i0.128];[i1.1536]]  
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 51.121us (9.000MiB, est bw: 184.607GB/s, 0.428% of tot. time) for         bfloat16<128 x 1536> TongaSB partitions[3] bfloat16 (2, 4, 3, 128, 1536) %'constant.115-8091_local_8102'[i_shard_9967,i463_0_0_6306_0_9310,c1_8094_16697,i0.128,i1.1536] = load bfloat16<128 x 1536> weight bfloat16 (128, 4, 3, 1536) %'constant.115-8091-10991'[i0.128,i463_0_0_6306_0_9310,c1_8094_16697,i1.1536] # id=11520, src_id=None, , instances=24 # dl = tensor_op_name: _convolution.1128 | hlo_id: 1128 |  [[i0.128];[i1.1536]] -> [[i0.128];[i1.1536]]  
+2026-06-05T09:33:53Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Est. DMA time: 51.121us (9.000MiB, est bw: 184.607GB/s, 0.428% of tot. time) for         bfloat16<128 x 1536> TongaSB partitions[3] bfloat16 (2, 4, 3, 128, 1536) %'constant.112-8132_local_8143'[i_shard_9967,i532_0_0_6344_0_9321,c1_8135_16698,i0.128,i1.1536] = load bfloat16<128 x 1536> weight bfloat16 (128, 4, 3, 1536) %'constant.112-8132-10999'[i0.128,i532_0_0_6344_0_9321,c1_8135_16698,i1.1536] # id=11553, src_id=None, , instances=24 # dl = tensor_op_name: _convolution.1160 | hlo_id: 1160 |  [[i0.128];[i1.1536]] -> [[i0.128];[i1.1536]]  
+2026-06-05T09:33:54Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: Finished (changed=False)
+2026-06-05T09:33:54Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: hash=76775216381abd31086bddc84bb5963e703b3f79d5c9459b0c312866867c1141
+2026-06-05T09:33:54Z INFO 3238 [sg0000/Tensorizer/DMAProfiler]: DMAProfiler finished after 0.210 seconds
+2026-06-05T09:33:54Z INFO 3238 [sg0000/Tensorizer/OptimizeNKIKernels]: Running OptimizeNKIKernels
+2026-06-05T09:33:54Z INFO 3238 [sg0000/Tensorizer/OptimizeNKIKernels]: Finished (changed=False)
+2026-06-05T09:33:54Z INFO 3238 [sg0000/Tensorizer/OptimizeNKIKernels]: hash=76775216381abd31086bddc84bb5963e703b3f79d5c9459b0c312866867c1141
+2026-06-05T09:33:54Z INFO 3238 [sg0000/Tensorizer/OptimizeNKIKernels]: OptimizeNKIKernels finished after 0.206 seconds
+2026-06-05T09:33:54Z INFO 3238 [sg0000/Tensorizer/StaticProfiler]: Running StaticProfiler
+2026-06-05T09:33:54Z DEBUG 3238 [sg0000/Tensorizer/StaticProfiler]: PE size utilization: sg0000 0.0
+2026-06-05T09:33:54Z DEBUG 3238 [sg0000/Tensorizer/StaticProfiler]: Fractal PE size utilization: sg0000 0.0
+2026-06-05T09:33:54Z ERROR 3238 [/usr/lib/python3.12/multiprocessing/process.py:108]: Assertion failed: usage <= hbm_size
+2026-06-05T09:33:54Z ERROR 3238 [/usr/lib/python3.12/multiprocessing/process.py:108]: Assertion failed: usage <= hbm_size
+2026-06-05T09:33:54Z INFO 3238 [sg0000/Tensorizer/StaticProfiler]: StaticProfiler finished after 0.174 seconds
+2026-06-05T09:33:54Z ERROR 3238 [Tensorizer]: Transformation error on operator: _add.2010
+2026-06-05T09:33:54Z USER 3238 [root/Tensorizer/Tensorizer]: Tensorizer finished after 50.581 seconds
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]: ***************************************************************
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:  An Internal Compiler Error has occurred
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]: ***************************************************************
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]: 
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]: [ERROR] [NCC_EXSP001] Size of HBM memory required for the model exceeds HBM limit of gen3. Needed more than 40,947,923,456 (38.14GB) vs. available bytes 25,769,803,776 (24.00GB). This may be due to compiler allocating high scratch pad memory for this model. - Check the target architecture flag to ensure you are compiling for correct target, or consider using smaller batches or applying model/tensor parallelism.
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]: 
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]: Internal details:
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]: Type: <class 'neuronxlogger.error.NeuronAssertion'>
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/CommandDriver.py", line 360, in neuronxcc.driver.CommandDriver.CommandDriver.run_subcommand
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1551, in neuronxcc.driver.commands.CompileCommand.CompileCommand.run
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1486, in neuronxcc.driver.commands.CompileCommand.CompileCommand.runPipeline
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1533, in neuronxcc.driver.commands.CompileCommand.CompileCommand.runPipeline
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1515, in neuronxcc.driver.commands.CompileCommand.CompileCommand.runPipeline
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/commands/CompileCommand.py", line 1518, in neuronxcc.driver.commands.CompileCommand.CompileCommand.runPipeline
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Job.py", line 373, in neuronxcc.driver.Job.SingleInputJob.run
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Job.py", line 402, in neuronxcc.driver.Job.SingleInputJob.runOnState
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Pipeline.py", line 31, in neuronxcc.driver.Pipeline.Pipeline.runSingleInput
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Job.py", line 373, in neuronxcc.driver.Job.SingleInputJob.run
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/Job.py", line 402, in neuronxcc.driver.Job.SingleInputJob.runOnState
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/jobs/Frontend.py", line 139, in neuronxcc.driver.jobs.Frontend.Frontend.runSingleInput
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/jobs/Frontend.py", line 88, in neuronxcc.driver.jobs.Frontend.Frontend.runXLAFrontend
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/driver/jobs/Frontend.py", line 93, in neuronxcc.driver.jobs.Frontend.Frontend.runXLAFrontend
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Penguin.py", line 354, in neuronxcc.starfish.penguin.Penguin.runPenguin
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Frontend.py", line 183, in neuronxcc.starfish.penguin.Frontend.tensorizeXla
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Frontend.py", line 191, in neuronxcc.starfish.penguin.Frontend.tensorizeXla
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Frontend.py", line 197, in neuronxcc.starfish.penguin.Frontend.tensorizeXla
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Frontend.py", line 382, in neuronxcc.starfish.penguin.Frontend.tensorizeXlaFromFile
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Compile.py", line 490, in neuronxcc.starfish.penguin.Compile.compile_module
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Compile.py", line 497, in neuronxcc.starfish.penguin.Compile.compile_module
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Compile.py", line 561, in neuronxcc.starfish.penguin.Compile.compile_module
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Compile.py", line 577, in neuronxcc.starfish.penguin.Compile.generate_code_and_metadata_for_module
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/Compile.py", line 215, in neuronxcc.starfish.penguin.Compile.generate_code_and_metadata
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 179, in neuronxcc.starfish.penguin.DotTransform.DotTransform.runOnFunction
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 265, in neuronxcc.starfish.penguin.DotTransform.DotTransform.run_with_exception_handling
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 282, in neuronxcc.starfish.penguin.DotTransform.DotTransform.rethrow_exception
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 252, in neuronxcc.starfish.penguin.DotTransform.DotTransform.run_with_exception_handling
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 342, in neuronxcc.starfish.penguin.DotTransform.DotTransform.timed_run_
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 352, in neuronxcc.starfish.penguin.DotTransform.DotTransform.timed_run_
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 354, in neuronxcc.starfish.penguin.DotTransform.DotTransform.timed_run_
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 384, in neuronxcc.starfish.penguin.DotTransform.DotTransform.run_
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 386, in neuronxcc.starfish.penguin.DotTransform.DotTransform.run_
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 537, in neuronxcc.starfish.penguin.DotTransform.DotTransform.transformFunction
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/DotTransform.py", line 530, in neuronxcc.starfish.penguin.DotTransform.DotTransform.runTransforms
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/targets/tonga/passes/StaticProfiler.py", line 547, in neuronxcc.starfish.penguin.targets.tonga.passes.StaticProfiler.StaticProfiler.afterStmtTransform
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "neuronxcc/starfish/penguin/targets/tonga/passes/TongaBufferUsageAnalysis.py", line 136, in neuronxcc.starfish.penguin.targets.tonga.passes.TongaBufferUsageAnalysis.profileMemoryPressure
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:   File "/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/neuronxlogger/error.py", line 183, in neuron_external_assert
+2026-06-05T09:33:54Z ERROR 3238 [neuronxcc.driver.CommandDriver]:     raise NeuronAssertion(
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]: 
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]: Diagnostic information:
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]:   NeuronX Compiler version 2.25.3371.0+f524f7f8
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]:   
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]:   Python version 3.12.3
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]:   HWM version 2.25.0.3371++f524f7f8
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]:   NumPy version 2.4.6
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]:   
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]:   Running on AMI ami-0cf4a9836c7e41459
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]:   Running in region sae1-az2
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]: 
+2026-06-05T09:33:54Z USER 3238 [neuronxcc.driver.CommandDriver]: Diagnostic logs stored in /home/ubuntu/log-neuron-cc.txt
+2026-06-05T09:33:54Z INFO 3238 [neuronxcc.driver.CommandDriver]: Artifacts stored in: /home/ubuntu/neuronxcc-8rklxhka
+2026-06-05T09:33:54Z INFO 3226 [root]: Subcommand returned with exitcode=70
+[09:33:54] Compile FAILED after 53.5s
+Exception class: RuntimeError
+Exception message: neuronx-cc failed with 70
