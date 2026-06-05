@@ -1,0 +1,59 @@
+{
+  "verdict": "BLOCKED_HOST_OOM",
+  "tp": 4,
+  "latent_shape": [1, 4, 256, 256],
+  "image_shape": [1, 3, 2048, 2048],
+  "lnc": 1,
+  "compile_succeeded": false,
+  "neff_size_bytes": null,
+  "cold_ms": null,
+  "warm_ms_avg": null,
+  "warm_ms_min": null,
+  "cos_vs_cpu_bf16": null,
+  "structural_validation": {
+    "linears_sharded": 4,
+    "convs_sharded": 32,
+    "convs_skipped_small": 4,
+    "state_dict_alignment_missing_keys": 0,
+    "state_dict_alignment_extra_keys": 0,
+    "trace_seconds": 0.2
+  },
+  "compile_failure": {
+    "stage": "walrus_driver",
+    "exit_code": -9,
+    "error": "F137: neuronx-cc was forcibly killed (Linux OOM-killer SIGKILL)",
+    "instance_ram_gb": 124,
+    "swap_added_gb": 64,
+    "peak_compiler_rss_gb_run1": 128,
+    "peak_compiler_rss_gb_run2": 125,
+    "compile_wall_seconds_run1": 1106,
+    "compile_wall_seconds_run2": 2356,
+    "per_partition_peak_rss_mb": {
+      "sg01": 44241,
+      "sg00": 72006,
+      "sg03": 125697
+    }
+  },
+  "graph_size_after_tp4_sharding": {
+    "total_partitions": 5,
+    "instructions_total_oom_checker": 8288040,
+    "instructions_largest_partition_sg00_after_tp": 1731151,
+    "instructions_partition_sg03_after_tp": 897054,
+    "tiled_inst_limit_set_to": 10000000,
+    "below_inst_count_limit": true,
+    "comment": "TP=4 sharding successfully shrank the per-partition instruction count below the --tiled-inst-limit 10M ceiling (so Luo's flag was no longer needed). The compile failure is now compile-host CPU memory, not Trainium HBM or instruction limit."
+  },
+  "instance": {
+    "type": "trn2.3xlarge",
+    "id": "i-0e48667e57ff8ef7b",
+    "region": "sa-east-1b"
+  },
+  "sdk": {
+    "neuronx_cc": "2.25.3371.0+f524f7f8",
+    "torch_neuronx": "2.9.0.2.14.27725+e2ff0410",
+    "neuronx_distributed": "0.19.28093+fc70b593",
+    "diffusers": "0.34.0",
+    "venv": "/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference"
+  },
+  "compiler_args": "--model-type=unet-inference --lnc=1 -O1 --internal-hlo2tensorizer-options='--tiled-inst-limit 10000000' --verbose=DEBUG"
+}
