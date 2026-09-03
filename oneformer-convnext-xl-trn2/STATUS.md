@@ -6,7 +6,8 @@ Last updated: 2026-09-03 Asia/Singapore
 
 `PASS`: the official OneFormer ADE20K ConvNeXt-XL 640 x 640 checkpoint runs
 end to end as a fixed-shape BF16 Neuron pipeline with fused NKI
-multi-scale deformable attention on `trn2.3xlarge`.
+multi-scale deformable attention and direct-HBM model chaining on
+`trn2.3xlarge`.
 
 ## Target
 
@@ -15,7 +16,8 @@ multi-scale deformable attention on `trn2.3xlarge`.
 - Batch and input: 1 x 3 x 640 x 640
 - Class logits: 1 x 250 x 151
 - Mask logits: 1 x 250 x 160 x 160
-- Backend: `torch_neuronx.trace` plus NKI Library MSDeformableAttention
+- Backend: `torch_neuronx.trace`, NKI Library MSDeformableAttention, and
+  direct-HBM chaining
 - Logical NeuronCore configuration: LNC2
 - Compiler flags:
   `-O1 --auto-cast=all --auto-cast-type=bf16`
@@ -28,24 +30,27 @@ multi-scale deformable attention on `trn2.3xlarge`.
 - Mask-logit cosine similarity: 0.98865259
 - Semantic pixel agreement: 0.99980223
 - Warmups / measured runs: 3 / 10
-- Full mean: 670.600 ms
-- Full p50: 670.401 ms
-- Full p90: 671.146 ms
-- Full min / max: 669.965 / 671.535 ms
+- Full mean: 553.462 ms
+- Full p50: 553.322 ms
+- Full p90: 554.362 ms
+- Full min / max: 552.638 / 554.380 ms
 
 Component means:
 
-- Backbone: 151.369 ms
-- Pixel decoder: 326.066 ms
-- Task encoder: 0.348 ms
-- Transformer: 176.207 ms
+- Backbone: 104.540 ms
+- Pixel decoder: 310.315 ms
+- Task encoder: 0.472 ms
+- Transformer: 142.954 ms
 
 Compared with the validated explicit-gather baseline:
 
-- Pixel decoder: 4190.425 -> 326.066 ms, 12.85x faster
-- Complete pipeline: 4527.947 -> 670.600 ms, 6.75x faster
+- Pixel decoder: 4190.425 -> 310.315 ms, 13.50x faster
+- Complete pipeline: 4527.947 -> 553.462 ms, 8.18x faster
 - Unique artifacts: 78 -> 63
 - Runtime invocations: 99 -> 69
+
+Direct-HBM chaining alone improves the fused NKI pipeline from 670.600 to
+553.462 ms, or 1.21x.
 
 ## GPU comparison
 
@@ -53,7 +58,9 @@ The NVIDIA L4 reference used the original Detectron2 implementation.
 
 - Strict FP32 native core: 215.964 ms
 - Strict FP32 TensorRT backbone + native head: 170.738 ms
+- PyTorch AMP BF16 backbone: 54.569 ms
 - PyTorch AMP BF16 core: 114.158 ms
+- TensorRT BF16 backbone: 24.782 ms
 - TensorRT BF16 backbone + native head: 89.809 ms
 - TensorRT BF16 semantic pixel agreement: 0.99956787
 
@@ -77,12 +84,10 @@ fully TensorRT OneFormer graph.
 
 ## Main limitation
 
-The six fused encoder layers now run in roughly 12.5-12.7 ms each and
-75.86 ms combined. Component microbenchmarks put the input projection at
-7.44 ms and the final FPN output at 255.18 ms. The FPN upsample and
-convolution path is therefore the next decoder target. The complete model
-also retains 69 host-dispatched calls, mainly from the fine-grained backbone
-and transformer pipelines.
+The final FPN output remains the largest pixel-decoder component. The complete
+model also retains 69 sequential invocations from the fine-grained backbone,
+pixel-decoder, and transformer pipelines. Even after direct-HBM chaining, the
+batch-1 result is substantially slower than the L4 TensorRT path.
 
 ## Historical result
 

@@ -41,6 +41,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", required=True)
     parser.add_argument("--warmup", type=int, default=2)
     parser.add_argument("--runs", type=int, default=5)
+    parser.add_argument("--device-resident", action="store_true")
+    parser.add_argument("--neuron-device-id", type=int, default=0)
     parser.add_argument("--custom-grid-sample", action="store_true")
     return parser.parse_args()
 
@@ -191,6 +193,60 @@ class CompiledTransformerPipeline:
         return self.final_prediction(output, mask_features)
 
 
+def iter_compiled_modules(
+    backbone,
+    pixel_decoder,
+    task_encoder,
+    transformer,
+):
+    yield backbone.embeddings
+    for stage_chunks in backbone.stages:
+        for _, _, module in stage_chunks:
+            yield module
+
+    yield pixel_decoder.input
+    if isinstance(pixel_decoder, CompiledNkiPixelDecoderPipeline):
+        yield from pixel_decoder.layers
+    else:
+        yield from pixel_decoder.samplers
+        yield from pixel_decoder.projections
+        yield from pixel_decoder.combiners
+        yield from pixel_decoder.posts
+    yield pixel_decoder.output
+
+    yield task_encoder
+    yield transformer.query_input
+    yield from transformer.query_layers
+    yield transformer.main_prepare
+    yield from transformer.masks
+    yield from transformer.decoder_layers
+    yield transformer.final_prediction
+
+
+def move_pipeline_to_device(
+    backbone,
+    pixel_decoder,
+    task_encoder,
+    transformer,
+    device_id: int,
+) -> int:
+    module_count = 0
+    for module in iter_compiled_modules(
+        backbone,
+        pixel_decoder,
+        task_encoder,
+        transformer,
+    ):
+        torch_neuronx.move_trace_to_device(module, device_id)
+        torch_neuronx.set_neuron_cores(
+            module,
+            start_nc=device_id,
+            nc_count=1,
+        )
+        module_count += 1
+    return module_count
+
+
 def build_pixel_position_embeddings(decoder, backbone_outputs):
     source_features = (
         backbone_outputs[3],
@@ -251,6 +307,15 @@ def main() -> None:
     compiled_transformer = CompiledTransformerPipeline(
         Path(args.transformer_dir)
     )
+    device_module_count = 0
+    if args.device_resident:
+        device_module_count = move_pipeline_to_device(
+            compiled_backbone,
+            compiled_pixel_decoder,
+            compiled_task_encoder,
+            compiled_transformer,
+            args.neuron_device_id,
+        )
 
     with torch.no_grad():
         cpu_backbone_outputs = tuple(backbone(pixel_values).feature_maps)
@@ -265,32 +330,52 @@ def main() -> None:
             cpu_task_token,
         )
 
-        neuron_backbone_outputs = compiled_backbone(pixel_values)
+        if args.device_resident:
+            private_backend = (
+                torch._C._get_privateuse1_backend_name()
+            )
+            neuron_device = torch.device(
+                f"{private_backend}:{args.neuron_device_id}"
+            )
+            neuron_pixel_values = pixel_values.to(neuron_device)
+            neuron_task_inputs = task_inputs.to(neuron_device)
+            neuron_position_embeddings = position_embeddings.to(
+                neuron_device
+            )
+        else:
+            neuron_device = torch.device("cpu")
+            neuron_pixel_values = pixel_values
+            neuron_task_inputs = task_inputs
+            neuron_position_embeddings = position_embeddings
+
+        neuron_backbone_outputs = compiled_backbone(
+            neuron_pixel_values
+        )
         neuron_pixel_outputs = compiled_pixel_decoder(
             neuron_backbone_outputs,
-            position_embeddings,
+            neuron_position_embeddings,
         )
-        neuron_task_token = compiled_task_encoder(task_inputs)
+        neuron_task_token = compiled_task_encoder(neuron_task_inputs)
         neuron_outputs = compiled_transformer(
             neuron_pixel_outputs,
             neuron_task_token,
         )
 
         backbone_latency = benchmark_callable(
-            lambda: compiled_backbone(pixel_values),
+            lambda: compiled_backbone(neuron_pixel_values),
             args.warmup,
             args.runs,
         )
         pixel_decoder_latency = benchmark_callable(
             lambda: compiled_pixel_decoder(
                 neuron_backbone_outputs,
-                position_embeddings,
+                neuron_position_embeddings,
             ),
             args.warmup,
             args.runs,
         )
         task_encoder_latency = benchmark_callable(
-            lambda: compiled_task_encoder(task_inputs),
+            lambda: compiled_task_encoder(neuron_task_inputs),
             args.warmup,
             args.runs,
         )
@@ -304,12 +389,14 @@ def main() -> None:
         )
 
         def full_pipeline():
-            backbone_outputs = compiled_backbone(pixel_values)
+            backbone_outputs = compiled_backbone(
+                neuron_pixel_values
+            )
             pixel_outputs = compiled_pixel_decoder(
                 backbone_outputs,
-                position_embeddings,
+                neuron_position_embeddings,
             )
-            task_token = compiled_task_encoder(task_inputs)
+            task_token = compiled_task_encoder(neuron_task_inputs)
             return compiled_transformer(pixel_outputs, task_token)
 
         full_latency = benchmark_callable(
@@ -318,7 +405,9 @@ def main() -> None:
             args.runs,
         )
 
-    class_logits, mask_logits = neuron_outputs
+    class_logits, mask_logits = (
+        value.cpu() for value in neuron_outputs
+    )
     expected_class, expected_mask = cpu_outputs
     class_metrics = tensor_metrics(class_logits, expected_class)
     mask_metrics = tensor_metrics(mask_logits, expected_mask)
@@ -350,6 +439,9 @@ def main() -> None:
             else "bf16-all"
         ),
         "pixel_decoder_backend": args.pixel_decoder_backend,
+        "device_resident": args.device_resident,
+        "neuron_device": str(neuron_device),
+        "device_module_count": device_module_count,
         "instance_type": "trn2.3xlarge",
         "logical_neuroncore_config": 2,
         "batch_size": 1,

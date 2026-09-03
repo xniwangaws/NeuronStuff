@@ -38,9 +38,11 @@
   },
   "trn2": {
     "instance_type": "trn2.3xlarge",
-    "backend": "torch_neuronx.trace + NKI Library MSDeformableAttention",
+    "backend": "torch_neuronx.trace + NKI Library MSDeformableAttention + direct HBM chaining",
     "logical_neuroncore_config": 2,
     "precision": "bf16-all+nki-msda",
+    "device_resident": true,
+    "neuron_device": "privateuseone:0",
     "compiler_args": "-O1 --auto-cast=all --auto-cast-type=bf16",
     "software": {
       "torch_neuronx": "2.9.0.2.15.32035+de43f57c",
@@ -72,41 +74,47 @@
     },
     "latency_ms": {
       "backbone": {
-        "mean": 151.36902100002771,
-        "p50": 151.34826400026213
+        "mean": 104.53991460017278,
+        "p50": 104.53373300333624
       },
       "pixel_decoder": {
-        "mean": 326.06564729994716,
-        "p50": 326.0284939988196
+        "mean": 310.31533680034045,
+        "p50": 310.3323880022799
       },
       "task_encoder": {
-        "mean": 0.3478956004983047,
-        "p50": 0.3879610012518242
+        "mean": 0.47158340057649184,
+        "p50": 0.4387070002849214
       },
       "transformer": {
-        "mean": 176.20697620004648,
-        "p50": 176.23005299901706
+        "mean": 142.95406279961753,
+        "p50": 142.9257259987935
       },
       "full_pipeline": {
-        "min": 669.9652440001955,
-        "mean": 670.5999971003621,
-        "p50": 670.4005789997609,
-        "p90": 671.1455490003573,
-        "max": 671.5351110015035
+        "min": 552.6383689975773,
+        "mean": 553.4616347995325,
+        "p50": 553.3219850003661,
+        "p90": 554.362350001611,
+        "max": 554.380310997658
       }
     },
     "optimization": {
       "kernel": "nkilib.experimental.deformable_attention.ms_deformable_attention",
       "fused_pixel_encoder_layers": 6,
       "far_out_of_bounds_zero_padding_sanitization": true,
-      "pixel_decoder_component_latency_ms": {
+      "host_chained_pixel_decoder_component_latency_ms": {
         "input_mean": 7.443448399862973,
         "six_fused_layers_mean_sum": 75.86428430004162,
         "fused_layer_mean": 12.64404738334027,
         "fpn_output_mean": 255.17513749982754
       },
-      "pixel_decoder_speedup": 12.851475155690933,
-      "full_pipeline_speedup": 6.75208362836125,
+      "direct_hbm_chaining": {
+        "host_chained_full_pipeline_mean_ms": 670.5999971003621,
+        "device_resident_full_pipeline_mean_ms": 553.4616347995325,
+        "speedup": 1.2116467609236508,
+        "latency_reduction_percent": 17.4676950204786
+      },
+      "pixel_decoder_speedup": 13.503762361883222,
+      "full_pipeline_speedup": 8.18114025778952,
       "baseline": {
         "backend": "torch_neuronx.trace explicit bilinear gather",
         "component_count": 78,

@@ -27,7 +27,7 @@ runs.
 | NVIDIA L4, PyTorch AMP BF16 | 54.57 ms | 114.16 ms | 99.9558% |
 | NVIDIA L4, TensorRT BF16 backbone + PyTorch head | 24.78 ms | 89.81 ms | 99.9568% |
 | Trn2, explicit-gather baseline, BF16/LNC2 | 152.58 ms | 4527.95 ms | 99.9773% |
-| Trn2, fused NKI MSDA, BF16/LNC2 | 151.37 ms | 670.60 ms | 99.9802% |
+| Trn2, fused NKI MSDA + direct HBM, BF16/LNC2 | 104.54 ms | 553.46 ms | 99.9802% |
 
 The GPU TensorRT result compiles the complete ConvNeXt-XL backbone with
 `require_full_compilation=True`; the OneFormer head remains native PyTorch.
@@ -38,17 +38,18 @@ The optimized Trn2 core latency breaks down as follows:
 
 | Component | Unique artifacts | Runtime calls | Mean latency |
 | --- | ---: | ---: | ---: |
-| ConvNeXt-XL backbone | 37 | 37 | 151.37 ms |
-| Pixel decoder | 8 | 8 | 326.07 ms |
-| Task encoder | 1 | 1 | 0.35 ms |
-| Transformer decoder | 17 | 23 | 176.21 ms |
-| Complete pipeline | 63 | 69 | 670.60 ms |
+| ConvNeXt-XL backbone | 37 | 37 | 104.54 ms |
+| Pixel decoder | 8 | 8 | 310.32 ms |
+| Task encoder | 1 | 1 | 0.47 ms |
+| Transformer decoder | 17 | 23 | 142.95 ms |
+| Complete pipeline | 63 | 69 | 553.46 ms |
 
-The complete-pipeline p50 is 670.40 ms. Relative to the validated
-explicit-gather baseline, the pixel decoder is 12.85x faster and the complete
-pipeline is 6.75x faster. The distinction between unique artifacts and
-runtime calls matters: reusable transformer mask artifacts are invoked more
-than once.
+The complete-pipeline p50 is 553.32 ms. Relative to the validated
+explicit-gather baseline, the pixel decoder is 13.50x faster and the complete
+pipeline is 8.18x faster. Direct HBM chaining keeps intermediate tensors on
+one Neuron device; this improves the NKI pipeline from 670.60 ms to
+553.46 ms. The distinction between unique artifacts and runtime calls matters:
+reusable transformer mask artifacts are invoked more than once.
 
 Machine-readable measurements are in
 `benchmarks/oneformer_convnext_xl_ade20k_640.json`.
@@ -153,9 +154,11 @@ python scripts/run_full_oneformer_pipeline.py \
   --pixel-decoder-backend nki \
   --remaining-dir agent_artifacts/traces/oneformer_remaining_bf16_all \
   --transformer-dir agent_artifacts/traces/transformer_pipeline_bf16_all \
-  --output agent_artifacts/results/trn2_full_oneformer_nki_bf16_lnc2.json \
+  --output agent_artifacts/results/trn2_full_oneformer_nki_hbm_bf16_lnc2.json \
   --warmup 3 \
   --runs 10 \
+  --device-resident \
+  --neuron-device-id 0 \
   --custom-grid-sample
 ```
 
@@ -171,12 +174,11 @@ Neuron runtime 2.34.10, and NKI Library commit
 
 ## Optimization direction
 
-The deformable-attention bottleneck is removed: the six fused encoder layers
-run in about 12.5-12.7 ms each, or 75.86 ms combined. A component
-microbenchmark measures the input projection at 7.44 ms and the final FPN
-output at 255.18 ms, so the next target is specifically the FPN upsample and
-convolution graph. Further safe fusion of ConvNeXt and transformer components
-can also reduce the remaining 69 host invocations.
+The deformable-attention bottleneck and intermediate CPU round trips are
+removed. The final FPN output remains the largest pixel-decoder component.
+Further fusion of ConvNeXt and transformer components may reduce latency, but
+the current batch-1 result remains substantially slower than the L4 TensorRT
+path.
 
 ## Limitations
 
@@ -185,6 +187,8 @@ can also reduce the remaining 69 host invocations.
 - Latencies exclude image preprocessing and final semantic postprocessing.
 - The Trn2 run uses shape-derived positional embeddings prepared outside the
   timed path.
+- Inputs and intermediate tensors are preallocated on one Neuron device for
+  the direct-HBM benchmark.
 - The NKI MSDeformableAttention API is experimental.
 - Compiled artifacts and model weights are intentionally not stored in Git.
 - Results describe this port and software stack, not a general hardware
