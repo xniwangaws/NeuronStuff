@@ -5,6 +5,28 @@ _[English version: README.en.md](README.en.md)_
 
 > Prompt:`"A cat holding a sign that says hello world"`,guidance 4.0,50 step,batch=1,seeds 42–51(共 10 个)
 
+## 2026-09-03 更新：原生 trn2.3xlarge + Neuron FP8
+
+本次直接使用 `trn2.3xlarge` Capacity Block（不是在
+`trn2.48xlarge` 上切核）重跑 FLUX.2 Klein 9B 1024²：
+
+| 精度 | Mean | Pass | 相对 BF16 |
+|---|---:|---:|---:|
+| BF16 TP=4 | 41.785 s | 10/10 | 1.000× |
+| FP8 MLP weight-only | 41.989 s | 1/1 | 0.995× |
+| FP8 MLP dynamic activation | 38.562 s | 10/10 | 1.084× |
+| FP8 全部 Transformer Linear W8A8 | **37.893 s** | **10/10** | **1.103×** |
+
+`all_linear` 把 Transformer 内全部 289 个 Linear/GEMM 权重做成 per-row
+E4M3，并对对应输入动态 E4M3 量化；norm、RoPE、softmax、残差和 attention
+kernel 仍为 BF16/FP32，因此不是“所有算子均 FP8”。
+原始 checkpoint 仍为 Hugging Face BF16，可在 GPU/CPU 离线导出约 9.09 GB
+的 NxDI FP8 checkpoint 后部署到 Trn2。
+另已验证离线导出的 MLP per-row E4M3 checkpoint：经 NxDI 加载后与加载时
+量化路径在同 seed 的 4-step 测试中逐像素完全一致。
+完整代码、逐 seed 图片、comparison grid 和指标见
+[`task016_klein_trn2_fp8/`](task016_klein_trn2_fp8/)。
+
 ## 1. 设备与价格(AWS on-demand,2026-05)
 
 | 实例 | 芯片 | 内存 | $/hr | Region |
@@ -181,4 +203,3 @@ Trainium2 **没有 NVIDIA MIG 式的硬件显存切分**。Neuron 用 **LNC(Logi
 - Neuron 4K 编译超时（HLO gen timeout，NUM_PATCHES=65536 过大）
 - L4 FP8 需要自定义 FP8 Linear shim（`torch._scaled_mm`，per-tensor E4M3）— diffusers `from_single_file` 不支持 BFL 的 `input_scale` 0-dim scalar 格式
 - 4K 如需支持，建议：2K 生成 + Real-ESRGAN/SUPIR 超分至 4K
-

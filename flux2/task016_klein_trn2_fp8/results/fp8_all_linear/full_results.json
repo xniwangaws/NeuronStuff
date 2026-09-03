@@ -1,0 +1,137 @@
+{
+  "metadata": {
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "model": "/mnt/nvme/flux2-klein/weights",
+    "transformer_checkpoint": "/mnt/nvme/flux2-klein/checkpoints/fp8_all_linear_per_row",
+    "compile_dir": "/mnt/nvme/flux2-klein/compiled_fp8_all_linear_dynamic",
+    "resolution": [
+      1024,
+      1024
+    ],
+    "steps": 50,
+    "guidance": 4.0,
+    "tp": 4,
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "prompt": "A cat holding a sign that says hello world",
+    "neuron_logical_nc_config": "2",
+    "neuron_rt_virtual_core_size": "2",
+    "neuron_rt_visible_cores": "0-3",
+    "flux2_fp8_mlp": "1",
+    "flux2_fp8_scope": "all_linear",
+    "flux2_fp8_activation": "dynamic",
+    "unsafe_fp8fncast": "1"
+  },
+  "compile_seconds": 9.846899956755806e-05,
+  "load_seconds": 46.15025226299986,
+  "mean_seconds": 37.893059240100044,
+  "median_seconds": 37.91322114349896,
+  "min_seconds": 37.71611475200007,
+  "max_seconds": 38.06100154200067,
+  "stdev_seconds": 0.11699920888448563,
+  "valid_images": 10,
+  "sample_count": 10,
+  "samples": [
+    {
+      "seed": 42,
+      "latency_seconds": 37.763318306000656,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed42_cat.png",
+      "mean": 114.2982177734375,
+      "std": 78.86786651611328,
+      "neighbor_correlation": 0.9770591884947105,
+      "valid_image": true
+    },
+    {
+      "seed": 43,
+      "latency_seconds": 38.019969802999185,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed43_cat.png",
+      "mean": 71.9124526977539,
+      "std": 75.08900451660156,
+      "neighbor_correlation": 0.9908837589972382,
+      "valid_image": true
+    },
+    {
+      "seed": 44,
+      "latency_seconds": 38.06100154200067,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed44_cat.png",
+      "mean": 152.92137145996094,
+      "std": 79.68923950195312,
+      "neighbor_correlation": 0.996645952632627,
+      "valid_image": true
+    },
+    {
+      "seed": 45,
+      "latency_seconds": 37.92489950499839,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed45_cat.png",
+      "mean": 144.78353881835938,
+      "std": 77.56329345703125,
+      "neighbor_correlation": 0.9863196651601185,
+      "valid_image": true
+    },
+    {
+      "seed": 46,
+      "latency_seconds": 37.964605221000966,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed46_cat.png",
+      "mean": 132.961181640625,
+      "std": 91.01215362548828,
+      "neighbor_correlation": 0.9865509770872113,
+      "valid_image": true
+    },
+    {
+      "seed": 47,
+      "latency_seconds": 37.747910993000914,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed47_cat.png",
+      "mean": 117.15169525146484,
+      "std": 90.1559066772461,
+      "neighbor_correlation": 0.9899433218971668,
+      "valid_image": true
+    },
+    {
+      "seed": 48,
+      "latency_seconds": 37.71611475200007,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed48_cat.png",
+      "mean": 125.64765167236328,
+      "std": 73.94424438476562,
+      "neighbor_correlation": 0.9845986101690022,
+      "valid_image": true
+    },
+    {
+      "seed": 49,
+      "latency_seconds": 37.82576748000065,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed49_cat.png",
+      "mean": 125.621826171875,
+      "std": 67.94532012939453,
+      "neighbor_correlation": 0.9915407336332295,
+      "valid_image": true
+    },
+    {
+      "seed": 50,
+      "latency_seconds": 37.901542781999524,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed50_cat.png",
+      "mean": 92.76139068603516,
+      "std": 93.83283996582031,
+      "neighbor_correlation": 0.9913848880645554,
+      "valid_image": true
+    },
+    {
+      "seed": 51,
+      "latency_seconds": 38.005462016999445,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_all_linear_final/seed51_cat.png",
+      "mean": 153.72186279296875,
+      "std": 73.8086929321289,
+      "neighbor_correlation": 0.9979248462940605,
+      "valid_image": true
+    }
+  ]
+}

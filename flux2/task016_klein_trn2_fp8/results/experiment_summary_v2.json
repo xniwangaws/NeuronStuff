@@ -1,0 +1,62 @@
+{
+  "resolution": [
+    1024,
+    1024
+  ],
+  "steps": 50,
+  "hourly_price_usd": 2.235,
+  "bf16": {
+    "mean_seconds": 41.78495677040009,
+    "median_seconds": 41.82014401299966,
+    "min_seconds": 41.52264096300041,
+    "max_seconds": 41.97659984800066,
+    "stdev_seconds": 0.16044072678288349,
+    "valid_images": 10,
+    "sample_count": 10,
+    "speedup_vs_bf16": 1.0,
+    "latency_reduction_percent": 0.0,
+    "cost_per_image_usd": 0.025941493994956724
+  },
+  "fp8_mlp_dynamic": {
+    "mean_seconds": 38.56248233259994,
+    "median_seconds": 38.57586041999957,
+    "min_seconds": 38.433012305000375,
+    "max_seconds": 38.672829166000156,
+    "stdev_seconds": 0.08784381457302928,
+    "valid_images": 10,
+    "sample_count": 10,
+    "speedup_vs_bf16": 1.0835650156026375,
+    "latency_reduction_percent": 7.712044445820531,
+    "cost_per_image_usd": 0.023940874448155795
+  },
+  "fp8_all_transformer_linear_dynamic": {
+    "mean_seconds": 37.893059240100044,
+    "median_seconds": 37.91322114349896,
+    "min_seconds": 37.71611475200007,
+    "max_seconds": 38.06100154200067,
+    "stdev_seconds": 0.11699920888448563,
+    "valid_images": 10,
+    "sample_count": 10,
+    "speedup_vs_bf16": 1.1027073983559892,
+    "latency_reduction_percent": 9.31411165909598,
+    "cost_per_image_usd": 0.023525274278228776,
+    "scope_note": "All Transformer Linear/GEMM projections are W8A8; normalization, RoPE, softmax, residual math, and the attention kernel remain BF16/FP32.",
+    "checkpoint": {
+      "format": "flux2-klein-nxdi-fp8-v2",
+      "weight_dtype": "float8_e4m3fn",
+      "scale_dtype": "float32",
+      "weight_quantization": "per_output_row_symmetric",
+      "fp8_weight_tensor_count": 289,
+      "fp8_mlp_weight_tensor_count": 120,
+      "fp8_attention_weight_tensor_count": 160,
+      "fp8_auxiliary_weight_tensor_count": 9,
+      "total_tensor_bytes": 9086124544
+    },
+    "quality_vs_bf16": {
+      "mean_mse": 0.01523279482498765,
+      "mean_mae": 0.05015049688518047,
+      "mean_psnr_db": 19.959998610179998,
+      "mean_global_ssim": 0.9282391303421365
+    }
+  }
+}

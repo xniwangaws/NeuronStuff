@@ -1,0 +1,135 @@
+{
+  "metadata": {
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "model": "/mnt/nvme/flux2-klein/weights",
+    "compile_dir": "/mnt/nvme/flux2-klein/compiled_bf16",
+    "resolution": [
+      1024,
+      1024
+    ],
+    "steps": 50,
+    "guidance": 4.0,
+    "tp": 4,
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "prompt": "A cat holding a sign that says hello world",
+    "neuron_logical_nc_config": "2",
+    "neuron_rt_virtual_core_size": "2",
+    "neuron_rt_visible_cores": "0-3",
+    "flux2_fp8_mlp": "0",
+    "flux2_fp8_activation": "none",
+    "unsafe_fp8fncast": null
+  },
+  "compile_seconds": 8.517999958712608e-05,
+  "load_seconds": 20.31572916300047,
+  "mean_seconds": 41.78495677040009,
+  "median_seconds": 41.82014401299966,
+  "min_seconds": 41.52264096300041,
+  "max_seconds": 41.97659984800066,
+  "stdev_seconds": 0.16044072678288349,
+  "valid_images": 10,
+  "sample_count": 10,
+  "samples": [
+    {
+      "seed": 42,
+      "latency_seconds": 41.52264096300041,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed42_cat.png",
+      "mean": 113.68447875976562,
+      "std": 80.27507781982422,
+      "neighbor_correlation": 0.9763311837404449,
+      "valid_image": true
+    },
+    {
+      "seed": 43,
+      "latency_seconds": 41.55563251999956,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed43_cat.png",
+      "mean": 72.42443084716797,
+      "std": 75.43666076660156,
+      "neighbor_correlation": 0.9910092178355444,
+      "valid_image": true
+    },
+    {
+      "seed": 44,
+      "latency_seconds": 41.91484696600037,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed44_cat.png",
+      "mean": 152.34300231933594,
+      "std": 78.51566314697266,
+      "neighbor_correlation": 0.9963749451169357,
+      "valid_image": true
+    },
+    {
+      "seed": 45,
+      "latency_seconds": 41.604216435000126,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed45_cat.png",
+      "mean": 145.1921844482422,
+      "std": 77.70584106445312,
+      "neighbor_correlation": 0.9847362868715961,
+      "valid_image": true
+    },
+    {
+      "seed": 46,
+      "latency_seconds": 41.94324245600001,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed46_cat.png",
+      "mean": 135.1583709716797,
+      "std": 90.51692962646484,
+      "neighbor_correlation": 0.9851806650987561,
+      "valid_image": true
+    },
+    {
+      "seed": 47,
+      "latency_seconds": 41.9216400790001,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed47_cat.png",
+      "mean": 110.66779327392578,
+      "std": 93.55829620361328,
+      "neighbor_correlation": 0.9903592486764112,
+      "valid_image": true
+    },
+    {
+      "seed": 48,
+      "latency_seconds": 41.860913847999655,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed48_cat.png",
+      "mean": 133.0237579345703,
+      "std": 72.44032287597656,
+      "neighbor_correlation": 0.9837320216513422,
+      "valid_image": true
+    },
+    {
+      "seed": 49,
+      "latency_seconds": 41.77937417799967,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed49_cat.png",
+      "mean": 123.90213775634766,
+      "std": 65.25387573242188,
+      "neighbor_correlation": 0.9906180985712387,
+      "valid_image": true
+    },
+    {
+      "seed": 50,
+      "latency_seconds": 41.770460411000386,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed50_cat.png",
+      "mean": 94.15270233154297,
+      "std": 94.66188049316406,
+      "neighbor_correlation": 0.9926751723578034,
+      "valid_image": true
+    },
+    {
+      "seed": 51,
+      "latency_seconds": 41.97659984800066,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16/seed51_cat.png",
+      "mean": 149.78419494628906,
+      "std": 73.14512634277344,
+      "neighbor_correlation": 0.9976358503637239,
+      "valid_image": true
+    }
+  ]
+}

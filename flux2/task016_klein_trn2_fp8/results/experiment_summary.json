@@ -1,0 +1,40 @@
+{
+  "resolution": [
+    1024,
+    1024
+  ],
+  "steps": 50,
+  "hourly_price_usd": 2.235,
+  "bf16": {
+    "compile_seconds": 8.354299961865763e-05,
+    "load_seconds": 19.35444282800063,
+    "mean_seconds": 41.78495677040009,
+    "valid_images": 10,
+    "sample_count": 10,
+    "cost_per_image_usd": 0.025941493994956724
+  },
+  "fp8_mlp_weight_only": {
+    "compile_seconds": 162.18817384199974,
+    "load_seconds": 32.24409779300004,
+    "seed42_seconds": 41.98934372799977,
+    "valid_images": 1,
+    "sample_count": 1,
+    "speedup_vs_bf16_mean": 0.9951324088577411
+  },
+  "fp8_mlp_dynamic_activation": {
+    "compile_seconds": 173.6331184769997,
+    "load_seconds": 58.019783049999205,
+    "mean_seconds": 38.56248233259994,
+    "valid_images": 10,
+    "sample_count": 10,
+    "speedup_vs_bf16": 1.0835650156026375,
+    "latency_reduction_percent": 7.712044445820531,
+    "cost_per_image_usd": 0.023940874448155795,
+    "quality_vs_bf16": {
+      "mean_mse": 0.008715893724001944,
+      "mean_mae": 0.0361480048391968,
+      "mean_psnr_db": 22.871243155593305,
+      "mean_global_ssim": 0.9564311916590409
+    }
+  }
+}

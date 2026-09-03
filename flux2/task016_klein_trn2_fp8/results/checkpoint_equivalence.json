@@ -1,0 +1,13 @@
+{
+  "resolution": [
+    1024,
+    1024
+  ],
+  "steps": 4,
+  "seed": 42,
+  "runtime_quantized_image_sha256": "41fc9ad48d678586642292bd10bd71bd7f246fd86e49b93ef81baaf7162c038c",
+  "prequantized_checkpoint_image_sha256": "41fc9ad48d678586642292bd10bd71bd7f246fd86e49b93ef81baaf7162c038c",
+  "pixel_equal": true,
+  "mse": 0.0,
+  "max_absolute_8bit_difference": 0
+}

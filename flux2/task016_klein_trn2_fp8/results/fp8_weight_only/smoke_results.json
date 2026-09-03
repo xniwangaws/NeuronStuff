@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "model": "/mnt/nvme/flux2-klein/weights",
+    "compile_dir": "/mnt/nvme/flux2-klein/compiled_fp8_none",
+    "resolution": [
+      1024,
+      1024
+    ],
+    "steps": 4,
+    "guidance": 4.0,
+    "tp": 4,
+    "seeds": [
+      42
+    ],
+    "prompt": "A cat holding a sign that says hello world",
+    "neuron_logical_nc_config": "2",
+    "neuron_rt_virtual_core_size": "2",
+    "neuron_rt_visible_cores": "0-3",
+    "flux2_fp8_mlp": "1",
+    "flux2_fp8_activation": "none",
+    "unsafe_fp8fncast": "1"
+  },
+  "compile_seconds": 162.18817384199974,
+  "load_seconds": 32.24409779300004,
+  "mean_seconds": 17.14866149699992,
+  "median_seconds": 17.14866149699992,
+  "min_seconds": 17.14866149699992,
+  "max_seconds": 17.14866149699992,
+  "stdev_seconds": 0.0,
+  "valid_images": 1,
+  "sample_count": 1,
+  "samples": [
+    {
+      "seed": 42,
+      "latency_seconds": 17.14866149699992,
+      "image": "/mnt/nvme/flux2-klein/outputs_fp8_none/seed42_cat.png",
+      "mean": 116.1097640991211,
+      "std": 68.77619171142578,
+      "neighbor_correlation": 0.9908429264367616,
+      "valid_image": true
+    }
+  ]
+}
