@@ -1,0 +1,91 @@
+{
+  "date": "2026-09-03",
+  "model": {
+    "name": "OneFormer ConvNeXt-XL ADE20K",
+    "input_shape": [1, 3, 640, 640],
+    "parameter_count": 372007256,
+    "checkpoint_sha256": "a022437a6cc16fd1485230670f2f7a3ed5e08ef9f08d3f67a42948e5a6a4d7ca",
+    "official_metrics": {
+      "pq": 50.1,
+      "ap": 36.3,
+      "miou_single_scale": 57.4,
+      "miou_multi_scale_flip": 58.8
+    },
+    "detectron2_to_huggingface_semantic_pixel_agreement": 0.9999975562095642
+  },
+  "gpu": {
+    "instance_type": "g6.4xlarge",
+    "accelerator": "NVIDIA L4",
+    "torch_version": "2.9.1+cu130",
+    "torch_tensorrt_version": "2.9.0+cu130",
+    "runs": 20,
+    "strict_fp32": {
+      "native_backbone_mean_ms": 149.90054092407226,
+      "native_core_mean_ms": 215.96385192871094,
+      "tensorrt_backbone_mean_ms": 106.21225051879883,
+      "tensorrt_backbone_native_head_mean_ms": 170.73846359252929,
+      "semantic_pixel_agreement": 1.0
+    },
+    "bf16": {
+      "pytorch_amp_backbone_mean_ms": 54.56900978088379,
+      "pytorch_amp_core_mean_ms": 114.15816154479981,
+      "pytorch_amp_semantic_pixel_agreement": 0.9995580911636353,
+      "tensorrt_backbone_mean_ms": 24.78217601776123,
+      "tensorrt_backbone_native_head_mean_ms": 89.80873260498046,
+      "tensorrt_semantic_pixel_agreement": 0.9995678663253784
+    },
+    "scope_note": "TensorRT compiles the complete ConvNeXt-XL backbone; the OneFormer head remains native PyTorch."
+  },
+  "trn2": {
+    "instance_type": "trn2.3xlarge",
+    "backend": "torch_neuronx.trace",
+    "logical_neuroncore_config": 2,
+    "precision": "bf16-all",
+    "compiler_args": "-O1 --auto-cast=all --auto-cast-type=bf16",
+    "warmups": 3,
+    "runs": 10,
+    "component_count": {
+      "backbone": 37,
+      "pixel_decoder": 23,
+      "task_encoder": 1,
+      "transformer": 17,
+      "total": 78
+    },
+    "accuracy": {
+      "class_logits_cosine_similarity": 0.9967909455299377,
+      "mask_logits_cosine_similarity": 0.9879364967346191,
+      "semantic_pixel_agreement": 0.9997729659080505
+    },
+    "latency_ms": {
+      "backbone": {
+        "mean": 152.58187069975975,
+        "p50": 152.56231499915884
+      },
+      "pixel_decoder": {
+        "mean": 4190.424565399553,
+        "p50": 4189.955421999912
+      },
+      "task_encoder": {
+        "mean": 0.22421490011765854,
+        "p50": 0.24558199947932735
+      },
+      "transformer": {
+        "mean": 175.30927419975342,
+        "p50": 175.29204300080892
+      },
+      "full_pipeline": {
+        "min": 4524.418511000476,
+        "mean": 4527.947261600457,
+        "p50": 4526.375695999377,
+        "p90": 4531.471528000111,
+        "max": 4533.818318999693
+      }
+    },
+    "limitations": [
+      "Static batch-1 640x640 graph.",
+      "The 78 components execute sequentially.",
+      "Explicit bilinear gather dominates pixel-decoder latency.",
+      "Native grid_sample micrographs compiled but failed numerical validation."
+    ]
+  }
+}

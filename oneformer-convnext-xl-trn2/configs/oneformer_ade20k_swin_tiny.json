@@ -1,0 +1,14 @@
+{
+  "model_id": "shi-labs/oneformer_ade20k_swin_tiny",
+  "task": "semantic",
+  "batch_size": 1,
+  "height": 512,
+  "width": 512,
+  "compiler_args": "--model-type=transformer -O1 --auto-cast=none",
+  "fallback_compiler_args": "--model-type=transformer -O1 --auto-cast=matmult --auto-cast-type=bf16",
+  "accuracy_gates": {
+    "class_logits_cosine": 0.99,
+    "mask_logits_cosine": 0.99,
+    "semantic_pixel_agreement": 0.95
+  }
+}
