@@ -31,6 +31,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cache-dir", required=True)
     parser.add_argument("--backbone-dir", required=True)
     parser.add_argument("--pixel-decoder-dir", required=True)
+    parser.add_argument(
+        "--pixel-decoder-backend",
+        choices=("micro", "nki"),
+        default="micro",
+    )
     parser.add_argument("--remaining-dir", required=True)
     parser.add_argument("--transformer-dir", required=True)
     parser.add_argument("--output", required=True)
@@ -107,6 +112,22 @@ class CompiledPixelDecoderPipeline:
             ]
             attention_output = combiner(*sampled, weights)
             hidden = post(hidden, attention_output)
+        return self.output(hidden, features[0])
+
+
+class CompiledNkiPixelDecoderPipeline:
+    def __init__(self, directory: Path):
+        self.input = torch.jit.load(str(directory / "input.pt"))
+        self.layers = [
+            torch.jit.load(str(directory / f"layer_{index}.pt"))
+            for index in range(6)
+        ]
+        self.output = torch.jit.load(str(directory / "output.pt"))
+
+    def __call__(self, features, position_embeddings):
+        hidden = self.input(features[1], features[2], features[3])
+        for layer in self.layers:
+            hidden = layer(hidden, position_embeddings)
         return self.output(hidden, features[0])
 
 
@@ -215,9 +236,15 @@ def main() -> None:
         stage_depths,
         1,
     )
-    compiled_pixel_decoder = CompiledPixelDecoderPipeline(
-        Path(args.pixel_decoder_dir)
-    )
+    pixel_decoder_directory = Path(args.pixel_decoder_dir)
+    if args.pixel_decoder_backend == "nki":
+        compiled_pixel_decoder = CompiledNkiPixelDecoderPipeline(
+            pixel_decoder_directory
+        )
+    else:
+        compiled_pixel_decoder = CompiledPixelDecoderPipeline(
+            pixel_decoder_directory
+        )
     compiled_task_encoder = torch.jit.load(
         str(Path(args.remaining_dir) / "task_encoder.pt")
     )
@@ -309,19 +336,42 @@ def main() -> None:
         neuron_semantic == expected_semantic
     ).float().mean().item()
 
+    pixel_component_count = (
+        8 if args.pixel_decoder_backend == "nki" else 23
+    )
+    pixel_runtime_invocation_count = (
+        8 if args.pixel_decoder_backend == "nki" else 38
+    )
     report = {
         "model_id": args.model_id,
-        "precision": "bf16-all",
+        "precision": (
+            "bf16-all+nki-msda"
+            if args.pixel_decoder_backend == "nki"
+            else "bf16-all"
+        ),
+        "pixel_decoder_backend": args.pixel_decoder_backend,
         "instance_type": "trn2.3xlarge",
         "logical_neuroncore_config": 2,
         "batch_size": 1,
         "input_shape": list(pixel_values.shape),
         "component_count": {
             "backbone": 37,
-            "pixel_decoder": 23,
+            "pixel_decoder": pixel_component_count,
             "task_encoder": 1,
             "transformer": 17,
-            "total": 78,
+            "total": 37 + pixel_component_count + 1 + 17,
+        },
+        "runtime_invocation_count": {
+            "backbone": 37,
+            "pixel_decoder": pixel_runtime_invocation_count,
+            "task_encoder": 1,
+            "transformer": 23,
+            "total": (
+                37
+                + pixel_runtime_invocation_count
+                + 1
+                + 23
+            ),
         },
         "class_logits": class_metrics,
         "mask_logits": mask_metrics,

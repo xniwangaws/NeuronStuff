@@ -38,54 +38,89 @@
   },
   "trn2": {
     "instance_type": "trn2.3xlarge",
-    "backend": "torch_neuronx.trace",
+    "backend": "torch_neuronx.trace + NKI Library MSDeformableAttention",
     "logical_neuroncore_config": 2,
-    "precision": "bf16-all",
+    "precision": "bf16-all+nki-msda",
     "compiler_args": "-O1 --auto-cast=all --auto-cast-type=bf16",
+    "software": {
+      "torch_neuronx": "2.9.0.2.15.32035+de43f57c",
+      "neuronx_cc": "2.27.5334.0+f702b353",
+      "nki": "0.6.0+31049202112.g85070674",
+      "neuron_runtime_lib": "2.34.10",
+      "nki_library_commit": "92d11f63a9a8ec1ade34e6e1a3b8db66ef31307e"
+    },
     "warmups": 3,
     "runs": 10,
     "component_count": {
       "backbone": 37,
-      "pixel_decoder": 23,
+      "pixel_decoder": 8,
       "task_encoder": 1,
       "transformer": 17,
-      "total": 78
+      "total": 63
+    },
+    "runtime_invocation_count": {
+      "backbone": 37,
+      "pixel_decoder": 8,
+      "task_encoder": 1,
+      "transformer": 23,
+      "total": 69
     },
     "accuracy": {
-      "class_logits_cosine_similarity": 0.9967909455299377,
-      "mask_logits_cosine_similarity": 0.9879364967346191,
-      "semantic_pixel_agreement": 0.9997729659080505
+      "class_logits_cosine_similarity": 0.9972327947616577,
+      "mask_logits_cosine_similarity": 0.9886525869369507,
+      "semantic_pixel_agreement": 0.9998022317886353
     },
     "latency_ms": {
       "backbone": {
-        "mean": 152.58187069975975,
-        "p50": 152.56231499915884
+        "mean": 151.36902100002771,
+        "p50": 151.34826400026213
       },
       "pixel_decoder": {
-        "mean": 4190.424565399553,
-        "p50": 4189.955421999912
+        "mean": 326.06564729994716,
+        "p50": 326.0284939988196
       },
       "task_encoder": {
-        "mean": 0.22421490011765854,
-        "p50": 0.24558199947932735
+        "mean": 0.3478956004983047,
+        "p50": 0.3879610012518242
       },
       "transformer": {
-        "mean": 175.30927419975342,
-        "p50": 175.29204300080892
+        "mean": 176.20697620004648,
+        "p50": 176.23005299901706
       },
       "full_pipeline": {
-        "min": 4524.418511000476,
-        "mean": 4527.947261600457,
-        "p50": 4526.375695999377,
-        "p90": 4531.471528000111,
-        "max": 4533.818318999693
+        "min": 669.9652440001955,
+        "mean": 670.5999971003621,
+        "p50": 670.4005789997609,
+        "p90": 671.1455490003573,
+        "max": 671.5351110015035
+      }
+    },
+    "optimization": {
+      "kernel": "nkilib.experimental.deformable_attention.ms_deformable_attention",
+      "fused_pixel_encoder_layers": 6,
+      "far_out_of_bounds_zero_padding_sanitization": true,
+      "pixel_decoder_component_latency_ms": {
+        "input_mean": 7.443448399862973,
+        "six_fused_layers_mean_sum": 75.86428430004162,
+        "fused_layer_mean": 12.64404738334027,
+        "fpn_output_mean": 255.17513749982754
+      },
+      "pixel_decoder_speedup": 12.851475155690933,
+      "full_pipeline_speedup": 6.75208362836125,
+      "baseline": {
+        "backend": "torch_neuronx.trace explicit bilinear gather",
+        "component_count": 78,
+        "runtime_invocation_count": 99,
+        "semantic_pixel_agreement": 0.9997729659080505,
+        "pixel_decoder_mean_ms": 4190.424565399553,
+        "full_pipeline_mean_ms": 4527.947261600457
       }
     },
     "limitations": [
       "Static batch-1 640x640 graph.",
-      "The 78 components execute sequentially.",
-      "Explicit bilinear gather dominates pixel-decoder latency.",
-      "Native grid_sample micrographs compiled but failed numerical validation."
+      "Shape-derived positional embeddings are prepared outside the timed path.",
+      "The generic pixel-decoder input and FPN output graphs now dominate the fused NKI encoder layers.",
+      "Native grid_sample micrographs compiled but failed numerical validation and are not used."
     ]
   }
 }
