@@ -1,5 +1,7 @@
 # OneFormer ConvNeXt-XL on AWS Neuron
 
+[中文 README](README.zh-CN.md)
+
 This workspace contains a functional AWS Neuron port of the official
 OneFormer ADE20K ConvNeXt-XL 640 x 640 checkpoint. The target is static
 batch-1 semantic-segmentation inference on `trn2.3xlarge`.
