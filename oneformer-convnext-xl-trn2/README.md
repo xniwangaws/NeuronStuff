@@ -35,15 +35,34 @@ engine.
 The stable 20-run measurement has a 144.48 ms p50, 145.50 ms p90, and a
 143.42–145.99 ms range.
 
-The backend is `torch_neuronx.trace`, not NxDI. The tested configuration uses
-BF16 auto-casting, LNC2, device-resident direct-HBM chaining, 33 unique
-artifacts, and 39 runtime invocations.
+The backend is `torch_neuronx.trace`, not NxDI. Compilation uses BF16
+auto-casting, `-O1`, and LNC2.
 
-ConvNeXt stages 0, 1, and 2 use custom fused NKI blocks covering depthwise
-convolution, LayerNorm, pointwise projections, GELU, LayerScale, and the
-residual connection. The pixel decoder uses the NKI Library
-MSDeformableAttention kernel. A six-layer pixel-decoder stack artifact was
-also tested but was slower, so it is not used by the final path.
+### Optimizations used by the final path
+
+| Optimization | Implementation |
+| --- | --- |
+| Static-shape specialization | Fixed batch 1 and 640 x 640 input; shape-only position embeddings are generated outside the timed path |
+| Channels-first backbone | Keeps NCHW and replaces pointwise Linear operations with equivalent 1 x 1 convolutions to reduce layout conversions |
+| Backbone consolidation | Uses a block chunk size of 9, reducing the backbone from 37 artifacts to 7 |
+| ConvNeXt NKI megakernels | Stages 0, 1, and 2 are specialized for fixed C/H/W and fuse DWConv, LayerNorm, both pointwise projections, GELU, LayerScale, and residual addition |
+| NKI memory and precision work | Channel tiling, SBUF reuse, FP32 PSUM accumulation, BF16 activations/matmul, and FP32 normalization statistics and interfaces |
+| Fixed resize operators | Exact 2x bilinear upsampling and even-factor downsampling replace generic interpolation graphs |
+| Per-layer pixel-decoder fusion | Each layer contains value/offset/weight projections, NKI MSDA, output projection, residual/LN, and FFN |
+| Safe MSDA sampling | Zero-contribution far-outside samples are zero-weighted and moved to safe addresses while preserving zero-padding semantics |
+| Device-resident execution | All 33 artifacts share one Neuron device and pass intermediate tensors through direct HBM chaining |
+
+The final path has 33 unique artifacts and 39 runtime invocations. Fixed
+resize operators and artifact consolidation are important parts of the
+result; the optimization is not limited to the ConvNeXt NKI kernels and MSDA.
+
+### Tested but not used
+
+- A six-layer pixel-decoder stack measured 72.39 ms versus 69.95 ms for the
+  separate-layer path.
+- A pure-BF16 stage-0 output made the isolated kernel faster but increased
+  numerical drift and did not preserve the existing FP32 stage interface.
+- Native `grid_sample` compiled but failed numerical validation.
 
 ## Model identity
 

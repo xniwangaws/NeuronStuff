@@ -38,18 +38,32 @@
 
 ## 实现
 
-- Backend：`torch_neuronx.trace`，不是 NxDI
-- 精度：BF16 auto-cast
-- Neuron 配置：LNC2
-- 中间张量：device-resident、direct HBM chaining
-- ConvNeXt Stage 0/1/2：自定义融合 NKI block
-- Pixel Decoder：NKI Library MSDeformableAttention
-- 组件数：33；运行时调用数：39
+最终路径使用 `torch_neuronx.trace`，不是 NxDI；编译配置为 BF16
+auto-cast、`-O1` 和 LNC2。
 
-ConvNeXt 的自定义 NKI block 融合
-DWConv → LayerNorm → PWConv → GELU → PWConv → LayerScale → Residual。
-Pixel Decoder 的六层 stack 合并实验反而增加延迟，因此最终版本仍使用六个独立
-encoder layer。
+### 最终启用的优化
+
+| 优化 | 实现 |
+| --- | --- |
+| 静态形状专用化 | 固定 batch 1、640 × 640；shape-only 位置编码在计时路径外生成 |
+| Channels-first Backbone | 保持 NCHW，使用等价的 1 × 1 Conv 替代 pointwise Linear，减少 layout 转换 |
+| Backbone 组件合并 | chunk size 9，将 Backbone 从 37 个组件降到 7 个 |
+| ConvNeXt NKI megakernel | Stage 0/1/2 按固定 C/H/W 专用化，融合 DWConv → LayerNorm → PWConv → GELU → PWConv → LayerScale → Residual |
+| NKI 内存与精度优化 | 通道分块、SBUF 复用、PSUM FP32 累加；BF16 激活和矩阵乘，FP32 归一化统计与关键接口 |
+| 固定 resize | 使用精确的 2× bilinear upsample 和偶数倍 downsample，替代通用插值图 |
+| Pixel Decoder 单层融合 | 每层包含 value/offset/weight projection、NKI MSDA、output projection、residual/LN 和 FFN |
+| MSDA 安全采样 | 将零贡献的远越界采样点清零并移动到安全地址，保持 zero-padding 语义 |
+| Device-resident 执行 | 33 个组件放在同一 Neuron device，中间 tensor 通过 direct HBM chaining 传递 |
+
+最终共有 33 个唯一组件、39 次运行时调用。固定 resize 和组件合并也是最终
+性能的重要组成部分，并非只使用了 ConvNeXt NKI 与 MSDA。
+
+### 测试后未采用
+
+- Pixel Decoder 六层 stack：72.39 ms，慢于独立六层的 69.95 ms。
+- Stage-0 纯 BF16 输出：局部 kernel 更快，但增加数值偏差且不兼容现有
+  FP32 stage 接口。
+- Native `grid_sample`：能够编译，但数值验证未通过。
 
 ## 结果文件
 
