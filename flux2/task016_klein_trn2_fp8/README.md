@@ -96,6 +96,13 @@ Ten-seed pixel comparison against BF16:
 | MLP W8A8 | 0.9564 | 22.87 dB | 0.03615 | 0.008716 |
 | all Linear W8A8 | 0.9282 | 19.96 dB | 0.05015 | 0.015233 |
 
+### Visual comparison
+
+Each row uses the same prompt and seed. Columns are BF16 (left), MLP W8A8
+(center), and all-Transformer-Linear W8A8 (right).
+
+![BF16 vs MLP W8A8 vs all-Transformer-Linear W8A8 across seeds 42-51](results/comparison_grid_bf16_mlp_all_linear.png)
+
 These are diagnostic pixel metrics, not a perceptual-quality benchmark.
 Diffusion trajectories can amplify small numeric differences. Inspect
 `results/comparison_grid_bf16_mlp_all_linear.png` alongside the per-seed
