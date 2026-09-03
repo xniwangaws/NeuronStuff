@@ -27,6 +27,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--chunk-size", type=int, default=1)
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--runs", type=int, default=10)
+    parser.add_argument("--device-resident", action="store_true")
+    parser.add_argument("--neuron-device-id", type=int, default=0)
     parser.add_argument("--custom-grid-sample", action="store_true")
     return parser.parse_args()
 
@@ -121,6 +123,29 @@ class NeuronConvNextStagePipeline:
         return result
 
 
+def iter_compiled_modules(pipeline: NeuronConvNextStagePipeline):
+    yield pipeline.embeddings
+    for stage_chunks in pipeline.stages:
+        for _, _, module in stage_chunks:
+            yield module
+
+
+def move_pipeline_to_device(
+    pipeline: NeuronConvNextStagePipeline,
+    device_id: int,
+) -> int:
+    module_count = 0
+    for module in iter_compiled_modules(pipeline):
+        torch_neuronx.move_trace_to_device(module, device_id)
+        torch_neuronx.set_neuron_cores(
+            module,
+            start_nc=device_id,
+            nc_count=1,
+        )
+        module_count += 1
+    return module_count
+
+
 def main() -> None:
     args = parse_args()
     if args.chunk_size <= 0:
@@ -145,6 +170,19 @@ def main() -> None:
         stage_depths,
         args.chunk_size,
     )
+    device_module_count = 0
+    if args.device_resident:
+        device_module_count = move_pipeline_to_device(
+            pipeline,
+            args.neuron_device_id,
+        )
+        private_backend = torch._C._get_privateuse1_backend_name()
+        neuron_device = torch.device(
+            f"{private_backend}:{args.neuron_device_id}"
+        )
+        neuron_pixel_values = pixel_values.to(neuron_device)
+    else:
+        neuron_pixel_values = pixel_values
 
     with torch.no_grad():
         reference_features = tuple(backbone(pixel_values).feature_maps)
@@ -152,7 +190,7 @@ def main() -> None:
             neuron_features,
             component_inputs,
             component_outputs,
-        ) = pipeline(pixel_values, capture_intermediates=True)
+        ) = pipeline(neuron_pixel_values, capture_intermediates=True)
 
         component_latency_ms = {
             "embeddings": benchmark_callable(
@@ -173,7 +211,7 @@ def main() -> None:
                 )
 
         end_to_end_latency_ms = benchmark_callable(
-            lambda: pipeline(pixel_values),
+            lambda: pipeline(neuron_pixel_values),
             args.warmup,
             args.runs,
         )
@@ -186,13 +224,16 @@ def main() -> None:
         name: tensor_metrics(actual, expected)
         for name, actual, expected in zip(
             feature_names,
-            neuron_features,
+            (value.cpu() for value in neuron_features),
             reference_features,
         )
     }
     report = {
         "model_id": args.model_id,
         "precision": "bf16-all",
+        "device_resident": args.device_resident,
+        "neuron_device_id": args.neuron_device_id,
+        "device_module_count": device_module_count,
         "chunk_size": args.chunk_size,
         "stage_depths": stage_depths,
         "feature_names": feature_names,

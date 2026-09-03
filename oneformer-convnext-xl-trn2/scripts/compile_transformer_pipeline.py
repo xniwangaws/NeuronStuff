@@ -8,7 +8,6 @@ import time
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
 import torch_neuronx
 from torch import Tensor, nn
 
@@ -21,6 +20,7 @@ from neuron_port.components import (
     TransformerCore,
 )
 from neuron_port.modeling import load_oneformer
+from neuron_port.ops import fixed_bilinear_downsample
 from scripts.run_validation import tensor_metrics
 
 
@@ -128,6 +128,11 @@ class AttentionMaskCore(nn.Module):
         self.num_heads = decoder.num_heads
         self.target_height = target_height
         self.target_width = target_width
+        if target_height != target_width or 160 % target_height != 0:
+            raise ValueError(
+                "This fixed target expects a square divisor of 160"
+            )
+        self.downsample_factor = 160 // target_height
 
     def forward(
         self,
@@ -141,11 +146,9 @@ class AttentionMaskCore(nn.Module):
             mask_embedding,
             mask_features,
         )
-        attention_mask = F.interpolate(
+        attention_mask = fixed_bilinear_downsample(
             masks,
-            size=(self.target_height, self.target_width),
-            mode="bilinear",
-            align_corners=False,
+            self.downsample_factor,
         )
         return (
             attention_mask.sigmoid()
@@ -579,6 +582,7 @@ def main() -> None:
     metadata = {
         "model_id": args.model_id,
         "precision": args.precision,
+        "resize_implementation": "fixed-exact-align-corners-false",
         "query_layers": len(query_layer_cores),
         "decoder_layers": len(main_layer_cores),
         "cpu_pipeline_vs_full_transformer": metrics_tree(

@@ -8,7 +8,6 @@ import time
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
 import torch_neuronx
 from torch import Tensor, nn
 
@@ -17,6 +16,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from neuron_port.components import PixelDecoderCore
 from neuron_port.modeling import load_oneformer
+from neuron_port.ops import fixed_bilinear_upsample_2x
 from scripts.run_validation import tensor_metrics
 
 
@@ -105,13 +105,7 @@ class PixelDecoderOutputCore(nn.Module):
         )
         lateral = self.lateral_conv(feature_4)
         feature_4_output = self.output_conv(
-            lateral
-            + F.interpolate(
-                feature_8,
-                size=(160, 160),
-                mode="bilinear",
-                align_corners=False,
-            )
+            lateral + fixed_bilinear_upsample_2x(feature_8)
         )
         return (
             feature_32,
@@ -357,6 +351,7 @@ def main() -> None:
     metadata = {
         "model_id": args.model_id,
         "precision": args.precision,
+        "resize_implementation": "fixed-exact-align-corners-false",
         "encoder_layers": len(layer_cores),
         "cpu_pipeline_vs_full_decoder": cpu_pipeline_metrics,
         "neuron_pipeline_vs_full_decoder": metrics_tree(

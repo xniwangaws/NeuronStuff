@@ -2,6 +2,59 @@ import torch
 from torch import Tensor, nn
 
 
+def fixed_bilinear_upsample_2x(input_tensor: Tensor) -> Tensor:
+    """Exact 2x bilinear resize for ``align_corners=False``.
+
+    The static formulation avoids the expensive generic interpolation
+    lowering on Neuron while preserving replicated-edge behavior.
+    """
+
+    left = torch.cat(
+        (input_tensor[..., :1], input_tensor[..., :-1]),
+        dim=-1,
+    )
+    right = torch.cat(
+        (input_tensor[..., 1:], input_tensor[..., -1:]),
+        dim=-1,
+    )
+    even_x = 0.25 * left + 0.75 * input_tensor
+    odd_x = 0.75 * input_tensor + 0.25 * right
+    horizontal = torch.stack((even_x, odd_x), dim=-1).flatten(-2)
+
+    top = torch.cat(
+        (horizontal[:, :, :1], horizontal[:, :, :-1]),
+        dim=2,
+    )
+    bottom = torch.cat(
+        (horizontal[:, :, 1:], horizontal[:, :, -1:]),
+        dim=2,
+    )
+    even_y = 0.25 * top + 0.75 * horizontal
+    odd_y = 0.75 * horizontal + 0.25 * bottom
+    return torch.stack((even_y, odd_y), dim=3).flatten(2, 3)
+
+
+def fixed_bilinear_downsample(
+    input_tensor: Tensor,
+    factor: int,
+) -> Tensor:
+    """Exact integer downsample for even ``factor`` and static shapes.
+
+    With ``align_corners=False``, every destination point for an even
+    integer reduction lies halfway between four source pixels.
+    """
+
+    if factor <= 0 or factor % 2 != 0:
+        raise ValueError("factor must be a positive even integer")
+    offset = factor // 2 - 1
+    return 0.25 * (
+        input_tensor[:, :, offset::factor, offset::factor]
+        + input_tensor[:, :, offset::factor, offset + 1 :: factor]
+        + input_tensor[:, :, offset + 1 :: factor, offset::factor]
+        + input_tensor[:, :, offset + 1 :: factor, offset + 1 :: factor]
+    )
+
+
 def _gather_2d(input_tensor: Tensor, x_index: Tensor, y_index: Tensor) -> Tensor:
     batch_size, channels, height, width = input_tensor.shape
     output_height, output_width = x_index.shape[-2:]

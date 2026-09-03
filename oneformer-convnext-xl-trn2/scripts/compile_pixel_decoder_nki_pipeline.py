@@ -19,6 +19,7 @@ from neuron_port.modeling import load_oneformer
 from neuron_port.nki_ops import (
     MSDA_SPATIAL_SHAPES,
     NkiFusedPixelDecoderEncoderLayerCore,
+    NkiFusedPixelDecoderEncoderStackCore,
 )
 from neuron_port.ops import multi_scale_deformable_attention_bilinear
 from scripts.compile_pixel_decoder_micro_pipeline import (
@@ -44,6 +45,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lnc", type=int, choices=(1, 2), default=2)
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--runs", type=int, default=10)
+    parser.add_argument("--fuse-stack", action="store_true")
     parser.add_argument("--force-recompile", action="store_true")
     parser.add_argument("--custom-grid-sample", action="store_true")
     return parser.parse_args()
@@ -190,7 +192,8 @@ def main() -> None:
     compiled_input = torch.jit.load(str(output_dir / "input.pt"))
     compiled_output = torch.jit.load(str(output_dir / "output.pt"))
     with torch.no_grad():
-        neuron_hidden = compiled_input(*input_args)
+        initial_neuron_hidden = compiled_input(*input_args)
+        neuron_hidden = initial_neuron_hidden
 
     layer_results = []
     compiled_layers = []
@@ -260,6 +263,56 @@ def main() -> None:
     }
 
     complete = args.max_layers == len(decoder.encoder.layers)
+    compiled_stack = None
+    stack_result = None
+    stack_latency = None
+    if complete and args.fuse_stack:
+        stack_module = NkiFusedPixelDecoderEncoderStackCore(
+            decoder.encoder.layers,
+            reference_points,
+            args.lnc,
+        ).eval()
+        stack_path = output_dir / "encoder_stack.pt"
+        stack_workdir = output_dir / "encoder_stack_workdir"
+        start = time.perf_counter()
+        if stack_path.exists() and not args.force_recompile:
+            compiled_stack = torch.jit.load(str(stack_path))
+            compile_seconds = 0.0
+            skipped_existing = True
+        else:
+            compiled_stack = torch_neuronx.trace(
+                stack_module,
+                (cpu_records[0]["input"], position_embeddings),
+                compiler_args=compiler_args,
+                compiler_workdir=str(stack_workdir),
+            )
+            compile_seconds = time.perf_counter() - start
+            torch.jit.save(compiled_stack, str(stack_path))
+            skipped_existing = False
+        with torch.no_grad():
+            stack_output = compiled_stack(
+                initial_neuron_hidden,
+                position_embeddings,
+            )
+        stack_result = {
+            "name": "encoder_stack",
+            "compile_seconds": compile_seconds,
+            "skipped_existing": skipped_existing,
+            "artifact_bytes": stack_path.stat().st_size,
+            "metrics_vs_cpu_stack_output": tensor_metrics(
+                stack_output,
+                cpu_hidden,
+            ),
+        }
+        stack_latency = benchmark_callable(
+            lambda: compiled_stack(
+                initial_neuron_hidden,
+                position_embeddings,
+            ),
+            args.warmup,
+            args.runs,
+        )
+
     report = {
         "model_id": args.model_id,
         "backend": "nki-ms-deformable-attention",
@@ -267,6 +320,7 @@ def main() -> None:
         "lnc": args.lnc,
         "compiler_args": compiler_args,
         "compiled_layers": len(compiled_layers),
+        "fused_stack": args.fuse_stack,
         "complete": complete,
         "reused_components": reused,
         "cpu_split_pipeline_vs_full_decoder": metrics_tree(
@@ -276,11 +330,19 @@ def main() -> None:
         "layers": layer_results,
         "layer_latency_ms": layer_latencies,
     }
+    if stack_result is not None:
+        report["stack"] = stack_result
+        report["stack_latency_ms"] = stack_latency
 
     if complete:
         with torch.no_grad():
+            output_hidden = (
+                compiled_stack(initial_neuron_hidden, position_embeddings)
+                if compiled_stack is not None
+                else neuron_hidden
+            )
             neuron_outputs = compiled_output(
-                neuron_hidden,
+                output_hidden,
                 backbone_outputs[0],
             )
             input_latency = benchmark_callable(
@@ -299,8 +361,14 @@ def main() -> None:
 
             def full_pixel_decoder():
                 hidden = compiled_input(*input_args)
-                for layer in compiled_layers:
-                    hidden = layer(hidden, position_embeddings)
+                if compiled_stack is not None:
+                    hidden = compiled_stack(
+                        hidden,
+                        position_embeddings,
+                    )
+                else:
+                    for layer in compiled_layers:
+                        hidden = layer(hidden, position_embeddings)
                 return compiled_output(hidden, backbone_outputs[0])
 
             full_latency = benchmark_callable(
@@ -310,22 +378,32 @@ def main() -> None:
             )
         report.update(
             {
-                "component_count": 8,
-                "runtime_invocation_count": 8,
+                "component_count": 3 if compiled_stack is not None else 8,
+                "runtime_invocation_count": (
+                    3 if compiled_stack is not None else 8
+                ),
                 "neuron_pipeline_vs_full_decoder": metrics_tree(
                     neuron_outputs,
                     expected_decoder_outputs,
                 ),
                 "component_latency_ms": {
                     "input": input_latency,
-                    **layer_latencies,
+                    **(
+                        {"encoder_stack": stack_latency}
+                        if compiled_stack is not None
+                        else layer_latencies
+                    ),
                     "output": output_latency,
                 },
                 "component_mean_sum_ms": (
                     input_latency["mean"]
-                    + sum(
-                        latency["mean"]
-                        for latency in layer_latencies.values()
+                    + (
+                        stack_latency["mean"]
+                        if compiled_stack is not None
+                        else sum(
+                            latency["mean"]
+                            for latency in layer_latencies.values()
+                        )
                     )
                     + output_latency["mean"]
                 ),

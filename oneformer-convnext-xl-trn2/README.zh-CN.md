@@ -1,64 +1,73 @@
-# OneFormer ConvNeXt-XL：L4 TensorRT 与 Trainium2 性能对比
+# OneFormer ConvNeXt-XL：L4 TensorRT 与 Trainium2
 
 [English README](README.md)
 
-测试模型为 OneFormer ConvNeXt-XL ADE20K，输入固定为 batch 1、
-640 × 640，参数量 372M。
+这是 OneFormer ConvNeXt-XL ADE20K 640 × 640、batch 1 的固定形状推理实现。
+模型、checkpoint、输入分辨率和网络结构均未修改。
 
-## 结论
+## Summary
 
-- L4 使用 TensorRT 编译 Backbone 后，相对 PyTorch AMP BF16，
-  Backbone 加速 **2.20×**，完整 OneFormer core 加速 **1.27×**。
-- Trn2 相对 L4 TensorRT 混合路径，Backbone 延迟为 **4.22×**，
-  完整 OneFormer core 延迟为 **6.16×**。
-- 对这个单图、batch 1 的 CNN + deformable-attention workload，
-  L4 + TensorRT 明显更适合低延迟推理。除非部署必须使用 Trainium，
-  继续优化当前 Trn2 路径的投入产出比不高。
+| 平台和执行路径 | Backbone | 完整 OneFormer core | 语义像素一致率 |
+| --- | ---: | ---: | ---: |
+| NVIDIA L4，PyTorch AMP BF16 | 54.57 ms | 114.16 ms | 99.9558% |
+| NVIDIA L4，TensorRT BF16 Backbone + PyTorch head | **24.78 ms** | **89.81 ms** | 99.9568% |
+| Trn2，Neuron BF16/LNC2 + NKI | 56.48 ms | 144.53 ms | **99.9805%** |
 
-## Summary table
+关键结论：
 
-| 平台和执行路径 | Backbone | 完整 OneFormer core | 语义像素一致率 | 对比结论 |
-| --- | ---: | ---: | ---: | --- |
-| NVIDIA L4，PyTorch AMP BF16 | 54.57 ms | 114.16 ms | 99.9558% | GPU 基线 |
-| NVIDIA L4，TensorRT BF16 Backbone + PyTorch head | 24.78 ms | 89.81 ms | 99.9568% | Backbone 2.20×；完整 core 1.27× |
-| Trn2，Neuron BF16/LNC2 + NKI MSDA | 104.54 ms | 553.46 ms | 99.9802% | Backbone 延迟 4.22×；完整 core 延迟 6.16× |
-
-## TensorRT 加速
-
-TensorRT 加速以 L4 PyTorch AMP BF16 为基线：
-
-| 测量范围 | PyTorch AMP BF16 | TensorRT BF16 | 加速 | 延迟降低 |
-| --- | ---: | ---: | ---: | ---: |
-| ConvNeXt-XL Backbone | 54.57 ms | 24.78 ms | **2.20×** | 54.6% |
-| 完整 OneFormer core | 114.16 ms | 89.81 ms | **1.27×** | 21.3% |
-
-完整 core 的 TensorRT 收益较小，是因为 TensorRT 只编译
-ConvNeXt-XL Backbone；OneFormer Pixel Decoder 和 Transformer head
-仍运行在原生 PyTorch。
+- TensorRT 相对 L4 PyTorch AMP，Backbone 加速 **2.20×**，完整 core
+  加速 **1.27×**。
+- Trn2 Backbone 比 L4 TensorRT 慢 **2.28×**，完整 core 慢 **1.61×**。
+- Trn2 Backbone 与 L4 PyTorch AMP 接近：56.48 ms 对 54.57 ms；主要差距在
+  Pixel Decoder 和 Transformer head。
+- L4 的 89.81 ms 是 TensorRT Backbone + PyTorch head，不是全模型
+  TensorRT engine。
 
 ## Trn2 延迟分解
 
 | 组件 | 平均延迟 |
 | --- | ---: |
-| ConvNeXt-XL Backbone | 104.54 ms |
-| Pixel Decoder | 310.32 ms |
-| Task Encoder | 0.47 ms |
-| Transformer Decoder | 142.95 ms |
-| 完整模型 | 553.46 ms |
+| ConvNeXt-XL Backbone | 56.48 ms |
+| Pixel Decoder | 69.95 ms |
+| Task Encoder | 0.39 ms |
+| Transformer Decoder | 23.18 ms |
+| 完整模型 | **144.53 ms** |
 
-Trn2 使用 `torch_neuronx.trace`、BF16 auto-cast、LNC2，并在 Pixel
-Decoder 中使用 NKI MSDeformableAttention。所有编译模块和中间
-tensor 常驻同一 Neuron device，避免分段执行时往返 CPU。
+完整模型 20 次稳定测试：p50 144.48 ms，p90 145.50 ms，范围
+143.42–145.99 ms。
+
+## 实现
+
+- Backend：`torch_neuronx.trace`，不是 NxDI
+- 精度：BF16 auto-cast
+- Neuron 配置：LNC2
+- 中间张量：device-resident、direct HBM chaining
+- ConvNeXt Stage 0/1/2：自定义融合 NKI block
+- Pixel Decoder：NKI Library MSDeformableAttention
+- 组件数：33；运行时调用数：39
+
+ConvNeXt 的自定义 NKI block 融合
+DWConv → LayerNorm → PWConv → GELU → PWConv → LayerScale → Residual。
+Pixel Decoder 的六层 stack 合并实验反而增加延迟，因此最终版本仍使用六个独立
+encoder layer。
+
+## 结果文件
+
+- 机器可读结果：`benchmarks/oneformer_convnext_xl_ade20k_640.json`
+- 当前状态：`STATUS.md`
+- NKI Backbone：`neuron_port/convnext_nki.py`、
+  `neuron_port/convnext_stage1_nki.py`、
+  `neuron_port/convnext_stage2_nki.py`
+- 编译入口：`scripts/compile_convnext_stage_pipeline.py`
+- 完整推理：`scripts/run_full_oneformer_pipeline.py`
+
+编译后的 NEFF、模型权重和测试输入体积较大，不存入 Git。
 
 ## 测试口径
 
-- 相同模型、checkpoint、batch 和输入分辨率
+- 参数量：372,007,256
+- 输入：1 × 3 × 640 × 640
+- checkpoint SHA-256：
+  `a022437a6cc16fd1485230670f2f7a3ed5e08ef9f08d3f67a42948e5a6a4d7ca`
 - 延迟不包含图片预处理和最终语义后处理
-- “完整 OneFormer core”包含 Backbone 和 OneFormer head
-- L4 TensorRT 路径是 TensorRT Backbone + PyTorch head，不是全模型
-  TensorRT engine
-- 结果仅代表当前模型、静态输入和软件栈，不代表 L4 与 Trainium2 的
-  通用硬件性能
-
-机器可读结果：
-`benchmarks/oneformer_convnext_xl_ade20k_640.json`
+- 结果只代表当前模型、静态输入和软件栈，不代表通用硬件性能

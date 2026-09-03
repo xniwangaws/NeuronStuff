@@ -191,3 +191,34 @@ class NkiFusedPixelDecoderEncoderLayerCore(nn.Module):
         hidden_states = torch.relu(self.fc1(hidden_states))
         hidden_states = self.fc2(hidden_states)
         return self.final_layer_norm(residual + hidden_states)
+
+
+class NkiFusedPixelDecoderEncoderStackCore(nn.Module):
+    """Run all pixel-decoder encoder layers in one Neuron graph."""
+
+    def __init__(
+        self,
+        layers: nn.ModuleList,
+        reference_points: Tensor,
+        lnc: int,
+    ):
+        super().__init__()
+        self.layers = nn.ModuleList(
+            [
+                NkiFusedPixelDecoderEncoderLayerCore(
+                    layer,
+                    reference_points,
+                    lnc,
+                )
+                for layer in layers
+            ]
+        )
+
+    def forward(
+        self,
+        hidden_states: Tensor,
+        position_embeddings: Tensor,
+    ) -> Tensor:
+        for layer in self.layers:
+            hidden_states = layer(hidden_states, position_embeddings)
+        return hidden_states

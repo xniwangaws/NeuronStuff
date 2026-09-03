@@ -30,6 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--inputs", required=True)
     parser.add_argument("--cache-dir", required=True)
     parser.add_argument("--backbone-dir", required=True)
+    parser.add_argument("--backbone-chunk-size", type=int, default=1)
     parser.add_argument("--pixel-decoder-dir", required=True)
     parser.add_argument(
         "--pixel-decoder-backend",
@@ -120,16 +121,31 @@ class CompiledPixelDecoderPipeline:
 class CompiledNkiPixelDecoderPipeline:
     def __init__(self, directory: Path):
         self.input = torch.jit.load(str(directory / "input.pt"))
-        self.layers = [
-            torch.jit.load(str(directory / f"layer_{index}.pt"))
-            for index in range(6)
-        ]
+        stack_path = directory / "encoder_stack.pt"
+        self.stack = (
+            torch.jit.load(str(stack_path))
+            if stack_path.exists()
+            else None
+        )
+        self.layers = (
+            []
+            if self.stack is not None
+            else [
+                torch.jit.load(str(directory / f"layer_{index}.pt"))
+                for index in range(6)
+            ]
+        )
         self.output = torch.jit.load(str(directory / "output.pt"))
+        self.component_count = 3 if self.stack is not None else 8
+        self.runtime_invocation_count = self.component_count
 
     def __call__(self, features, position_embeddings):
         hidden = self.input(features[1], features[2], features[3])
-        for layer in self.layers:
-            hidden = layer(hidden, position_embeddings)
+        if self.stack is not None:
+            hidden = self.stack(hidden, position_embeddings)
+        else:
+            for layer in self.layers:
+                hidden = layer(hidden, position_embeddings)
         return self.output(hidden, features[0])
 
 
@@ -206,7 +222,10 @@ def iter_compiled_modules(
 
     yield pixel_decoder.input
     if isinstance(pixel_decoder, CompiledNkiPixelDecoderPipeline):
-        yield from pixel_decoder.layers
+        if pixel_decoder.stack is not None:
+            yield pixel_decoder.stack
+        else:
+            yield from pixel_decoder.layers
     else:
         yield from pixel_decoder.samplers
         yield from pixel_decoder.projections
@@ -290,7 +309,7 @@ def main() -> None:
     compiled_backbone = NeuronConvNextStagePipeline(
         Path(args.backbone_dir),
         stage_depths,
-        1,
+        args.backbone_chunk_size,
     )
     pixel_decoder_directory = Path(args.pixel_decoder_dir)
     if args.pixel_decoder_backend == "nki":
@@ -426,10 +445,21 @@ def main() -> None:
     ).float().mean().item()
 
     pixel_component_count = (
-        8 if args.pixel_decoder_backend == "nki" else 23
+        compiled_pixel_decoder.component_count
+        if args.pixel_decoder_backend == "nki"
+        else 23
     )
     pixel_runtime_invocation_count = (
-        8 if args.pixel_decoder_backend == "nki" else 38
+        compiled_pixel_decoder.runtime_invocation_count
+        if args.pixel_decoder_backend == "nki"
+        else 38
+    )
+    backbone_component_count = (
+        1
+        + sum(
+            len(stage_chunks)
+            for stage_chunks in compiled_backbone.stages
+        )
     )
     report = {
         "model_id": args.model_id,
@@ -447,19 +477,24 @@ def main() -> None:
         "batch_size": 1,
         "input_shape": list(pixel_values.shape),
         "component_count": {
-            "backbone": 37,
+            "backbone": backbone_component_count,
             "pixel_decoder": pixel_component_count,
             "task_encoder": 1,
             "transformer": 17,
-            "total": 37 + pixel_component_count + 1 + 17,
+            "total": (
+                backbone_component_count
+                + pixel_component_count
+                + 1
+                + 17
+            ),
         },
         "runtime_invocation_count": {
-            "backbone": 37,
+            "backbone": backbone_component_count,
             "pixel_decoder": pixel_runtime_invocation_count,
             "task_encoder": 1,
             "transformer": 23,
             "total": (
-                37
+                backbone_component_count
                 + pixel_runtime_invocation_count
                 + 1
                 + 23
