@@ -5,6 +5,27 @@ _[English version: README.en.md](README.en.md)_
 
 > Prompt:`"A cat holding a sign that says hello world"`,guidance 4.0,50 step,batch=1,seeds 42–51(共 10 个)
 
+## 2026-09-11 更新：text encoder / VAE 搬上 Neuron，BF16 41.79 s → 25.94 s
+
+09-03 那版移植把 Qwen3-8B text encoder（5.1 s）和 VAE decode（9.2 s）留在
+CPU 上，占每张图 35%。本次把两者编译到 Neuron（TE 截到 27 层、切 3 段放逻辑核
+1/2/3；VAE 用 `unet-inference` model type + FP32 GroupNorm 放逻辑核 0），并缓存
+RoPE 表：
+
+| 路径（1024²，50 步，CFG） | Mean | Pass | $/image | 出图 vs 原路径 |
+|---|---:|---:|---:|---|
+| BF16 TP=4，TE/VAE 在 CPU（09-03） | 41.785 s | 10/10 | $0.0259 | — |
+| **BF16 TP=4，全 Neuron** | **25.939 s** | **10/10** | **$0.0161** | SSIM 0.988 / PSNR 28.3 dB |
+| FP8 all-Linear W8A8，全 Neuron | 见 task016 §2 | | | |
+
+剩下的 25.3 s 有 98% 是 DiT 的 100 次前向（klein-base 非蒸馏，classic CFG 每步
+2 次），每次 253 ms ≈ 300 TFLOPS，约为 trn2 BF16 峰值的 45%，与 FLUX.1-lite 在同一
+SDK 上的效率一致——klein 比 flux1-lite 慢是因为每张图要算 4.5× 的 FLOPs，不是
+移植问题。按 L20 BF16 峰值 119.5 TFLOPS 算，这个工作量在 L20 上不可能低于 64 s，
+与"L20 ≈ 42 s"的说法对比前需要先核对口径。
+分阶段计时、组件数值验证、flux1 对比和 L20 口径分析见
+[`task016_klein_trn2_fp8/`](task016_klein_trn2_fp8/)。
+
 ## 2026-09-03 更新：原生 trn2.3xlarge + Neuron FP8
 
 本次直接使用 `trn2.3xlarge` Capacity Block（不是在

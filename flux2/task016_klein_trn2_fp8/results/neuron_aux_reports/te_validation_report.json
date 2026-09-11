@@ -1,0 +1,33 @@
+{
+  "placement": {
+    "seg_a": 1,
+    "seg_b": 2,
+    "seg_c": 3
+  },
+  "load_seconds_including_first_exec": {},
+  "neuron_vs_pipeline": {
+    "benchmark": {
+      "cosine": 1.0014758110046387,
+      "max_abs_diff": 128.0,
+      "mean_abs_diff": 0.06654291599988937,
+      "ref_norm": 40159.7265625,
+      "out_norm": 39935.2734375,
+      "first_call_seconds": 0.0954716570013261
+    },
+    "uncond": {
+      "cosine": 1.0017534494400024,
+      "max_abs_diff": 128.0,
+      "mean_abs_diff": 0.05863159894943237,
+      "ref_norm": 40196.41796875,
+      "out_norm": 39970.921875,
+      "first_call_seconds": 0.06365136100066593
+    }
+  },
+  "neuron_latency_ms": {
+    "chained_mean": 60.69786510015547,
+    "chained_min": 60.63243800053897,
+    "seg_a_mean": 20.14126740014035,
+    "seg_b_mean": 20.27622660043562,
+    "seg_c_mean": 20.277671799703967
+  }
+}

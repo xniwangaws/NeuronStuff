@@ -1,0 +1,46 @@
+{
+  "load_seconds": 22.838622250999833,
+  "steps": 50,
+  "guidance_scale": 4.0,
+  "images": [
+    {
+      "label": "warmup",
+      "seed": 52042,
+      "total_seconds": 44.0,
+      "text_encoder_seconds": 6.524,
+      "text_encoder_calls": 2,
+      "dit_seconds": 26.893,
+      "dit_calls": 100,
+      "dit_mean_ms_per_call": 268.9,
+      "vae_decode_seconds": 9.788,
+      "vae_decode_calls": 1,
+      "other_seconds": 0.795
+    },
+    {
+      "label": "measured",
+      "seed": 42,
+      "total_seconds": 41.573,
+      "text_encoder_seconds": 5.184,
+      "text_encoder_calls": 2,
+      "dit_seconds": 26.837,
+      "dit_calls": 100,
+      "dit_mean_ms_per_call": 268.4,
+      "vae_decode_seconds": 9.293,
+      "vae_decode_calls": 1,
+      "other_seconds": 0.258
+    },
+    {
+      "label": "measured",
+      "seed": 43,
+      "total_seconds": 41.259,
+      "text_encoder_seconds": 4.99,
+      "text_encoder_calls": 2,
+      "dit_seconds": 26.814,
+      "dit_calls": 100,
+      "dit_mean_ms_per_call": 268.1,
+      "vae_decode_seconds": 9.192,
+      "vae_decode_calls": 1,
+      "other_seconds": 0.264
+    }
+  ]
+}

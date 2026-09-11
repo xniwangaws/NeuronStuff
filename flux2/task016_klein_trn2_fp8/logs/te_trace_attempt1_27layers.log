@@ -1,0 +1,84 @@
+Loading tokenizer + Qwen3-8B (BF16, eager attn)...
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 207.21it/s]
+Pipeline-exact CPU reference (full 36-layer model)...
+  cpu(full) benchmark: 2.40s
+  cpu(full) uncond: 2.17s
+Truncated-wrapper CPU sanity check vs pipeline reference...
+  benchmark: cos=1.001498 max_abs=0.0000
+  uncond: cos=1.001764 max_abs=0.0000
+Tracing on Neuron (compile)...
+..........................................................
+Compiler status PASS
+Compile done in 1226.6s
+2026-Sep-10 10:41:38.529838  4099:4099  ERROR  TDRV:dml_dump                                Wrote nrt memory alloc debug info to /tmp/nrt_mem_log_device_0_6aa28962.csv
+2026-Sep-10 10:41:38.532807  4099:4099  ERROR  TDRV:dml_driver_dump                         Wrote driver memory alloc debug info to /tmp/neuron_mem_log_device_0_hbm_2_6aa28962.csv
+2026-Sep-10 10:41:38.535491  4099:4099  ERROR  TDRV:dmem_alloc_internal                     Aligned allocations may fail even if HBM has space for the actual size requested, due to running out of alignment boundaries
+2026-Sep-10 10:41:38.537847  4099:4099  ERROR  TDRV:print_lnc_hbm_details                   LNC size is 2. Neuron Cores using this HBM: NC 4 and NC 5
+2026-Sep-10 10:41:38.539494  4099:4099  ERROR  TDRV:log_dev_mem                             Failed to allocate 96.000MB (alignment: 128.000MB, usage: model constants) on ND 0:NC 5
+2026-Sep-10 10:41:38.541574  4099:4099  ERROR  TDRV:log_dev_mem_usage_table                 Displaying Current Memory Utilization:
+(NOTE: the lines are LONG, and NEFF id to name mapping is printed after)
+
+              |          |  Model   |  Model   |          |  Shared  |          |          |DMA Rings |DMA Rings | DMA Rings |DMA Rings |           | Profiler |
+              |  TOTAL   |   Code   |Constants | Tensors  |Scratchpad|Scratchpad| Runtime  |    IO    |  Spill   |Collectives| Runtime  |Collectives| Buffers  |
+ND 0 HBM 2    | 22.882GB | 3.363MB  | 21.878GB |  0.000B  | 1.000GB  |  0.000B  | 26.125KB |  0.000B  |  0.000B  |  0.000B   | 56.000KB |  0.000B   |  0.000B  |
+\_NC 4        | 12.207GB | 1.682MB  | 11.706GB |  0.000B  |512.000MB |  0.000B  | 13.062KB |  0.000B  |  0.000B  |  0.000B   | 28.000KB |  0.000B   |  0.000B  |
+\_NC 5        | 10.674GB | 1.681MB  | 10.173GB |  0.000B  |512.000MB |  0.000B  | 13.062KB |  0.000B  |  0.000B  |  0.000B   | 28.000KB |  0.000B   |  0.000B  |
+
+NEFF id to name mapping:
+
+2026-Sep-10 10:41:38.542543  4099:4099  ERROR  TDRV:log_dev_mem_usage_table                 Also logged memory breakdown to /tmp/neuron_mem_table_device_0_nc_5.log
+2026-Sep-10 10:41:38.544321  4099:4099  ERROR  TDRV:mem_ref_copy_and_stage_mr_to_hbm        Failed to allocate aligned (134217728) buffer in MLA DRAM for constant.55-25508-28626_sg0000 of size 100663296 bytes, HBM 2
+2026-Sep-10 10:41:38.550723  4099:4099  ERROR  NMGR:dlr_kelf_stage                          Failed to create logical core info for subgraph 0 to 1
+2026-Sep-10 10:41:38.552281  4099:4099  ERROR  NMGR:kmgr_load_nn_internal_v2                Failed to stage graph to NeuronCore
+2026-Sep-10 10:41:39.194747  4099:4099  ERROR  NMGR:kmgr_load_nn_post_metrics               Failed to load NN: /mnt/nvme/flux2-klein/compiled_te/compiler_workdir/graph.neff, err: 4
+2026-Sep-10 10:41:39.196769  4099:4099  ERROR   NRT:nrt_infodump                            Neuron runtime information - please include in any support request:
+2026-Sep-10 10:41:39.199081  4099:4099  ERROR   NRT:nrt_infodump                            ------------->8------------[ cut here ]------------>8-------------
+2026-Sep-10 10:41:39.201214  4099:4099  ERROR   NRT:nrt_infodump                            NRT version: 2.31.24.0 (0b044f4ce917b633a70eb3d0bc460f34ac3da620)
+2026-Sep-10 10:41:39.203247  4099:4099  ERROR   NRT:nrt_infodump                            Embedded FW version: 1.21.1.0 (6db9edc09474e79d0c0e283c14c16e51ee7417e5) loaded from "libnrtucode_extisa.so"
+2026-Sep-10 10:41:39.205891  4099:4099  ERROR   NRT:nrt_infodump                            CCOM version: 2.31.24.0- (compat 89)
+2026-Sep-10 10:41:39.207641  4099:4099  ERROR   NRT:nrt_infodump                            NCFW version: 2.31.1.0 (cf13a49f86829014f0575b6d50c112ddf68b53c0)
+2026-Sep-10 10:41:39.209638  4099:4099  ERROR   NRT:nrt_infodump                            Instance ID: i-0e030ce4d854cf6e7
+2026-Sep-10 10:41:39.211217  4099:4099  ERROR   NRT:nrt_infodump                            Cluster ID: N/A
+2026-Sep-10 10:41:39.212461  4099:4099  ERROR   NRT:nrt_infodump                            Kernel: Linux 6.17.0-1012-aws #12~24.04.1-Ubuntu SMP Mon Apr  6 17:36:28 UTC 2026
+2026-Sep-10 10:41:39.214683  4099:4099  ERROR   NRT:nrt_infodump                            Nodename: ip-172-31-41-6
+2026-Sep-10 10:41:39.216195  4099:4099  ERROR   NRT:nrt_infodump                            Driver version: 2.27.4.0
+
+2026-Sep-10 10:41:39.218013  4099:4099  ERROR   NRT:nrt_infodump                            Failure: NRT_RESOURCE in nrt_load_util
+2026-Sep-10 10:41:39.219762  4099:4099  ERROR   NRT:nrt_infodump                            Visible cores: 0, 1, 2, 3
+2026-Sep-10 10:41:39.221257  4099:4099  ERROR   NRT:nrt_infodump                            Environment:
+2026-Sep-10 10:41:39.222487  4099:4099  ERROR   NRT:nrt_infodump                                NEURON_LOGICAL_NC_CONFIG=2
+2026-Sep-10 10:41:39.224064  4099:4099  ERROR   NRT:nrt_infodump                                NEURON_RT_VIRTUAL_CORE_SIZE=2
+2026-Sep-10 10:41:39.225644  4099:4099  ERROR   NRT:nrt_infodump                                NEURON_LIBRARY_PATH=/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/libneuronxla/libneuronpjrt.so
+2026-Sep-10 10:41:39.228451  4099:4099  ERROR   NRT:nrt_infodump                                NEURON_RT_ROOT_COMM_ID=localhost:62182
+2026-Sep-10 10:41:39.230123  4099:4099  ERROR   NRT:nrt_infodump                                NEURON_RT_NUMERICAL_ERRORS_VERBOSITY=none
+2026-Sep-10 10:41:39.231837  4099:4099  ERROR   NRT:nrt_infodump                            -------------8<-----------[ cut to here ]-----------8<------------
+2026-Sep-10 10:41:44.280883  4099:4099  ERROR   NRT:nrt_load                                Failed to load nrt model
+Traceback (most recent call last):
+  File "/mnt/nvme/flux2-klein/src/trace_text_encoder_neuron.py", line 177, in <module>
+    main()
+  File "/mnt/nvme/flux2-klein/src/trace_text_encoder_neuron.py", line 151, in main
+    name, refs[name], traced(p_ids, p_mask), report["neuron_vs_pipeline"]
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The following operation failed in the TorchScript interpreter.
+Traceback of TorchScript (most recent call last):
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch/_ops.py(1255): __call__
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch_neuronx/xla_impl/trace.py(112): forward
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch/nn/modules/module.py(1765): _slow_forward
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch/nn/modules/module.py(1786): _call_impl
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch/nn/modules/module.py(1775): _wrapped_call_impl
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch/jit/_trace.py(1181): trace_module
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch/jit/_trace.py(696): _trace_impl
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch/jit/_trace.py(998): trace
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch_neuronx/xla_impl/trace.py(654): create_neuron_model
+/opt/aws_neuronx_venv_pytorch_2_9_nxd_inference/lib/python3.12/site-packages/torch_neuronx/xla_impl/trace.py(614): trace
+/mnt/nvme/flux2-klein/src/trace_text_encoder_neuron.py(134): main
+/mnt/nvme/flux2-klein/src/trace_text_encoder_neuron.py(177): <module>
+RuntimeError: Could not load the model status=4 message=Allocation Failure
+

@@ -20,8 +20,10 @@ This module provides:
 - create_flux2_klein_config: Config factory for backbone + VAE
 - NeuronTransformerWrapper: Drop-in replacement for Flux2Transformer2DModel in Diffusers pipeline
 
-The text encoder (Qwen3-8B) runs on CPU since it only executes once per prompt.
-The VAE decoder is compiled separately with torch_neuronx.trace().
+The Qwen3-8B text encoder (layers 0-26, three torch_neuronx segments on
+logical cores 1/2/3) and the VAE decoder (one segment on logical core 0) also
+run on Neuron; see neuron_aux.py. In the original port both ran on the host
+CPU and accounted for 14.3 s of the 41.4 s per image.
 """
 
 import gc
@@ -47,11 +49,13 @@ try:
             Flux2KleinBackboneInferenceConfig,
             NeuronFlux2KleinBackboneApplication,
         )
+        from . import neuron_aux
     except ImportError:
         from modeling_flux2_klein import (
             Flux2KleinBackboneInferenceConfig,
             NeuronFlux2KleinBackboneApplication,
         )
+        import neuron_aux
 
     NEURON_AVAILABLE = True
 except ImportError:
@@ -162,40 +166,14 @@ class NeuronTransformerWrapper(nn.Module):
         return self.config.neuron_config.torch_dtype
 
 
-class NeuronVAEDecoderWrapper(nn.Module):
-    """
-    Wrapper for the VAE decoder compiled with torch_neuronx.trace().
-
-    Handles the FLUX.2-specific latent post-processing:
-    1. Unpack latents from sequence to spatial format
-    2. Batch norm normalize
-    3. Unpatchify (32ch -> 8ch with 2x2 spatial expansion)
-    4. VAE decode
-    """
-
-    def __init__(self, traced_model, vae_config):
-        super().__init__()
-        self.traced = traced_model
-        self.vae_config = vae_config
-
-    def forward(self, latent: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            latent: [B, C_vae, H_lat, W_lat] latent after unpatchify (e.g., [1, 8, 128, 128])
-        Returns:
-            image: [B, 3, H, W] decoded image
-        """
-        return self.traced(latent)
-
-
 class NeuronFlux2KleinApplication(nn.Module):
     """
     Top-level application for FLUX.2-klein-base-9B on Neuron.
 
     Components:
     - Transformer backbone: Compiled with NxDI (TP=4 on trn2.3xlarge)
-    - Text encoder (Qwen3-8B): Runs on CPU (single execution per prompt)
-    - VAE decoder: Compiled with torch_neuronx.trace() (single core)
+    - Text encoder (Qwen3-8B, layers 0-26): torch_neuronx, 3 segments on cores 1/2/3
+    - VAE decoder: torch_neuronx (unet-inference model type), core 0
     - Scheduler: FlowMatchEulerDiscreteScheduler from Diffusers
 
     Usage:
@@ -212,12 +190,20 @@ class NeuronFlux2KleinApplication(nn.Module):
         height: int = 1024,
         width: int = 1024,
         transformer_checkpoint: Optional[str] = None,
+        neuron_aux: bool = True,
+        aux_compiled_path: Optional[str] = None,
     ):
         super().__init__()
         self.model_path = model_path
         self.backbone_config = backbone_config
         self.height = height
         self.width = width
+        # Run the Qwen3 text encoder and VAE decoder on Neuron (True) or on the
+        # host CPU as in the original port (False).
+        self.neuron_aux = neuron_aux
+        self.aux_compiled_path = aux_compiled_path
+        self.neuron_vae_decode = None
+        self._rope_cache = None
 
         transformer_path = os.path.join(model_path, "transformer")
         transformer_checkpoint = transformer_checkpoint or os.environ.get(
@@ -232,9 +218,9 @@ class NeuronFlux2KleinApplication(nn.Module):
             config=backbone_config,
         )
 
-        # Diffusers pipeline (for text encoding, scheduling, VAE)
+        # Diffusers pipeline (tokenizer, scheduler, VAE BatchNorm stats, and
+        # the CPU fallbacks when neuron_aux=False)
         self.pipe = None
-        self.vae_traced = None
 
     def _load_pipeline(self):
         """Load the Diffusers pipeline for CPU components."""
@@ -251,7 +237,10 @@ class NeuronFlux2KleinApplication(nn.Module):
         logger.info("Pipeline loaded successfully.")
 
     def compile(self, compiled_model_path: str, debug: bool = False):
-        """Compile the transformer backbone."""
+        """Compile the transformer backbone, then (unless disabled) the text
+        encoder and VAE decoder. The auxiliary artifacts are resolution/seq
+        specific but precision independent, so ``aux_compiled_path`` lets
+        BF16 and FP8 transformer builds share them."""
         transformer_dir = os.path.join(compiled_model_path, "transformer")
         compiled_model = os.path.join(transformer_dir, "model.pt")
         if os.path.isfile(compiled_model):
@@ -262,8 +251,24 @@ class NeuronFlux2KleinApplication(nn.Module):
             )
             self.backbone_app.compile(transformer_dir, debug)
 
+        if not self.neuron_aux:
+            return
+        aux_dir = self.aux_compiled_path or compiled_model_path
+        needs_te = not all(
+            os.path.isfile(neuron_aux.te_segment_path(aux_dir, name))
+            for name, _, _ in neuron_aux.TE_SEGMENTS
+        )
+        needs_vae = not os.path.isfile(neuron_aux.vae_path(aux_dir))
+        if needs_te or needs_vae:
+            self._load_pipeline()
+        if needs_te:
+            neuron_aux.compile_text_encoder(self.pipe.text_encoder, self.pipe.tokenizer, aux_dir)
+        if needs_vae:
+            neuron_aux.compile_vae_decoder(self.pipe.vae, aux_dir, self.height, self.width)
+
     def load(self, compiled_model_path: str, skip_warmup: bool = False):
-        """Load the compiled transformer backbone."""
+        """Load the compiled transformer backbone plus Neuron text encoder /
+        VAE decoder, and hot-swap them into the Diffusers pipeline."""
         transformer_dir = os.path.join(compiled_model_path, "transformer")
         self.backbone_app.load(transformer_dir, skip_warmup=skip_warmup)
 
@@ -275,6 +280,22 @@ class NeuronFlux2KleinApplication(nn.Module):
             self.backbone_app,
             self.backbone_config,
         )
+
+        # The RoPE table depends only on the (fixed) resolution and text length;
+        # without this the wrapper recomputes it on the host for every forward.
+        self._rope_cache = self.backbone_app.image_rotary_emb_cache_context()
+        self._rope_cache.__enter__()
+
+        if self.neuron_aux:
+            aux_dir = self.aux_compiled_path or compiled_model_path
+            # Text encoder: three Qwen3 segments on logical cores 1/2/3. This
+            # drops the 16 GB CPU Qwen3ForCausalLM.
+            self.pipe.text_encoder = neuron_aux.NeuronKleinTextEncoder(aux_dir)
+            # VAE decode on logical core 0. The CPU VAE object is kept because
+            # the pipeline reads its BatchNorm statistics to denormalize the
+            # latents before decoding.
+            self.neuron_vae_decode = neuron_aux.NeuronVaeDecode(aux_dir)
+            self.pipe.vae.decode = self.neuron_vae_decode
 
     def __call__(
         self,

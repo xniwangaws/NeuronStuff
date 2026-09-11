@@ -2,6 +2,8 @@
 set -euo pipefail
 
 source "$(dirname "$0")/remote_env.sh"
+# Text encoder / VAE artifacts are precision independent; share them.
+export FLUX2_AUX_COMPILE_DIR="${FLUX2_AUX_COMPILE_DIR:-/mnt/nvme/flux2-klein/compiled_aux_1024}"
 unset FLUX2_FP8_MLP
 unset FLUX2_FP8_ACTIVATION
 unset UNSAFE_FP8FNCAST
@@ -13,5 +15,5 @@ run_id="$(date -u +%Y%m%dT%H%M%SZ)"
 python /mnt/nvme/flux2-klein/src/bench_klein_1k.py \
   --model /mnt/nvme/flux2-klein/weights \
   --compile-dir /mnt/nvme/flux2-klein/compiled_bf16 \
-  --output-dir /mnt/nvme/flux2-klein/outputs_bf16 \
+  --output-dir "${FLUX2_OUTPUT_DIR:-/mnt/nvme/flux2-klein/outputs_bf16}" \
   "$@" 2>&1 | tee "/mnt/nvme/flux2-klein/logs/bf16_${run_id}.log"

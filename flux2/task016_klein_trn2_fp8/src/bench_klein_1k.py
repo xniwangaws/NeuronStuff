@@ -57,7 +57,58 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tp", type=int, default=4)
     parser.add_argument("--seeds", type=int, nargs="+", default=list(range(42, 52)))
     parser.add_argument("--warmups", type=int, default=1)
+    parser.add_argument(
+        "--aux-compile-dir",
+        default=os.environ.get("FLUX2_AUX_COMPILE_DIR"),
+        help=(
+            "Directory holding the Neuron text encoder and VAE decoder artifacts. "
+            "They depend on resolution but not on transformer precision, so BF16 "
+            "and FP8 runs can share one. Defaults to --compile-dir."
+        ),
+    )
+    parser.add_argument(
+        "--no-neuron-aux",
+        action="store_true",
+        help="Run the text encoder and VAE decoder on the host CPU (original port).",
+    )
     return parser.parse_args()
+
+
+class StageTimer:
+    """Wraps text encoder / transformer / VAE decode calls with wall-clock timers."""
+
+    def __init__(self, pipe):
+        self.calls = {"text_encoder": [], "transformer": [], "vae_decode": []}
+        pipe.text_encoder.forward = self._wrap(pipe.text_encoder.forward, "text_encoder")
+        pipe.transformer.forward = self._wrap(pipe.transformer.forward, "transformer")
+        pipe.vae.decode = self._wrap(pipe.vae.decode, "vae_decode")
+
+    def _wrap(self, fn, bucket):
+        def inner(*args, **kwargs):
+            started = time.perf_counter()
+            result = fn(*args, **kwargs)
+            self.calls[bucket].append(time.perf_counter() - started)
+            return result
+
+        return inner
+
+    def reset(self):
+        for values in self.calls.values():
+            values.clear()
+
+    def summary(self, total_seconds):
+        te = sum(self.calls["text_encoder"])
+        dit = sum(self.calls["transformer"])
+        vae = sum(self.calls["vae_decode"])
+        return {
+            "text_encoder_seconds": te,
+            "text_encoder_calls": len(self.calls["text_encoder"]),
+            "transformer_seconds": dit,
+            "transformer_calls": len(self.calls["transformer"]),
+            "transformer_ms_per_call": 1000 * dit / max(len(self.calls["transformer"]), 1),
+            "vae_decode_seconds": vae,
+            "other_seconds": total_seconds - te - dit - vae,
+        }
 
 
 def image_metrics(image) -> dict[str, float | bool]:
@@ -107,6 +158,8 @@ def main() -> None:
         "flux2_fp8_scope": os.environ.get("FLUX2_FP8_SCOPE"),
         "flux2_fp8_activation": os.environ.get("FLUX2_FP8_ACTIVATION", "none"),
         "unsafe_fp8fncast": os.environ.get("UNSAFE_FP8FNCAST"),
+        "neuron_aux": not args.no_neuron_aux,
+        "aux_compile_dir": args.aux_compile_dir or args.compile_dir,
     }
 
     config = create_flux2_klein_config(
@@ -122,6 +175,8 @@ def main() -> None:
         height=args.height,
         width=args.width,
         transformer_checkpoint=args.transformer_checkpoint,
+        neuron_aux=not args.no_neuron_aux,
+        aux_compiled_path=args.aux_compile_dir,
     )
 
     started = time.perf_counter()
@@ -131,8 +186,10 @@ def main() -> None:
     started = time.perf_counter()
     app.load(args.compile_dir)
     load_seconds = time.perf_counter() - started
+    timer = StageTimer(app.pipe)
 
     for warmup_index in range(args.warmups):
+        timer.reset()
         generator = torch.Generator(device="cpu").manual_seed(
             args.seeds[0] + 10000 + warmup_index
         )
@@ -148,6 +205,7 @@ def main() -> None:
 
     samples = []
     for seed in args.seeds:
+        timer.reset()
         generator = torch.Generator(device="cpu").manual_seed(seed)
         started = time.perf_counter()
         result = app(
@@ -169,11 +227,16 @@ def main() -> None:
             "latency_seconds": latency,
             "image": str(image_path),
             **metrics,
+            "stages": timer.summary(latency),
         }
         samples.append(sample)
         print(json.dumps(sample, sort_keys=True), flush=True)
 
     latencies = [sample["latency_seconds"] for sample in samples]
+    stage_means = {
+        key: statistics.fmean(sample["stages"][key] for sample in samples)
+        for key in samples[0]["stages"]
+    }
     summary = {
         "metadata": metadata,
         "compile_seconds": compile_seconds,
@@ -185,6 +248,7 @@ def main() -> None:
         "stdev_seconds": statistics.pstdev(latencies),
         "valid_images": sum(sample["valid_image"] for sample in samples),
         "sample_count": len(samples),
+        "stage_means": stage_means,
         "samples": samples,
     }
     summary_path = output_dir / "results.json"

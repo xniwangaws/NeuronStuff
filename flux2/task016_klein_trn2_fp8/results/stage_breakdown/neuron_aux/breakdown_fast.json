@@ -1,0 +1,45 @@
+{
+  "config": "neuron TE 3 segs (cores 1/2/3) + neuron DiT TP=4 + neuron VAE (core 0) + RoPE cache",
+  "aux_load_seconds": 375.3210000090003,
+  "load_seconds": 42.364649678000205,
+  "steps": 50,
+  "guidance_scale": 4.0,
+  "images": [
+    {
+      "label": "warmup",
+      "seed": 52042,
+      "total_seconds": 26.127,
+      "text_encoder_seconds": 0.125,
+      "text_encoder_calls": 2,
+      "dit_seconds": 25.335,
+      "dit_calls": 100,
+      "dit_mean_ms_per_call": 253.3,
+      "vae_decode_seconds": 0.285,
+      "other_seconds": 0.382
+    },
+    {
+      "label": "measured",
+      "seed": 42,
+      "total_seconds": 25.99,
+      "text_encoder_seconds": 0.122,
+      "text_encoder_calls": 2,
+      "dit_seconds": 25.314,
+      "dit_calls": 100,
+      "dit_mean_ms_per_call": 253.1,
+      "vae_decode_seconds": 0.285,
+      "other_seconds": 0.269
+    },
+    {
+      "label": "measured",
+      "seed": 43,
+      "total_seconds": 26.025,
+      "text_encoder_seconds": 0.122,
+      "text_encoder_calls": 2,
+      "dit_seconds": 25.348,
+      "dit_calls": 100,
+      "dit_mean_ms_per_call": 253.5,
+      "vae_decode_seconds": 0.285,
+      "other_seconds": 0.271
+    }
+  ]
+}

@@ -1,0 +1,238 @@
+{
+  "metadata": {
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "model": "/mnt/nvme/flux2-klein/weights",
+    "transformer_checkpoint": null,
+    "compile_dir": "/mnt/nvme/flux2-klein/compiled_bf16",
+    "resolution": [
+      1024,
+      1024
+    ],
+    "steps": 50,
+    "guidance": 4.0,
+    "tp": 4,
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "prompt": "A cat holding a sign that says hello world",
+    "neuron_logical_nc_config": "2",
+    "neuron_rt_virtual_core_size": "2",
+    "neuron_rt_visible_cores": "0-3",
+    "flux2_fp8_mlp": "0",
+    "flux2_fp8_scope": null,
+    "flux2_fp8_activation": "none",
+    "unsafe_fp8fncast": null,
+    "neuron_aux": true,
+    "aux_compile_dir": "/mnt/nvme/flux2-klein/compiled_aux_1024"
+  },
+  "compile_seconds": 0.00011490099859656766,
+  "load_seconds": 401.1327387270012,
+  "mean_seconds": 25.9392244345001,
+  "median_seconds": 25.93820494600004,
+  "min_seconds": 25.92102473900013,
+  "max_seconds": 25.97567302099924,
+  "stdev_seconds": 0.014887661867009006,
+  "valid_images": 10,
+  "sample_count": 10,
+  "stage_means": {
+    "text_encoder_seconds": 0.12277152969963936,
+    "text_encoder_calls": 2.0,
+    "transformer_seconds": 25.28575103379917,
+    "transformer_calls": 100.0,
+    "transformer_ms_per_call": 252.8575103379917,
+    "vae_decode_seconds": 0.28785292409957036,
+    "other_seconds": 0.24284894690172223
+  },
+  "samples": [
+    {
+      "seed": 42,
+      "latency_seconds": 25.938064821999433,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed42_cat.png",
+      "mean": 115.5173110961914,
+      "std": 79.75712585449219,
+      "neighbor_correlation": 0.9763891380054864,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.12155888899906131,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.28904366000279,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 252.8904366000279,
+        "vae_decode_seconds": 0.2852549599992926,
+        "other_seconds": 0.24220731299828913
+      }
+    },
+    {
+      "seed": 43,
+      "latency_seconds": 25.97567302099924,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed43_cat.png",
+      "mean": 72.5105972290039,
+      "std": 75.94268035888672,
+      "neighbor_correlation": 0.9911749797173156,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.12175829599982535,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.323392368996792,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 253.23392368996792,
+        "vae_decode_seconds": 0.28470856599960825,
+        "other_seconds": 0.2458137900030124
+      }
+    },
+    {
+      "seed": 44,
+      "latency_seconds": 25.943061019999732,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed44_cat.png",
+      "mean": 151.8267822265625,
+      "std": 79.08370208740234,
+      "neighbor_correlation": 0.9964805639211235,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.12147207999987586,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.29043231200194,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 252.9043231200194,
+        "vae_decode_seconds": 0.2846109849997447,
+        "other_seconds": 0.2465456429981714
+      }
+    },
+    {
+      "seed": 45,
+      "latency_seconds": 25.938809185001446,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed45_cat.png",
+      "mean": 146.2908172607422,
+      "std": 77.790283203125,
+      "neighbor_correlation": 0.9847020846422218,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.12153800399937609,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.284680793000007,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 252.84680793000007,
+        "vae_decode_seconds": 0.2849555880002299,
+        "other_seconds": 0.24763480000183336
+      }
+    },
+    {
+      "seed": 46,
+      "latency_seconds": 25.927353837001647,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed46_cat.png",
+      "mean": 135.58563232421875,
+      "std": 90.49542236328125,
+      "neighbor_correlation": 0.984999237019164,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.12138531100026739,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.27865768200718,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 252.7865768200718,
+        "vae_decode_seconds": 0.28464856699974916,
+        "other_seconds": 0.24266227699445153
+      }
+    },
+    {
+      "seed": 47,
+      "latency_seconds": 25.92102473900013,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed47_cat.png",
+      "mean": 110.4413070678711,
+      "std": 94.0098876953125,
+      "neighbor_correlation": 0.9903984555105009,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.12164275599934626,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.274925782003265,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 252.74925782003265,
+        "vae_decode_seconds": 0.2856322519983223,
+        "other_seconds": 0.23882394899919746
+      }
+    },
+    {
+      "seed": 48,
+      "latency_seconds": 25.92683143299837,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed48_cat.png",
+      "mean": 136.47000122070312,
+      "std": 72.57555389404297,
+      "neighbor_correlation": 0.9844481359535472,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.12183983700015233,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.283078321996072,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 252.83078321996072,
+        "vae_decode_seconds": 0.2875539769993338,
+        "other_seconds": 0.23435929700281122
+      }
+    },
+    {
+      "seed": 49,
+      "latency_seconds": 25.930713335999826,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed49_cat.png",
+      "mean": 122.91217041015625,
+      "std": 65.58329010009766,
+      "neighbor_correlation": 0.9902059182213725,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.1228450749986223,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.27850414499335,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 252.7850414499335,
+        "vae_decode_seconds": 0.290436014000079,
+        "other_seconds": 0.23892810200777603
+      }
+    },
+    {
+      "seed": 50,
+      "latency_seconds": 25.93834507000065,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed50_cat.png",
+      "mean": 94.43946075439453,
+      "std": 95.23884582519531,
+      "neighbor_correlation": 0.9929585690189756,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.12531183899955067,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.28120181399572,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 252.81201813995722,
+        "vae_decode_seconds": 0.29306099399946106,
+        "other_seconds": 0.2387704230059171
+      }
+    },
+    {
+      "seed": 51,
+      "latency_seconds": 25.952367882000544,
+      "image": "/mnt/nvme/flux2-klein/outputs_bf16_neuron_aux/seed51_cat.png",
+      "mean": 149.92723083496094,
+      "std": 72.58184051513672,
+      "neighbor_correlation": 0.9976955552907462,
+      "valid_image": true,
+      "stages": {
+        "text_encoder_seconds": 0.12836321000031603,
+        "text_encoder_calls": 2,
+        "transformer_seconds": 25.273593458994583,
+        "transformer_calls": 100,
+        "transformer_ms_per_call": 252.73593458994583,
+        "vae_decode_seconds": 0.2976673379998829,
+        "other_seconds": 0.2527438750057627
+      }
+    }
+  ]
+}

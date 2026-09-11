@@ -1,0 +1,12 @@
+Loading full Qwen3-8B on CPU for pipeline-exact reference...
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 201.90it/s]
+/mnt/nvme/flux2-klein/src/validate_te_segments.py:66: DeprecationWarning: Deprecated: torch_neuronx.experimental.placement.set_neuron_cores → torch_neuronx.set_neuron_cores
+  torch_neuronx.experimental.set_neuron_cores(traced, start_nc=core, nc_count=1)
+  loaded seg_a -> core 1 (156.1s)
+  loaded seg_b -> core 2 (107.3s)
+  loaded seg_c -> core 3 (106.6s)
+  benchmark: cos=1.001476 max_abs=128.0000 first_call=0.10s
+  uncond: cos=1.001753 max_abs=128.0000 first_call=0.06s
+Neuron TE chained latency: 60.7 ms (a=20 b=20 c=20)
+WROTE /mnt/nvme/flux2-klein/compiled_te/te_validation_report.json

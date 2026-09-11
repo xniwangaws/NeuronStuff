@@ -1,0 +1,15 @@
+{
+  "compiler_args": "--model-type=unet-inference -O1 --auto-cast=none",
+  "group_norms_patched_fp32": 52,
+  "compile_seconds": 558.030054887,
+  "cpu_decode_seconds": 13.168788087999928,
+  "cosine_vs_cpu_bf16": 0.9997819662094116,
+  "max_abs_diff": 0.052734375,
+  "mean_abs_diff": 0.0010409740498289466,
+  "neuron_latency_ms": {
+    "mean": 284.94407199996203,
+    "min": 284.8689229995216,
+    "max": 285.0054729997282
+  },
+  "model_path": "/mnt/nvme/flux2-klein/compiled_vae/vae_decoder_1k.pt"
+}

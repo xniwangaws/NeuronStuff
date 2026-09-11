@@ -1,0 +1,11 @@
+Loading VAE (BF16)...
+CPU BF16 reference decode (unpatched GroupNorm)...
+  cpu decode: 13.17s, out (1, 3, 1024, 1024)
+Patched 52 GroupNorm modules to FP32 compute
+Tracing on Neuron (compile) with: --model-type=unet-inference -O1 --auto-cast=none
+............................
+Compiler status PASS
+Compile done in 558.0s
+  cos=0.999782 max_abs=0.0527 mean_abs=0.00104
+Neuron VAE latency: 284.9 ms mean
+WROTE /mnt/nvme/flux2-klein/compiled_vae/vae_decoder_1k.pt

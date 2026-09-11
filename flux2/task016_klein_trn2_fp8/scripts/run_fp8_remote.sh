@@ -2,6 +2,8 @@
 set -euo pipefail
 
 source "$(dirname "$0")/remote_env.sh"
+# Text encoder / VAE artifacts are precision independent; share them.
+export FLUX2_AUX_COMPILE_DIR="${FLUX2_AUX_COMPILE_DIR:-/mnt/nvme/flux2-klein/compiled_aux_1024}"
 export FLUX2_FP8_MLP=1
 export FLUX2_FP8_SCOPE="${FLUX2_FP8_SCOPE:-mlp}"
 export FLUX2_FP8_ACTIVATION="${FLUX2_FP8_ACTIVATION:-none}"
