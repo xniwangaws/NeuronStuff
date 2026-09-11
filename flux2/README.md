@@ -16,7 +16,7 @@ RoPE 表：
 |---|---:|---:|---:|---|
 | BF16 TP=4，TE/VAE 在 CPU（09-03） | 41.785 s | 10/10 | $0.0259 | — |
 | **BF16 TP=4，全 Neuron** | **25.939 s** | **10/10** | **$0.0161** | SSIM 0.988 / PSNR 28.3 dB |
-| FP8 all-Linear W8A8，全 Neuron | 见 task016 §2 | | | |
+| **FP8 all-Linear W8A8，全 Neuron** | **21.978 s** | **10/10** | **$0.0136** | SSIM 0.92（构图细节级漂移） |
 
 剩下的 25.3 s 有 98% 是 DiT 的 100 次前向（klein-base 非蒸馏，classic CFG 每步
 2 次），每次 253 ms ≈ 300 TFLOPS，约为 trn2 BF16 峰值的 45%，与 FLUX.1-lite 在同一

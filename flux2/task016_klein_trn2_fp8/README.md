@@ -2,7 +2,7 @@
 
 > Prompt:`"A cat holding a sign that says hello world"`,guidance 4.0（klein-base 为非蒸馏模型,走 classic CFG,**每步 2 次 DiT 前向**),50 steps,batch=1,max_sequence_length=512,seeds 42–51(共 10 个)
 
-> **2026-09-11 更新**:原始移植把 Qwen3-8B text encoder 和 VAE decoder 留在 CPU 上,占了每张图 14.3 s(35%)。本次把两者搬到 Neuron 并缓存 RoPE 表,**BF16 端到端从 41.79 s 降到 25.94 s(1.61×)**,10/10 seeds 通过,与原路径出图 SSIM 0.988。FP8 all-Linear W8A8 叠加后见 §2 表格。§9 解释了为什么同样是 DiT 的 FLUX.1-lite 在 trn2 上只要 6.5 s,§10 给出与 L20 对比时必须核对的口径。
+> **2026-09-11 更新**:原始移植把 Qwen3-8B text encoder 和 VAE decoder 留在 CPU 上,占了每张图 14.3 s(35%)。本次把两者搬到 Neuron 并缓存 RoPE 表,**BF16 端到端从 41.79 s 降到 25.94 s(1.61×)**,10/10 seeds 通过,与原路径出图 SSIM 0.988;再叠加 FP8 all-Linear W8A8 到 **21.98 s(1.90×)**,已快于 H100 BF16 eager。§9 解释了为什么同样是 DiT 的 FLUX.1-lite 在 trn2 上只要 6.5 s,§10 给出与 L20 对比时必须核对的口径。
 
 ## 1. 设备与价格(AWS,2026-09)
 
@@ -22,7 +22,7 @@
 | trn2.3xl(2026-09-03) | FP8 MLP W8A8,TE + VAE 在 CPU | 38.562 | 10/10 | $0.02394 | 1.08× | 0.62× |
 | trn2.3xl(2026-09-03) | FP8 all-Linear W8A8,TE + VAE 在 CPU | 37.893 | 10/10 | $0.02353 | 1.10× | 0.64× |
 | **trn2.3xl(2026-09-11)** | **BF16 TP=4,TE + VAE 在 Neuron,RoPE 缓存** | **25.939** | **10/10** | **$0.01610** | **1.61×** | 0.93×(慢 1.08×) |
-| trn2.3xl(2026-09-11) | FP8 all-Linear W8A8 + TE/VAE Neuron | 测试中(10 seed 运行中,下次提交补充) | | | | |
+| **trn2.3xl(2026-09-11)** | **FP8 all-Linear W8A8 + TE/VAE Neuron** | **21.978** | **10/10** | **$0.01364** | **1.90×** | **1.10×(快 10%)** |
 | H100 p5.4xlarge(2026-05) | BF16,diffusers eager | 24.10 | 10/10 | $0.02896 | 1.73× | 1.00× |
 | H100 p5.4xlarge(2026-05) | FP8(torchao),eager | 21.18 | 10/10 | $0.02545 | 1.97× | 1.14× |
 | L4 g6.4xlarge(2026-05) | FP8(BFL 官方 `klein-9b-fp8` 蒸馏 ckpt,强制 50 步,**无 CFG**) | 77.25 | 10/10 | $0.02839 | 0.54× | 0.31× |
@@ -32,8 +32,9 @@
 **核心结论**:
 - 原始移植的 41.8 s 里有 **14.3 s 花在 CPU 上的 text encoder(5.1 s)和 VAE decode(9.2 s)**,这是 GPU 端不存在的额外损耗;搬到 Neuron 后两项合计 **0.41 s**。
 - 全 Neuron 路径 BF16 **25.94 s**,单图成本 **$0.0161**,比 H100 BF16 便宜 44%、比 H100 FP8 便宜 37%,速度已接近 H100 BF16 eager(慢 8%)。
+- 再叠加 FP8 all-Linear W8A8:**21.98 s / $0.0136**,比 H100 BF16 快 10%、便宜 53%;DiT 每次前向 253 → 213 ms(−16%),TE / VAE 不变。
 - 10 个 seed 的 stdev 只有 0.015 s(原路径 0.16 s):CPU 阶段去掉后延时抖动几乎消失。
-- 剩下的 25.3 s 几乎全是 DiT 的 **100 次前向**(每次 253 ms)。要再快只能动 DiT:FP8(见上表)、编译选项、以及 CFG 语义本身(§9)。
+- 剩下的时间几乎全是 DiT 的 **100 次前向**(BF16 253 ms / FP8 213 ms 每次)。要再快只能动 DiT:编译选项、以及 CFG 语义本身(§9)。
 - L4 那一行跑的是蒸馏 ckpt 且无 CFG(50 次前向而不是 100 次),与其它行不是同一个工作量,仅供参考。
 
 ## 3. 阶段拆分:时间去哪了(插桩实测,1024² / 50 步 / CFG)
@@ -52,12 +53,12 @@
 
 | 阶段 | 耗时 | 说明 |
 |---|---:|---|
-| DiT 编译(BF16,1K) | 157 s | NEFF 可缓存 |
+| DiT 编译(BF16 / FP8 all-Linear,1K) | 157 s / 174 s | NEFF 可缓存 |
 | Text encoder 3 段编译 | 452 + 364 + 362 s | 一次性;27 层整段编译要 1227 s 且 18.9 GB 装不进单核(见 §6) |
 | VAE decoder 编译 | 558 s | 一次性 |
 | 加载(仅 DiT) | 20 s | |
-| 加载(DiT + TE 3 段 + VAE) | 401 s | 19 GB TorchScript 段的 `torch.jit.load` 占大头,后续可改为 NEFF 直载 |
-| **稳态** | **25.94 s / image** | |
+| 加载(DiT + TE 3 段 + VAE) | 401 s(BF16)/ 422 s(FP8) | 19 GB TorchScript 段的 `torch.jit.load` 占大头,后续可改为 NEFF 直载 |
+| **稳态** | **25.94 s(BF16)/ 21.98 s(FP8 all-Linear)/ image** | |
 
 ### 两个 Neuron 组件的数值验证
 
@@ -71,11 +72,13 @@
 
 | BF16,TE/VAE 在 CPU(原始移植) | **BF16,全 Neuron** | FP8 all-Linear,TE/VAE 在 CPU | **FP8 all-Linear,全 Neuron** |
 |:---:|:---:|:---:|:---:|
-| ![](results/bf16/seed42_cat.png) | ![](results/bf16_neuron_aux/seed42_cat.png) | ![](results/fp8_all_linear/seed42_cat.png) | 测试中 |
+| ![](results/bf16/seed42_cat.png) | ![](results/bf16_neuron_aux/seed42_cat.png) | ![](results/fp8_all_linear/seed42_cat.png) | ![](results/fp8_all_linear_neuron_aux/seed42_cat.png) |
 
-10 seed 三列对比图(原始移植 BF16 / 全 Neuron BF16 / 全 Neuron FP8 all-Linear)将随 FP8 结果一起提交到 `results/comparison_grid_cpu_aux_vs_neuron_aux.png`。旧的 BF16 / MLP-FP8 / all-Linear-FP8 网格仍在 [`results/comparison_grid_bf16_mlp_all_linear.png`](results/comparison_grid_bf16_mlp_all_linear.png)。
+10 seed 三列对比图:[`results/comparison_grid_cpu_aux_vs_neuron_aux.png`](results/comparison_grid_cpu_aux_vs_neuron_aux.png)(左:原始移植 BF16;中:全 Neuron BF16;右:全 Neuron FP8 all-Linear)。旧的 BF16 / MLP-FP8 / all-Linear-FP8 网格仍在 [`results/comparison_grid_bf16_mlp_all_linear.png`](results/comparison_grid_bf16_mlp_all_linear.png)。
 
-**视觉一致性(10 seed 逐张人工核对)**:BF16 全 Neuron 与原始移植在全部 10 个 seed 上构图、猫的品种与姿态、牌子位置、字体风格一致,10/10 文字清晰可读,无噪声、色偏或伪影;差异在毛发纹理、背景抱枕花纹(seed 45)、门把手位置(seed 48)、笔画粗细这一级。唯一一处语义级差别是 seed 48:原路径写 "hello World",全 Neuron 路径写 "hello world",两者都是 prompt 的合法输出——这是 text encoder 数值微差被 100 步 diffusion 轨迹放大的结果,也是该 seed SSIM 最低(0.958)的原因。逐 seed SSIM 0.958–0.998,PSNR 21.6–34.4 dB。FP8 all-Linear 的漂移更大(vs BF16 SSIM 0.93),与 09-03 的结论相同。
+**视觉一致性(10 seed 逐张人工核对)**:BF16 全 Neuron 与原始移植在全部 10 个 seed 上构图、猫的品种与姿态、牌子位置、字体风格一致,10/10 文字清晰可读,无噪声、色偏或伪影;差异在毛发纹理、背景抱枕花纹(seed 45)、门把手位置(seed 48)、笔画粗细这一级。唯一一处语义级差别是 seed 48:原路径写 "hello World",全 Neuron 路径写 "hello world",两者都是 prompt 的合法输出——这是 text encoder 数值微差被 100 步 diffusion 轨迹放大的结果,也是该 seed SSIM 最低(0.958)的原因。逐 seed SSIM 0.958–0.998,PSNR 21.6–34.4 dB。
+
+**FP8 all-Linear 全 Neuron(10 seed 逐张人工核对)**:10/10 同样是清晰的猫 + 可读牌子,无伪影、无噪声,但漂移升到“构图细节”级:seed 45 右侧背景的抱枕变成椅子,seed 47/48 牌子位置与猫的姿态有轻微移动,seed 51 的 “Hello World” 变成 “HELLO WORLD”。vs 全 Neuron BF16:SSIM 0.9205 / PSNR 19.6 dB,逐 seed 0.82–0.99(最低 seed 47);vs 原始移植 BF16:SSIM 0.9206。与 09-03 在 CPU-aux 路径上测得的 0.928 一致——FP8 的画质代价来自 DiT 量化本身,和 TE/VAE 搬到 Neuron 无关。
 
 ## 5. 10-seed 全量 PNG 与结果文件
 
@@ -85,7 +88,7 @@
 | **BF16,全 Neuron** | `results/bf16_neuron_aux/seed{42..51}_cat.png`,`results/bf16_neuron_aux/results.json`(含逐 seed 阶段拆分) |
 | FP8 MLP W8A8,TE/VAE 在 CPU | `results/fp8_dynamic/` |
 | FP8 all-Linear W8A8,TE/VAE 在 CPU | `results/fp8_all_linear/` |
-| FP8 all-Linear W8A8,全 Neuron | `results/fp8_all_linear_neuron_aux/`(测试中) |
+| **FP8 all-Linear W8A8,全 Neuron** | `results/fp8_all_linear_neuron_aux/seed{42..51}_cat.png`,`results.json`,`comparison_vs_cpu_aux_bf16.json`,`comparison_vs_neuron_aux_bf16.json` |
 | 阶段拆分原始数据 | `results/stage_breakdown/cpu_aux/breakdown.json`,`results/stage_breakdown/neuron_aux/breakdown_fast.json` |
 | TE / VAE 组件验证 | `results/neuron_aux_reports/te_validation_report.json`,`vae_trace_report.json` |
 | 画质对比 | `results/bf16_neuron_aux/comparison_vs_cpu_aux.json`,`results/comparison_all_linear_vs_bf16.json`,`results/comparison_vs_bf16.json` |
@@ -159,10 +162,10 @@ python scripts/make_labeled_grid.py --column "BF16 CPU TE/VAE=results/bf16" --co
 
 ## 8. 结论
 
-1. **klein-base 1024² / 50 步 / CFG 在 trn2.3xlarge 上 BF16 25.94 s,10/10 pass**,比 09-03 报告的 41.79 s 快 1.61×;$/image **$0.0161**,比 H100 BF16 便宜 44%。
+1. **klein-base 1024² / 50 步 / CFG 在 trn2.3xlarge 上 BF16 25.94 s、FP8 all-Linear 21.98 s,均 10/10 pass**,比 09-03 报告的 41.79 s 快 1.61× / 1.90×;$/image **$0.0161 / $0.0136**,比 H100 BF16 便宜 44% / 53%,FP8 版速度也已超过 H100 BF16 eager。
 2. 之前"没优势"的直接原因是**移植不完整**:text encoder 和 VAE 留在 CPU,占 35%。这不是 Trainium 的算力问题。
 3. 剩余时间 98% 在 DiT 的 100 次前向。klein 每次前向约 76 TFLOP,253 ms 对应 ≈300 TFLOPS,即 trn2 BF16 峰值(≈667 TFLOPS)的 **~45%**,与 FLUX.1-lite 在同一 SDK 上的 ~41% 一致;DiT 实现本身没有明显低效(§9)。
-4. FP8 all-Linear W8A8 在 CPU-aux 路径上给了 9.3%,叠加在全 Neuron 路径上的数字见 §2;代价是画质漂移(SSIM 0.93),MLP-only 是更保守的折中。
+4. FP8 all-Linear W8A8 让 DiT 每次前向从 253 ms 降到 213 ms(−16%),端到端 −15%;代价是画质漂移到构图细节级(SSIM 0.92),MLP-only FP8(SSIM 0.96)是更保守的折中。
 5. 与 L20 对比之前必须先对齐口径(§10):按 L20 的 BF16 峰值算,这个工作量在 L20 上**不可能低于 64 s**。
 
 ## 9. 为什么同样是 DiT,FLUX.1-lite-8B 在 trn2 上是 6.5 s 而 klein 是 26 s
